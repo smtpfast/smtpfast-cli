@@ -46,7 +46,7 @@ export function toGlobals(values: FlagValues, env: Record<string, string | undef
     idempotencyKey: one(values, "idempotency-key"),
     noUpdateCheck: bool(values, "no-update-check") ?? false,
     noColor: bool(values, "no-color") ?? false,
-    debug: (bool(values, "debug") ?? false) || (debugEnv !== undefined && debugEnv !== "" && debugEnv !== "0"),
+    debug: bool(values, "debug") ?? (debugEnv !== undefined && debugEnv !== "" && debugEnv !== "0"),
     help: bool(values, "help") ?? false,
     version: bool(values, "version") ?? false,
   };
@@ -64,7 +64,9 @@ export class Session {
   constructor(
     readonly ctx: Context,
     readonly globals: Globals,
+    registry?: Registry,
   ) {
+    this.cachedRegistry = registry;
     this.out = new Output(ctx, { json: globals.json, quiet: globals.quiet, noColor: globals.noColor });
     this.out.addSecret(globals.apiKey);
     this.out.addSecret(ctx.env.SMTPFAST_API_KEY);

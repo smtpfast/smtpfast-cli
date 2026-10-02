@@ -1,11 +1,10 @@
-import { parseArgs } from "../args.js";
-import { buildRequest, operationFlagDefs } from "../request.js";
+import type { ParseResult } from "../args.js";
+import { buildRequest } from "../request.js";
 import type { Session } from "../session.js";
 import type { OperationSpec } from "../spec/types.js";
 
-/** Run any operation from the manifest: parse its flags, build the request, print the response. */
-export async function runOperation(session: Session, op: OperationSpec, tokens: string[]): Promise<number> {
-  const parsed = parseArgs(tokens, operationFlagDefs(op));
+/** Run any operation from the manifest: build the request from its parsed flags, print the response. */
+export async function runOperation(session: Session, op: OperationSpec, parsed: ParseResult): Promise<number> {
   const req = await buildRequest(op, parsed, { cwd: session.ctx.cwd, stdin: session.ctx.stdin });
   const res = await session.client().request({
     method: req.method,

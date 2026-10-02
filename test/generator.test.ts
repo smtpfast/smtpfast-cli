@@ -177,6 +177,18 @@ describe("spec edge cases", () => {
     expect(params.map((p) => p.flag)).toEqual(["body-data", "query-profile"]);
   });
 
+  test("a field that would collide with a global --no- form gets another flag", () => {
+    const params: ParamSpec[] = [
+      { name: "no-debug", flag: "", in: "query", type: "string", required: false },
+      { name: "no_json", flag: "", in: "query", type: "string", required: false },
+      { name: "color", flag: "", in: "query", type: "boolean", required: false },
+      { name: "update_check", flag: "", in: "body", type: "boolean", required: false },
+      { name: "update-mode", flag: "", in: "body", type: "boolean", required: false },
+    ];
+    assignFlags(params);
+    expect(params.map((p) => p.flag)).toEqual(["query-no-debug", "no_json", "query-color", "update_check", "update-mode"]);
+  });
+
   test("readOnly properties are not flags", () => {
     const { manifest: m } = buildManifest(
       base({

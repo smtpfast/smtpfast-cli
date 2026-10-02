@@ -205,6 +205,34 @@ describe("operations from the cached live spec", () => {
     expect(server.requests.length).toBe(0);
   });
 
+  test("a live operation whose fields collide with global flags gets renamed flags", async () => {
+    const configHome = tempDir();
+    const spec = fixtureSpec();
+    spec.paths["/v1/widgets"] = {
+      get: {
+        operationId: "listWidgets",
+        summary: "List widgets",
+        tags: ["Widgets"],
+        parameters: [
+          { name: "no-debug", in: "query", schema: { type: "string" } },
+          { name: "color", in: "query", schema: { type: "boolean" } },
+          { name: "json", in: "query", schema: { type: "string" } },
+        ],
+      },
+    };
+    seedCache(configHome, spec);
+    server = await startMockServer((_req, res) => sendJson(res, 200, { object: "list", data: [] }));
+    const r = await run(["widgets", "list", "--query-no-debug", "x", "--query-color", "--query-json", "y", "--no-debug", "--no-color"], {
+      configHome,
+      env: { SMTPFAST_API_KEY: "k", SMTPFAST_BASE_URL: server.url, SMTPFAST_DEBUG: "1" },
+    });
+    expect(r.code).toBe(0);
+    expect(server.requests[0]!.query.toString()).toBe("color=true&json=y&no-debug=x");
+    expect(r.stderr).not.toContain("> GET");
+    const help = await run(["widgets", "list", "--help"], { configHome });
+    expect(help.stdout).toContain("--query-no-debug <string>");
+  });
+
   test("a corrupt cache is ignored", async () => {
     const configHome = tempDir();
     const dir = join(configHome, "smtpfast");

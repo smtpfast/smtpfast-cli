@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { type FlagDef, parseArgs } from "../src/args.js";
-import { UsageError } from "../src/errors.js";
+import { type FlagDef, parseArgs, parseWithGlobals, splitCommandLine } from "../src/args.js";
+import { CliError, UsageError } from "../src/errors.js";
+import { catalog } from "../src/commands/index.js";
+import { GLOBAL_FLAGS } from "../src/session.js";
+import { RESERVED_FLAGS } from "../src/spec/build.js";
 
 const defs: FlagDef[] = [
   { name: "subject", kind: "value" },
@@ -58,9 +61,89 @@ describe("parseArgs", () => {
     expect(() => parseArgs(["--subject"], defs)).toThrow("--subject needs a value");
   });
 
-  test("lenient mode keeps unknown tokens in order", () => {
-    const r = parseArgs(["emails", "--json", "list", "--limit", "5", "--quiet", "-x"], [{ name: "json", kind: "boolean" }, { name: "quiet", kind: "boolean" }], { lenient: true });
-    expect(r.values).toEqual({ json: true, quiet: true });
-    expect(r.rest).toEqual(["emails", "list", "--limit", "5", "-x"]);
+  test("a value flag takes a token that looks like a flag", () => {
+    expect(parseArgs(["--subject", "--help", "--to", "-q"], defs).values).toEqual({ subject: ["--help"], to: ["-q"] });
+  });
+});
+
+describe("splitCommandLine", () => {
+  const words = (first: string) => (first === "help" ? Infinity : first === "send" ? 1 : 2);
+  const split = (argv: string[]) => splitCommandLine(argv, GLOBAL_FLAGS, words);
+
+  test("global flags before and between the command words are set aside with their values", () => {
+    expect(split(["--profile", "staging", "emails", "--json", "list", "--limit", "5"])).toEqual({
+      words: ["emails", "list"],
+      globalTokens: ["--profile", "staging", "--json"],
+      rest: ["--limit", "5"],
+    });
+    expect(split(["-q", "--base-url=http://x", "send", "--subject", "--help"])).toEqual({
+      words: ["send"],
+      globalTokens: ["-q", "--base-url=http://x"],
+      rest: ["--subject", "--help"],
+    });
+  });
+
+  test("everything after the command words is left for the command", () => {
+    expect(split(["emails", "list", "--json", "--no-debug"]).rest).toEqual(["--json", "--no-debug"]);
+    expect(split(["send", "extra"]).rest).toEqual(["extra"]);
+  });
+
+  test("an unknown flag ends the command words", () => {
+    expect(split(["emails", "--limit", "5", "list"])).toEqual({ words: ["emails"], globalTokens: [], rest: ["--limit", "5", "list"] });
+    expect(split(["--limit", "5"])).toEqual({ words: [], globalTokens: [], rest: ["--limit", "5"] });
+  });
+
+  test("help takes every word", () => {
+    expect(split(["help", "emails", "--json", "list"]).words).toEqual(["help", "emails", "list"]);
+  });
+
+  test("-- ends flags: the next tokens finish the command, the rest stay positional", () => {
+    expect(split(["--", "emails", "get", "--odd"])).toEqual({ words: ["emails", "get"], globalTokens: [], rest: ["--", "--odd"] });
+    expect(split(["emails", "get", "--", "--odd"]).rest).toEqual(["--", "--odd"]);
+  });
+});
+
+describe("parseWithGlobals", () => {
+  const local: FlagDef[] = [
+    { name: "subject", kind: "value" },
+    { name: "wait", kind: "boolean" },
+  ];
+
+  test("splits local and global values, with correct arity for both", () => {
+    const r = parseWithGlobals(["id1", "--subject", "--help", "--json", "--profile", "--wait", "--no-wait"], local, GLOBAL_FLAGS);
+    expect(r.local).toEqual({ values: { subject: ["--help"], wait: false }, positionals: ["id1"] });
+    expect(r.global).toEqual({ json: true, profile: ["--wait"] });
+  });
+
+  test("--no- forms of global booleans stay global", () => {
+    expect(parseWithGlobals(["--no-debug", "--no-json"], local, GLOBAL_FLAGS).global).toEqual({ debug: false, json: false });
+  });
+
+  test("-- makes the rest positional", () => {
+    expect(parseWithGlobals(["--", "--help"], local, GLOBAL_FLAGS)).toEqual({ local: { values: {}, positionals: ["--help"] }, global: {} });
+  });
+
+  test("a command flag that shadows a global flag is an error; such an alias is dropped", () => {
+    for (const bad of [
+      { name: "json", kind: "value" },
+      { name: "no-debug", kind: "value" },
+      { name: "color", kind: "boolean" },
+      { name: "x", short: "q", kind: "boolean" },
+    ] as FlagDef[]) {
+      expect(() => parseWithGlobals([], [bad], GLOBAL_FLAGS)).toThrow(CliError);
+    }
+    const r = parseWithGlobals(["--no-json"], [{ name: "first", aliases: ["no-json", "json"], kind: "value" }], GLOBAL_FLAGS);
+    expect(r.global).toEqual({ json: false });
+  });
+
+  test("no hand-written command flag clashes with a global flag", () => {
+    for (const cmd of [...catalog.top, ...catalog.extensions]) expect(() => parseWithGlobals([], cmd.flags, GLOBAL_FLAGS)).not.toThrow();
+  });
+
+  test("RESERVED_FLAGS covers every global flag and the --no- form of each global boolean", () => {
+    for (const g of GLOBAL_FLAGS) {
+      expect(RESERVED_FLAGS.has(g.name)).toBe(true);
+      if (g.kind === "boolean") expect(RESERVED_FLAGS.has(`no-${g.name}`)).toBe(true);
+    }
   });
 });

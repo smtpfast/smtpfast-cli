@@ -15,7 +15,11 @@ import type {
 
 const METHODS: HttpMethod[] = ["GET", "POST", "PUT", "PATCH", "DELETE"];
 
-/** Flags the CLI owns on every command. A parameter that maps to one of these gets another flag. */
+/**
+ * Flags the CLI owns on every command: the global flags, the --no- forms of
+ * the global booleans, and --data. A parameter that maps to one of these gets
+ * another flag.
+ */
 export const RESERVED_FLAGS = new Set([
   "api-key",
   "base-url",
@@ -25,11 +29,23 @@ export const RESERVED_FLAGS = new Set([
   "idempotency-key",
   "json",
   "no-color",
+  "no-debug",
+  "no-help",
+  "no-json",
+  "no-no-color",
+  "no-no-update-check",
+  "no-quiet",
   "no-update-check",
+  "no-version",
   "profile",
   "quiet",
   "version",
 ]);
+
+/** True when a parameter can use this flag name. A boolean also answers to --no-<flag>, so that form must not be reserved. */
+export function flagIsFree(flag: string, type: ValueType, taken: Set<string>): boolean {
+  return !taken.has(flag) && !RESERVED_FLAGS.has(flag) && !(type === "boolean" && RESERVED_FLAGS.has(`no-${flag}`));
+}
 
 /** Decode percent escapes until nothing changes, so %252e%252e is seen as "..". */
 function decodeFully(segment: string): string {
@@ -274,7 +290,7 @@ export function assignFlags(params: ParamSpec[]): void {
   for (const [cand, list] of candidates) {
     const sorted = [...list].sort((a, b) => rank(a) - rank(b) || byName(a, b));
     const [winner, ...rest] = sorted;
-    if (winner && !taken.has(cand)) {
+    if (winner && flagIsFree(cand, winner.type, taken)) {
       winner.flag = cand;
       taken.add(cand);
     } else if (winner) {
@@ -284,10 +300,10 @@ export function assignFlags(params: ParamSpec[]): void {
   }
   for (const p of losers) {
     const options = [p.name, `${p.in}-${kebab(p.name) || p.name}`];
-    let flag = options.find((o) => VALID_FLAG.test(o) && !taken.has(o));
+    let flag = options.find((o) => VALID_FLAG.test(o) && flagIsFree(o, p.type, taken));
     for (let i = 2; !flag; i++) {
       const o = `${p.in}-${kebab(p.name) || "param"}-${i}`;
-      if (!taken.has(o)) flag = o;
+      if (flagIsFree(o, p.type, taken)) flag = o;
     }
     p.flag = flag;
     taken.add(flag);

@@ -314,6 +314,80 @@ describe("generated commands", () => {
   });
 });
 
+describe("flag parsing", () => {
+  test("a command's value flag takes a value that looks like a global flag", async () => {
+    server = await startMockServer((_req, res) => sendJson(res, 200, { id: "em_1" }));
+    for (const subject of ["--help", "-h", "--version", "--json"]) {
+      const r = await run(["send", "--subject", subject, "--from", "a@x.test", "--to", "b@x.test", "--text", "t"], { env: env(server.url) });
+      expect(r.code).toBe(0);
+      expect(server.requests.at(-1)!.json.subject).toBe(subject);
+    }
+    const p = await run(["send", "--from", "a@x.test", "--to", "b@x.test", "--text", "--profile", "--subject", "s"], { env: env(server.url) });
+    expect(p.code).toBe(0);
+    expect(server.requests.at(-1)!.json).toMatchObject({ text: "--profile", subject: "s" });
+  });
+
+  test("global flags work before, between and after the command words", async () => {
+    server = await startMockServer((_req, res) => sendJson(res, 200, { id: "em_1" }));
+    for (const argv of [
+      ["--quiet", "emails", "get", "em_1"],
+      ["emails", "--quiet", "get", "em_1"],
+      ["emails", "get", "em_1", "--quiet"],
+      ["emails", "get", "-q", "em_1"],
+    ]) {
+      const r = await run(argv, { env: env(server.url), tty: true });
+      expect(r.code).toBe(0);
+      expect(r.stdout).toBe("em_1\n");
+    }
+  });
+
+  test("--help works at every level, before or after the command", async () => {
+    const top = await run(["--help"]);
+    expect(top.stdout).toContain("smtpfast: the command-line tool");
+    for (const argv of [["emails", "--help"], ["--help", "emails"], ["emails", "-h"]]) {
+      const r = await run(argv);
+      expect(r.code).toBe(0);
+      expect(r.stdout).toContain("smtpfast emails <command> [args] [flags]");
+    }
+    for (const argv of [["emails", "list", "--help"], ["--help", "emails", "list"], ["emails", "--help", "list"], ["help", "emails", "list"], ["emails", "list", "--limit", "5", "-h"]]) {
+      const r = await run(argv);
+      expect(r.code).toBe(0);
+      expect(r.stdout).toContain("API: GET /v1/emails (listEmails)");
+    }
+    const hand = await run(["send", "--help"]);
+    expect(hand.stdout).toContain("--attach <path>");
+    const ext = await run(["logs", "tail", "--help"]);
+    expect(ext.stdout).toContain("Print email events as they happen");
+  });
+
+  test("-- ends flag parsing", async () => {
+    server = await startMockServer((_req, res) => sendJson(res, 200, { id: "--odd" }));
+    const r = await run(["emails", "get", "--", "--odd"], { env: env(server.url) });
+    expect(r.code).toBe(0);
+    expect(server.requests[0]!.path).toBe("/v1/emails/--odd");
+    const r2 = await run(["--json", "--", "emails", "get", "--help"], { env: env(server.url) });
+    expect(r2.code).toBe(0);
+    expect(server.requests[1]!.path).toBe("/v1/emails/--help");
+  });
+
+  test("--no-debug turns off SMTPFAST_DEBUG", async () => {
+    server = await startMockServer((_req, res) => sendJson(res, 200, { id: "em_1" }));
+    const on = await run(["emails", "get", "em_1"], { env: env(server.url, { SMTPFAST_DEBUG: "1" }) });
+    expect(on.stderr).toContain("> GET");
+    const off = await run(["emails", "get", "em_1", "--no-debug"], { env: env(server.url, { SMTPFAST_DEBUG: "1" }) });
+    expect(off.stderr).not.toContain("> GET");
+  });
+
+  test("flags before the command must be global, and a group needs a command before its flags", async () => {
+    const r = await run(["--limit", "5", "emails", "list"]);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("Unknown flag --limit");
+    const g = await run(["emails", "--limit", "5"]);
+    expect(g.code).toBe(2);
+    expect(g.stderr).toContain('Put the command name before flags, like "smtpfast emails <command> --limit"');
+  });
+});
+
 describe("help", () => {
   test("command help shows args, typed flags, required markers and an example", async () => {
     const r = await run(["webhooks", "create", "--help"]);

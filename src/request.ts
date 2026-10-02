@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { type FlagDef, type FlagValues, one, type ParseResult } from "./args.js";
 import { CliError, UsageError } from "./errors.js";
 import type { Query } from "./http.js";
-import { isDotSegment, isSafeSpecPath, RESERVED_FLAGS } from "./spec/build.js";
+import { flagIsFree, isDotSegment, isSafeSpecPath } from "./spec/build.js";
 import type { OperationSpec, ParamSpec, ValueType } from "./spec/types.js";
 import { readAll, splitList } from "./util.js";
 
@@ -49,7 +49,7 @@ export function operationFlagDefs(op: OperationSpec): FlagDef[] {
   const aliasUsed = new Set<string>();
   const defs: FlagDef[] = params.map((p) => {
     const aliases: string[] = [];
-    if (p.name !== p.flag && !canonical.has(p.name) && !RESERVED_FLAGS.has(p.name) && !aliasUsed.has(p.name) && /^[A-Za-z0-9][\w.-]*$/.test(p.name)) {
+    if (p.name !== p.flag && !canonical.has(p.name) && flagIsFree(p.name, p.type, aliasUsed) && /^[A-Za-z0-9][\w.-]*$/.test(p.name)) {
       aliases.push(p.name);
       aliasUsed.add(p.name);
     }

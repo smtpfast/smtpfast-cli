@@ -150,6 +150,8 @@ Each API operation is a command: `smtpfast <group> <command> [args] [flags]`.
 - Query parameters and body fields are flags in kebab case. `scheduled_at` is `--scheduled-at`. The exact API name works too.
 - A list takes a repeated flag or a comma list: `--to a@x.com --to b@x.com` or `--to a@x.com,b@x.com`.
 - A boolean is `--flag` or `--no-flag`.
+- A flag that takes a value always takes the next word, even one that starts with a dash. `--subject --help` sets the subject to `--help`.
+- Global flags like `--json` and `--profile` go before or after the command. After `--`, every word is an argument.
 - An object takes JSON or `key=value` pairs: `--properties '{"plan":"pro"}'` or `--properties plan=pro`.
 - `--data` sends a whole body: inline JSON, `@file.json`, or `-` for stdin. Flags override fields from `--data`.
 
