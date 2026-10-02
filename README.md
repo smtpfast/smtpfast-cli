@@ -172,7 +172,7 @@ smtpfast contacts list --json | jq -r '.data[].email'
 id=$(smtpfast send --from hi@acme.com --to jane@example.com --subject Hi --text Hi --quiet)
 ```
 
-Errors go to stderr with the HTTP status and the API's message. When a key lacks a scope, the CLI names the scope. On HTTP 429 the CLI waits for the `Retry-After` time and tries once more. Pass `--idempotency-key` to make a retried send safe. `--debug` prints each request and response status to stderr. It never prints the key. Set `NO_COLOR` to turn colors off.
+Errors go to stderr with the HTTP status and the API's message. When a key lacks a scope, the CLI names the scope. On HTTP 429 the CLI waits for the `Retry-After` time and tries once more. Pass `--idempotency-key` to make a retried send safe. `--debug` prints each request and response status to stderr. Errors and debug output never show the API key. If a response repeats the key, the CLI prints `[redacted]` in its place. Set `NO_COLOR` to turn colors off.
 
 ## How it stays up to date
 

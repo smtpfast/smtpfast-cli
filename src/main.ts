@@ -81,6 +81,16 @@ function unknownSubcommand(session: Session, group: string, name: string): Usage
   );
 }
 
+/** Values given to --api-key, so an error never shows them, even one raised before the flags are parsed. */
+function apiKeysIn(argv: string[]): string[] {
+  const keys: string[] = [];
+  argv.forEach((token, i) => {
+    if (token === "--api-key" && argv[i + 1] !== undefined) keys.push(argv[i + 1]!);
+    else if (token.startsWith("--api-key=")) keys.push(token.slice("--api-key=".length));
+  });
+  return keys;
+}
+
 /** Run the CLI and return the exit code. Tests call this with a fake context. */
 export async function main(argv: string[], overrides: Partial<Context> = {}): Promise<number> {
   const ctx: Context = { ...defaultContext(), ...overrides };
@@ -148,6 +158,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
   } catch (err) {
     if (err instanceof InterruptError || (err as Error)?.name === "AbortError") return EXIT_INTERRUPTED;
     const out = session?.out ?? fallbackOut();
+    for (const key of apiKeysIn(argv)) out.addSecret(key);
     return out.error(err, helpCommand, session?.globals.debug ?? false);
   }
 }

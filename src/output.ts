@@ -191,6 +191,10 @@ export function collectIds(data: unknown): string[] {
   return items.map((i) => i.id).filter((id): id is string | number => typeof id === "string" || typeof id === "number").map(String);
 }
 
+/** Shorter values are not treated as keys. Redacting them would garble unrelated text. */
+const MIN_SECRET_LENGTH = 8;
+const REDACTED = "[redacted]";
+
 export interface ResultOptions {
   op?: OperationSpec;
   /** Printed on a TTY when the response has no body. */
@@ -203,6 +207,7 @@ export class Output {
   readonly tty: boolean;
   readonly c: Colors;
   readonly ce: Colors;
+  private readonly secrets = new Set<string>();
 
   constructor(
     private readonly ctx: Pick<Context, "stdout" | "stderr" | "env">,
@@ -224,8 +229,23 @@ export class Output {
     this.ctx.stdout.write(text.endsWith("\n") ? text : `${text}\n`);
   }
 
+  /** Remember an API key. Everything written to stderr has it replaced with [redacted]. */
+  addSecret(value: string | undefined): void {
+    if (!value || value.length < MIN_SECRET_LENGTH) return;
+    // Also the forms it takes inside a URL or a JSON string.
+    for (const form of [value, encodeURIComponent(value), JSON.stringify(value).slice(1, -1)]) this.secrets.add(form);
+  }
+
+  redact(text: string): string {
+    let out = text;
+    for (const s of [...this.secrets].sort((a, b) => b.length - a.length)) out = out.split(s).join(REDACTED);
+    return out;
+  }
+
+  /** Errors, hints and --debug lines all go through here, so an API key never reaches stderr. */
   err(text: string): void {
-    this.ctx.stderr.write(text.endsWith("\n") ? text : `${text}\n`);
+    const safe = this.redact(text);
+    this.ctx.stderr.write(safe.endsWith("\n") ? safe : `${safe}\n`);
   }
 
   writeRaw(stream: OutStream, data: string | Uint8Array): void {

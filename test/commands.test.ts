@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { type MockServer, run, sendJson, startMockServer, tempDir } from "./helpers.js";
 
@@ -360,5 +360,58 @@ describe("completion", () => {
     expect(flags).toBe("--subject\n");
     expect((await run(["__complete", "--profile", "x", "logs", "t"])).stdout).toBe("tail\n");
     expect((await run(["__complete", "completion", ""])).stdout).toBe("bash\nfish\nzsh\n");
+  });
+});
+
+describe("API keys in errors", () => {
+  const KEY = "sf_live_secret_0123456789";
+  const echoServer = () =>
+    startMockServer((req, res) => {
+      const auth = String(req.headers.authorization ?? "");
+      const key = auth.replace(/^Bearer /, "");
+      sendJson(res, 401, { error: `Invalid API key ${key}`, received: auth, url: `/v1/x?key=${encodeURIComponent(key)}` });
+    });
+
+  test("an API error that echoes the key does not print it, with or without --debug", async () => {
+    server = await echoServer();
+    for (const argv of [["emails", "list"], ["emails", "list", "--debug"], ["--debug", "emails", "list", "--api-key", KEY]]) {
+      const r = await run(argv, { env: env(server.url, { SMTPFAST_API_KEY: KEY }) });
+      expect(r.code).toBe(1);
+      expect(r.stderr).toContain("HTTP 401 Unauthorized: Invalid API key [redacted]");
+      expect(r.stderr).not.toContain(KEY);
+      expect(r.stdout).not.toContain(KEY);
+    }
+    const debug = await run(["emails", "list", "--debug"], { env: env(server.url, { SMTPFAST_API_KEY: KEY }) });
+    expect(debug.stderr).toContain('"received": "Bearer [redacted]"');
+  });
+
+  test("a key from a stored profile is redacted too", async () => {
+    server = await echoServer();
+    const configHome = tempDir();
+    const dir = join(configHome, "smtpfast");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "config.json"), JSON.stringify({ current: "p", profiles: { p: { api_key: KEY, base_url: server.url } } }));
+    const r = await run(["whoami", "--debug"], { configHome });
+    expect(r.code).toBe(1);
+    expect(r.stderr).not.toContain(KEY);
+  });
+
+  test("a login failure does not print the key it was given", async () => {
+    server = await echoServer();
+    const flag = await run(["login", "--api-key", KEY, "--base-url", server.url, "--debug"]);
+    expect(flag.code).toBe(1);
+    expect(flag.stderr).toContain("The API rejected this key (HTTP 401: Invalid API key [redacted])");
+    expect(flag.stderr).not.toContain(KEY);
+    const piped = await run(["login", "--debug"], { stdin: `${KEY}\n`, env: { SMTPFAST_BASE_URL: server.url } });
+    expect(piped.code).toBe(1);
+    expect(piped.stderr).toContain("[redacted]");
+    expect(piped.stderr).not.toContain(KEY);
+  });
+
+  test("a usage error that repeats an --api-key value does not print it", async () => {
+    const r = await run([KEY, "--api-key", KEY]);
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain('Unknown command "[redacted]"');
+    expect(r.stderr).not.toContain(KEY);
   });
 });

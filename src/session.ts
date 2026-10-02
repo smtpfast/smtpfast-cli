@@ -66,6 +66,8 @@ export class Session {
     readonly globals: Globals,
   ) {
     this.out = new Output(ctx, { json: globals.json, quiet: globals.quiet, noColor: globals.noColor });
+    this.out.addSecret(globals.apiKey);
+    this.out.addSecret(ctx.env.SMTPFAST_API_KEY);
     this.configDir = configDir(ctx.env, ctx.platform, ctx.homedir);
   }
 
@@ -81,7 +83,9 @@ export class Session {
   }
 
   settings(): Settings {
-    return resolveSettings({ apiKey: this.globals.apiKey, profile: this.globals.profile, baseUrl: this.globals.baseUrl }, this.ctx.env, this.config());
+    const s = resolveSettings({ apiKey: this.globals.apiKey, profile: this.globals.profile, baseUrl: this.globals.baseUrl }, this.ctx.env, this.config());
+    this.out.addSecret(s.apiKey);
+    return s;
   }
 
   registry(): Registry {
@@ -91,9 +95,11 @@ export class Session {
 
   client(overrides: { apiKey?: string; baseUrl?: string } = {}): ApiClient {
     const s = this.settings();
+    const apiKey = overrides.apiKey ?? s.apiKey;
+    this.out.addSecret(apiKey);
     return new ApiClient({
       baseUrl: overrides.baseUrl ?? s.baseUrl,
-      apiKey: overrides.apiKey ?? s.apiKey,
+      apiKey,
       userAgent: USER_AGENT,
       fetch: this.ctx.fetch,
       sleep: (ms, signal) => this.ctx.sleep(ms, signal),

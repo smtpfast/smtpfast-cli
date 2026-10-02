@@ -71,6 +71,7 @@ export const loginCommand: HandCommand = {
     const settings = session.settings();
     const key = await readKey(session);
     if (!key) throw new UsageError("No API key given");
+    session.out.addSecret(key);
 
     let me: Record<string, unknown>;
     try {
