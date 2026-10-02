@@ -47,6 +47,10 @@ from a newer live spec.
   `webhooks deliveries <id>`. `get` is dropped the same way on paths without an
   id: `getDomainClaimRecord` becomes `domains claim-record`.
 - Path parameters become positional arguments, in path order.
+- A path must start with `/v1/` and have no `.` or `..` segments (plain or
+  percent-encoded), no empty segments, and no scheme or host. The generator
+  skips any other path with a warning. The CLI applies the same rule to the
+  runtime spec cache.
 
 When a rule gives a bad name, add an entry to `COMMAND_OVERRIDES`,
 `GROUP_ALIASES` or `GROUP_WORDS` in `src/spec/naming.ts`. Then update the

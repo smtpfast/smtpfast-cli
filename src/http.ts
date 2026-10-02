@@ -94,7 +94,26 @@ export class ApiClient {
     }
     for (const [k, v] of query) params.append(k, v);
     const qs = params.toString();
-    return `${this.baseUrl}${p}${qs ? `?${qs}` : ""}`;
+    return this.checkUrl(`${this.baseUrl}${p}${qs ? `?${qs}` : ""}`);
+  }
+
+  /** The key only goes to the base URL: the final URL must have its origin and a path under its path. */
+  private checkUrl(raw: string): string {
+    let base: URL | undefined;
+    try {
+      base = new URL(this.baseUrl);
+    } catch {
+      base = undefined;
+    }
+    if (!base || (base.protocol !== "https:" && base.protocol !== "http:")) {
+      throw new UsageError(`Invalid base URL "${this.baseUrl}"`, "Use an http or https URL, like https://smtpfa.st/api.", false);
+    }
+    const url = new URL(raw);
+    const basePath = base.pathname.replace(/\/+$/, "");
+    if (url.origin !== base.origin || (url.pathname !== basePath && !url.pathname.startsWith(`${basePath}/`))) {
+      throw new UsageError(`Refusing to send a request outside the base URL: ${url.origin}${url.pathname}`, `The base URL is ${this.baseUrl}.`, false);
+    }
+    return url.href;
   }
 
   async request(o: RequestOptions): Promise<ApiResponse> {

@@ -31,6 +31,43 @@ export const RESERVED_FLAGS = new Set([
   "version",
 ]);
 
+/** Decode percent escapes until nothing changes, so %252e%252e is seen as "..". */
+function decodeFully(segment: string): string {
+  let s = segment;
+  for (let i = 0; i < 5; i++) {
+    let next: string;
+    try {
+      next = decodeURIComponent(s);
+    } catch {
+      return s;
+    }
+    if (next === s) return s;
+    s = next;
+  }
+  return s;
+}
+
+/** True for "." and "..", plain or percent-encoded. A URL parser removes these segments, so they can climb out of the base path. */
+export function isDotSegment(segment: string): boolean {
+  const decoded = decodeFully(segment);
+  return segment === "." || segment === ".." || decoded === "." || decoded === "..";
+}
+
+const SPEC_PATH_CHARS = /^[A-Za-z0-9\-._~!$&'()*+,;=:@{}%/]+$/;
+
+/**
+ * A spec path the CLI is willing to call: it starts with /v1/, has no empty
+ * or dot segments, and has nothing that could change the scheme, host, query
+ * or fragment once it is joined to the base URL.
+ */
+export function isSafeSpecPath(path: string): boolean {
+  if (!path.startsWith("/v1/") || path.includes("//") || !SPEC_PATH_CHARS.test(path)) return false;
+  return path.split("/").every((seg) => {
+    const decoded = decodeFully(seg);
+    return !isDotSegment(seg) && !/[/\\?#]/.test(decoded);
+  });
+}
+
 /** Headers the HTTP layer sets itself. Declared header params with these names are ignored. */
 const MANAGED_HEADERS = new Set(["accept", "authorization", "content-type", "user-agent"]);
 
@@ -436,6 +473,10 @@ export function buildManifest(specInput: unknown): BuildResult {
   const operations: OperationSpec[] = [];
   const paths = spec.paths as JsonObject;
   for (const path of Object.keys(paths).sort()) {
+    if (!isSafeSpecPath(path)) {
+      warnings.push({ operation: path, message: "Skipped: the path must start with /v1/ and have no dot segments, empty segments, scheme or host" });
+      continue;
+    }
     const item = r.deref(paths[path]);
     if (!item) continue;
     for (const method of METHODS) {

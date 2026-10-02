@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { generate, PATHS } from "../scripts/generate.js";
 import { BEGIN_MARKER, END_MARKER, updateReadme } from "../scripts/reference.js";
-import { assignFlags, buildManifest, serializeManifest } from "../src/spec/build.js";
+import { assignFlags, buildManifest, isSafeSpecPath, serializeManifest } from "../src/spec/build.js";
 import { specHash } from "../src/spec/hash.js";
 import type { OperationSpec, ParamSpec } from "../src/spec/types.js";
 import { fixtureSpec } from "./helpers.js";
@@ -190,6 +190,40 @@ describe("spec edge cases", () => {
       }),
     );
     expect(m.operations[0]!.body!.fields.map((f) => f.name)).toEqual(["name"]);
+  });
+
+  test("only safe /v1/ paths become commands", () => {
+    for (const p of ["/v1/emails", "/v1/emails/{id}", "/v1/webhooks/{id}/deliveries/{delivery_id}/retry", "/v1/emails/receiving/{id}"]) {
+      expect(isSafeSpecPath(p)).toBe(true);
+    }
+    const unsafe = [
+      "/v2/emails",
+      "/admin/users",
+      "v1/emails",
+      "/v1/../admin",
+      "/v1/./emails",
+      "/v1/%2e%2e/admin",
+      "/v1/%2E./admin",
+      "/v1/%252e%252e/admin",
+      "/v1//emails",
+      "//evil.test/v1/emails",
+      "https://evil.test/v1/emails",
+      "/v1/emails\\..\\admin",
+      "/v1/a%2F..%2F..%2Fadmin",
+      "/v1/emails?x=1",
+      "/v1/emails#x",
+      "/v1/emails list",
+    ];
+    for (const p of unsafe) expect(isSafeSpecPath(p)).toBe(false);
+    const { manifest: m, warnings } = buildManifest(
+      base({
+        "/v1/things": { get: { operationId: "listThings", summary: "a" } },
+        "/v1/%2e%2e/admin/users": { get: { operationId: "listAdminUsers", summary: "b" } },
+        "//evil.test/v1/x": { get: { operationId: "evil", summary: "c" } },
+      }),
+    );
+    expect(m.operations.map((o) => o.operationId)).toEqual(["listThings"]);
+    expect(warnings.filter((w) => w.message.startsWith("Skipped")).map((w) => w.operation).sort()).toEqual(["//evil.test/v1/x", "/v1/%2e%2e/admin/users"]);
   });
 
   test("a document without paths is rejected", () => {

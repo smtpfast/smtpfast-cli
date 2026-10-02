@@ -134,6 +134,24 @@ describe("ApiClient", () => {
     expect(server.requests[0]!.headers.authorization).toBeUndefined();
   });
 
+  test("refuses a URL that leaves the base path or the origin", async () => {
+    server = await startMockServer((_req, res) => sendJson(res, 200, {}));
+    const { c } = client(`${server.url}/api`);
+    for (const path of ["/v1/../../admin", "/v1/%2e%2e/%2e%2E/admin", "/v1/..\\..\\admin", "/../api2/v1/me"]) {
+      await expect(c.request({ method: "GET", path })).rejects.toThrow("Refusing to send a request outside the base URL");
+    }
+    expect(server.requests.length).toBe(0);
+    await c.request({ method: "GET", path: "/v1/emails/..." });
+    expect(server.requests[0]!.path).toBe("/api/v1/emails/...");
+  });
+
+  test("refuses a base URL that is not http or https", async () => {
+    const { c } = client("file:///etc");
+    await expect(c.request({ method: "GET", path: "/v1/me" })).rejects.toThrow('Invalid base URL "file:///etc"');
+    const { c: c2 } = client("not a url");
+    await expect(c2.request({ method: "GET", path: "/v1/me" })).rejects.toBeInstanceOf(UsageError);
+  });
+
   test("network failures name the host", async () => {
     const { c } = client("http://127.0.0.1:9");
     try {

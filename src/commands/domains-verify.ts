@@ -3,6 +3,7 @@ import { CliError, UsageError } from "../errors.js";
 import type { ApiClient } from "../http.js";
 import { type Colors, findList, renderTable } from "../output.js";
 import { InterruptError } from "../session.js";
+import { pathSegment } from "../request.js";
 import { formatDuration, parseDuration } from "../util.js";
 import type { HandCommand } from "./types.js";
 
@@ -90,7 +91,7 @@ export const domainsVerifyCommand: HandCommand = {
       const client = session.client();
       const domain = await resolveDomain(client, input, signal);
       const verify = async () => {
-        const res = await client.request({ method: "POST", path: `/v1/domains/${encodeURIComponent(domain.id)}/verify`, signal });
+        const res = await client.request({ method: "POST", path: `/v1/domains/${pathSegment(domain.id, "id-or-name")}/verify`, signal });
         return (res.data && typeof res.data === "object" ? res.data : {}) as Row;
       };
 
@@ -121,7 +122,7 @@ export const domainsVerifyCommand: HandCommand = {
         if (!shownRecords && !out.json && !out.quiet) {
           shownRecords = true;
           try {
-            const res = await client.request({ method: "GET", path: `/v1/domains/${encodeURIComponent(domain.id)}`, signal });
+            const res = await client.request({ method: "GET", path: `/v1/domains/${pathSegment(domain.id, "id-or-name")}`, signal });
             const records = (res.data as Row | null)?.dns_records;
             if (Array.isArray(records) && records.length > 0) {
               out.out(`\n${out.c.bold("DNS records for this domain:")}`);

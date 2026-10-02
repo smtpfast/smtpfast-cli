@@ -285,6 +285,18 @@ describe("generated commands", () => {
     expect(server.requests.length).toBe(0);
   });
 
+  test("a dot segment argument never reaches the server", async () => {
+    server = await startMockServer((_req, res) => sendJson(res, 200, {}));
+    for (const id of ["..", "%2e%2e", "."]) {
+      const r = await run(["emails", "get", id], { env: env(server.url) });
+      expect(r.code).toBe(2);
+      expect(r.stderr).toContain(`<id> cannot be "${id}"`);
+    }
+    const v = await run(["domains", "verify", "%2e%2e"], { env: env(server.url) });
+    expect(v.code).toBe(2);
+    expect(server.requests.length).toBe(0);
+  });
+
   test("unknown commands suggest the closest match", async () => {
     const r = await run(["emials", "list"]);
     expect(r.code).toBe(2);

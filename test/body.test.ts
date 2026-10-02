@@ -34,6 +34,22 @@ describe("path and query", () => {
     expect(r.path).toBe("/v1/webhooks/wh_1/deliveries/del%2F2/retry");
   });
 
+  test("dot segment arguments are refused, plain or percent-encoded", async () => {
+    for (const v of [".", "..", "%2e", "%2E%2e", ".%2E", "%2e.", "%252e%252e"]) {
+      expect((await usageError(build("getEmail", [v]))).message).toBe(`<id> cannot be "${v}"`);
+    }
+    expect((await build("getEmail", ["..."])).path).toBe("/v1/emails/...");
+    expect((await build("getEmail", ["a..b"])).path).toBe("/v1/emails/a..b");
+    expect((await build("getEmail", ["../x"])).path).toBe("/v1/emails/..%2Fx");
+  });
+
+  test("an operation with an unsafe path is refused before any request", async () => {
+    const hostile = { ...op("getEmail"), path: "/v1/../admin/{id}" };
+    await expect(buildRequest(hostile, parseArgs(["x"], operationFlagDefs(hostile)), { cwd: process.cwd(), stdin: Readable.from([""]) })).rejects.toThrow(
+      "Refusing to call /v1/../admin/{id}",
+    );
+  });
+
   test("missing and extra arguments are usage errors", async () => {
     expect((await usageError(build("getEmail", []))).message).toBe("Missing argument <id>");
     expect((await usageError(build("getEmail", ["a", "b"]))).message).toBe('Unexpected argument "b"');

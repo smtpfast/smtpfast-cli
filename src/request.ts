@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { type FlagDef, type FlagValues, one, type ParseResult } from "./args.js";
-import { UsageError } from "./errors.js";
+import { CliError, UsageError } from "./errors.js";
 import type { Query } from "./http.js";
-import { RESERVED_FLAGS } from "./spec/build.js";
+import { isDotSegment, isSafeSpecPath, RESERVED_FLAGS } from "./spec/build.js";
 import type { OperationSpec, ParamSpec, ValueType } from "./spec/types.js";
 import { readAll, splitList } from "./util.js";
 
@@ -173,6 +173,13 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
+/** A user value as one URL path segment. "." and ".." (also percent-encoded) are refused: they would move the request to another route. */
+export function pathSegment(value: string, name: string): string {
+  if (!value) throw new UsageError(`<${name}> cannot be empty`);
+  if (isDotSegment(value)) throw new UsageError(`<${name}> cannot be "${value}"`, "Dot segments like . and .. are not allowed in an argument.");
+  return encodeURIComponent(value);
+}
+
 export function usageLine(op: OperationSpec): string {
   const args = op.pathParams.map((p) => `<${p.name}>`).join(" ");
   return `smtpfast ${op.group} ${op.command}${args ? ` ${args}` : ""} [flags]`;
@@ -187,11 +194,11 @@ export async function buildRequest(op: OperationSpec, parsed: ParseResult, io: I
   if (positionals.length > op.pathParams.length) {
     throw new UsageError(`Unexpected argument "${positionals[op.pathParams.length]}"`, `Usage: ${usageLine(op)}`);
   }
+  if (!isSafeSpecPath(op.path)) throw new CliError(`Refusing to call ${op.path}: the path must start with /v1/ and have no dot segments`);
   let path = op.path;
   op.pathParams.forEach((p, i) => {
-    const value = positionals[i]!;
-    if (!value) throw new UsageError(`<${p.name}> cannot be empty`);
-    path = path.replace(`{${p.name}}`, encodeURIComponent(value));
+    const segment = pathSegment(positionals[i]!, p.name);
+    path = path.replace(`{${p.name}}`, () => segment);
   });
 
   const missing: string[] = [];

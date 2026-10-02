@@ -139,14 +139,14 @@ smtpfast api GET /v1/usage
 smtpfast api POST /v1/contacts --data '{"email":"jane@example.com"}'
 ```
 
-`api` uses the same key, base URL, retries and output as every other command.
+`api` uses the same key, base URL, retries and output as every other command. The CLI refuses any request whose final URL is not under the base URL.
 
 ## How commands map to the API
 
 Each API operation is a command: `smtpfast <group> <command> [args] [flags]`.
 
 - The group is the resource: `emails`, `domains`, `contacts`, `webhooks` and so on. Received mail is under `received`. The key's own details are under `account`.
-- Path parameters are positional arguments. `POST /v1/webhooks/{id}/deliveries/{delivery_id}/retry` is `smtpfast webhooks retry-delivery <id> <delivery_id>`.
+- Path parameters are positional arguments. `POST /v1/webhooks/{id}/deliveries/{delivery_id}/retry` is `smtpfast webhooks retry-delivery <id> <delivery_id>`. An argument cannot be `.` or `..`.
 - Query parameters and body fields are flags in kebab case. `scheduled_at` is `--scheduled-at`. The exact API name works too.
 - A list takes a repeated flag or a comma list: `--to a@x.com --to b@x.com` or `--to a@x.com,b@x.com`.
 - A boolean is `--flag` or `--no-flag`.

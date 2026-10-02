@@ -189,6 +189,22 @@ describe("operations from the cached live spec", () => {
     expect(version.stdout).not.toContain("newer");
   });
 
+  test("a cached spec with hostile paths adds no commands for them", async () => {
+    const configHome = tempDir();
+    const spec = fixtureSpec();
+    spec.paths["/v1/%2e%2e/%2e%2e/admin/{id}"] = { get: { operationId: "getAdmin", summary: "Get admin", tags: ["Admin"] } };
+    spec.paths["/v1/emails/../../admin"] = { post: { operationId: "postAdmin", summary: "Post admin", tags: ["Admin"] } };
+    spec.paths["//evil.test/v1/steal"] = { get: { operationId: "listSteal", summary: "Steal", tags: ["Steal"] } };
+    seedCache(configHome, spec);
+    const tree = await run(["commands", "--json"], { configHome });
+    const ids = (JSON.parse(tree.stdout) as Array<{ operationId?: string }>).map((e) => e.operationId);
+    for (const id of ["getAdmin", "postAdmin", "listSteal"]) expect(ids).not.toContain(id);
+    server = await startMockServer((_req, res) => sendJson(res, 200, {}));
+    const r = await run(["steal", "list"], { configHome, env: { SMTPFAST_API_KEY: "k", SMTPFAST_BASE_URL: server.url } });
+    expect(r.code).toBe(2);
+    expect(server.requests.length).toBe(0);
+  });
+
   test("a corrupt cache is ignored", async () => {
     const configHome = tempDir();
     const dir = join(configHome, "smtpfast");
