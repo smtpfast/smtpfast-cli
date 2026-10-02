@@ -55,7 +55,7 @@ The CLI looks for an API key in this order:
 2. The `SMTPFAST_API_KEY` environment variable
 3. The current profile in `~/.config/smtpfast/config.json`
 
-`smtpfast login` writes the key to a profile. The file is readable only by you (mode 600). Keep keys for several accounts or environments in named profiles:
+`smtpfast login` writes the key to a profile. The file is readable only by you (mode 600), and a new config directory gets mode 700. If `config.json` is a symbolic link, the CLI refuses to write the key. Keep keys for several accounts or environments in named profiles:
 
 ```sh
 smtpfast login --profile staging --base-url https://staging.example.com/api

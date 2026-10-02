@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { PassThrough } from "node:stream";
 import { promptHidden } from "../src/commands/auth.js";
-import { configDir, resolveSettings } from "../src/config.js";
+import { configDir, resolveSettings, writePrivateFile } from "../src/config.js";
 import type { InStream } from "../src/context.js";
 import { type MockServer, run, sendJson, startMockServer, tempDir } from "./helpers.js";
 
@@ -82,6 +82,49 @@ describe("login", () => {
     const config = JSON.parse(readFileSync(join(configHome, "smtpfast", "config.json"), "utf8"));
     expect(config.current).toBe("main");
     expect(Object.keys(config.profiles).sort()).toEqual(["main", "staging"]);
+  });
+});
+
+describe("writing the config file", () => {
+  test("refuses to write the key through a symlink", async () => {
+    server = await meServer();
+    const configHome = tempDir();
+    const dir = join(configHome, "smtpfast");
+    mkdirSync(dir, { recursive: true });
+    const elsewhere = join(tempDir(), "shared.json");
+    writeFileSync(elsewhere, "{}");
+    symlinkSync(elsewhere, join(dir, "config.json"));
+    const r = await run(["login", "--api-key", "sf_live_abcdefghijkl", "--base-url", server.url], { configHome });
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("config.json is a symbolic link");
+    expect(r.stderr).toContain("does not write an API key through a link");
+    expect(readFileSync(elsewhere, "utf8")).toBe("{}");
+    expect(lstatSync(join(dir, "config.json")).isSymbolicLink()).toBe(true);
+  });
+
+  test("a file planted at the old temp name is never written through", async () => {
+    server = await meServer();
+    const configHome = tempDir();
+    const dir = join(configHome, "smtpfast");
+    mkdirSync(dir, { recursive: true });
+    const victim = join(tempDir(), "victim");
+    writeFileSync(victim, "");
+    symlinkSync(victim, join(dir, `config.json.${process.pid}.tmp`));
+    const r = await run(["login", "--api-key", "sf_live_abcdefghijkl", "--base-url", server.url], { configHome });
+    expect(r.code).toBe(0);
+    expect(readFileSync(victim, "utf8")).toBe("");
+    expect(statSync(join(dir, "config.json")).mode & 0o777).toBe(0o600);
+    expect(readdirSync(dir).sort()).toEqual(["config.json", `config.json.${process.pid}.tmp`]);
+  });
+
+  test("replaces a readable file with a private one and leaves no temp files", () => {
+    const dir = tempDir();
+    const file = join(dir, "config.json");
+    writeFileSync(file, "old", { mode: 0o644 });
+    writePrivateFile(file, "new");
+    expect(readFileSync(file, "utf8")).toBe("new");
+    expect(statSync(file).mode & 0o777).toBe(0o600);
+    expect(readdirSync(dir)).toEqual(["config.json"]);
   });
 });
 

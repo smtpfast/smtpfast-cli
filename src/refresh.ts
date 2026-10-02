@@ -1,6 +1,6 @@
-import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { ensureDir } from "./config.js";
+import { ensureDir, writeFileAtomic } from "./config.js";
 import type { FetchFn } from "./context.js";
 import { buildManifest } from "./spec/build.js";
 
@@ -43,14 +43,7 @@ export function readMeta(dir: string): SpecMeta {
 }
 
 function writeAtomic(file: string, content: string): void {
-  const tmp = `${file}.${process.pid}.${Math.random().toString(36).slice(2)}.tmp`;
-  writeFileSync(tmp, content, { mode: 0o644 });
-  try {
-    renameSync(tmp, file);
-  } catch (err) {
-    rmSync(tmp, { force: true });
-    throw err;
-  }
+  writeFileAtomic(file, content, 0o644);
 }
 
 export function writeMeta(dir: string, meta: SpecMeta): void {

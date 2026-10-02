@@ -1,5 +1,6 @@
-import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { randomBytes } from "node:crypto";
+import { chmodSync, closeSync, existsSync, fsyncSync, lstatSync, mkdirSync, openSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { basename, dirname, join } from "node:path";
 import { UsageError } from "./errors.js";
 
 export const DEFAULT_BASE_URL = "https://smtpfa.st/api";
@@ -39,21 +40,47 @@ export function readConfig(dir: string): ConfigFile {
   return { current: typeof obj.current === "string" ? obj.current : undefined, profiles };
 }
 
-/** Write a file readable only by the owner. The temp file has mode 600 from the start, then replaces the target. */
-export function writePrivateFile(file: string, content: string): void {
-  const tmp = `${file}.${process.pid}.tmp`;
-  writeFileSync(tmp, content, { mode: 0o600 });
+/**
+ * Write a file through a temp file that then replaces the target. The temp
+ * file has a random name and is opened with "wx" (O_CREAT | O_EXCL), so a
+ * file or symlink planted in the directory is never written through.
+ */
+export function writeFileAtomic(file: string, content: string, mode: number): void {
+  const tmp = join(dirname(file), `.${basename(file)}.${randomBytes(8).toString("hex")}.tmp`);
+  const fd = openSync(tmp, "wx", mode);
   try {
+    try {
+      writeFileSync(fd, content);
+      fsyncSync(fd);
+    } finally {
+      closeSync(fd);
+    }
     renameSync(tmp, file);
   } catch (err) {
     rmSync(tmp, { force: true });
     throw err;
   }
-  chmodSync(file, 0o600);
 }
 
+/** Write a file readable only by the owner. Refuses to replace a symlink, so the key never lands somewhere unexpected. */
+export function writePrivateFile(file: string, content: string): void {
+  let isLink = false;
+  try {
+    isLink = lstatSync(file).isSymbolicLink();
+  } catch {
+    // The file does not exist yet.
+  }
+  if (isLink) {
+    throw new UsageError(`${file} is a symbolic link`, "smtpfast does not write an API key through a link. Replace the link with a regular file, then try again.", false);
+  }
+  writeFileAtomic(file, content, 0o600);
+}
+
+/** Create the config directory with mode 700. A directory that already exists keeps its mode. */
 export function ensureDir(dir: string): void {
+  if (existsSync(dir)) return;
   mkdirSync(dir, { recursive: true, mode: 0o700 });
+  chmodSync(dir, 0o700);
 }
 
 export function writeConfig(dir: string, config: ConfigFile): void {
