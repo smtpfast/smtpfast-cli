@@ -102,7 +102,29 @@ jobs:
           git add spec src/generated src/version.ts README.md CHANGELOG.md package.json
           git commit -m "Sync with the API spec ($TAG)"
           git tag "$TAG"
-          git push origin HEAD:main "$TAG"
+          # One atomic push: main and the tag land together, or neither does.
+          if git push --atomic origin HEAD:main "refs/tags/$TAG"; then
+            exit 0
+          fi
+          echo "::warning::main moved during this run. Rebasing onto it and trying once more."
+          git tag -d "$TAG"
+          git fetch origin main
+          if ! git rebase origin/main; then
+            git rebase --abort
+            echo "::error::The sync commit does not rebase onto the new main. Nothing was pushed and no tag was created. Run the workflow again."
+            exit 1
+          fi
+          # The new main may have other naming rules or README text. Regenerate from the committed spec and test again.
+          bun scripts/generate.ts
+          git add spec src/generated README.md
+          git diff --cached --quiet || git commit --amend --no-edit
+          bun run typecheck
+          bun test
+          git tag "$TAG"
+          if ! git push --atomic origin HEAD:main "refs/tags/$TAG"; then
+            echo "::error::The push failed again. Nothing was pushed and no tag was created. Run the workflow again."
+            exit 1
+          fi
 
   release:
     needs: sync

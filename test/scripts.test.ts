@@ -1,10 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { execFileSync, spawnSync } from "node:child_process";
+import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { diffManifests, prependChangelog, renderDiff } from "../scripts/spec-diff.js";
 import { versionSource } from "../scripts/sync-version.js";
 import { buildManifest } from "../src/spec/build.js";
-import { fixtureSpec } from "./helpers.js";
+import { fixtureSpec, tempDir } from "./helpers.js";
 
 const ROOT = join(import.meta.dir, "..");
 
@@ -60,5 +61,113 @@ describe("spec sync workflow", () => {
     expect(diff).toContain("jq -S -c . spec/openapi.json");
     expect(diff).toContain("git diff --quiet -- src/generated README.md");
     expect(diff).not.toContain("git diff --quiet -- spec");
+  });
+
+  test("every push sends main and the tag together, atomically", () => {
+    const pushes = workflow.split("\n").filter((l) => /\bgit push\b/.test(l));
+    expect(pushes.length).toBe(2);
+    for (const l of pushes) expect(l).toContain('git push --atomic origin HEAD:main "refs/tags/$TAG"');
+  });
+
+  /** The shell of the "Commit, tag and push" step, run the way Actions runs it, against local repos. */
+  function pushSandbox() {
+    const lines = step("Commit, tag and push").split("\n");
+    const script: string[] = [];
+    for (const l of lines.slice(lines.findIndex((x) => x.trim() === "run: |") + 1)) {
+      if (l.trim() !== "" && !l.startsWith("          ")) break;
+      script.push(l.slice(10));
+    }
+    const root = tempDir("smtpfast-push-");
+    const env = {
+      ...process.env,
+      GIT_CONFIG_GLOBAL: "/dev/null",
+      GIT_CONFIG_NOSYSTEM: "1",
+      GIT_AUTHOR_NAME: "test",
+      GIT_AUTHOR_EMAIL: "test@example.test",
+      GIT_COMMITTER_NAME: "test",
+      GIT_COMMITTER_EMAIL: "test@example.test",
+    };
+    const git = (cwd: string, ...args: string[]) => execFileSync("git", args, { cwd, env, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+    const write = (dir: string, file: string, text: string) => {
+      mkdirSync(dirname(join(dir, file)), { recursive: true });
+      writeFileSync(join(dir, file), text);
+    };
+    const seed = join(root, "seed");
+    mkdirSync(seed);
+    git(seed, "init", "-q", "-b", "main");
+    for (const f of ["spec/openapi.json", "src/generated/manifest.json", "src/version.ts", "README.md", "CHANGELOG.md", "package.json", "docs/other.md"]) write(seed, f, "v0\n");
+    git(seed, "add", "-A");
+    git(seed, "commit", "-q", "-m", "start");
+    const remote = join(root, "remote.git");
+    git(root, "clone", "-q", "--bare", seed, remote);
+    const clone = (name: string) => {
+      git(root, "clone", "-q", remote, name);
+      return join(root, name);
+    };
+    const work = clone("work");
+    const bin = join(root, "bin");
+    write(bin, "bun", '#!/bin/sh\necho "$*" >> "$BUN_LOG"\nif [ "$1" = test ] && [ -n "$BUN_TEST_FAILS" ]; then exit 1; fi\n');
+    chmodSync(join(bin, "bun"), 0o755);
+    const bunLog = join(root, "bun.log");
+    writeFileSync(bunLog, "");
+    /** Another push to main while the sync job works. */
+    const moveMain = (file: string, text: string) => {
+      const other = clone(`other-${Math.random().toString(36).slice(2)}`);
+      write(other, file, text);
+      git(other, "commit", "-q", "-am", "meanwhile");
+      git(other, "push", "-q", "origin", "main");
+      return git(other, "rev-parse", "HEAD");
+    };
+    const runStep = (extra: Record<string, string> = {}) => {
+      write(work, "spec/openapi.json", "v1\n");
+      write(work, "package.json", "v1\n");
+      return spawnSync("bash", ["--noprofile", "--norc", "-eo", "pipefail", "-c", script.join("\n")], {
+        cwd: work,
+        env: { ...env, PATH: `${bin}:${process.env.PATH}`, TAG: "v0.2.0", BUN_LOG: bunLog, ...extra },
+        encoding: "utf8",
+      });
+    };
+    const remoteTag = () => git(remote, "tag", "--list", "v0.2.0");
+    const remoteMain = () => git(remote, "rev-parse", "main");
+    return { git, remote, runStep, moveMain, remoteTag, remoteMain, bunCalls: () => readFileSync(bunLog, "utf8") };
+  }
+
+  test("the push step lands main and the tag together", () => {
+    const box = pushSandbox();
+    const r = box.runStep();
+    expect(r.status).toBe(0);
+    expect(box.remoteTag()).toBe("v0.2.0");
+    expect(box.git(box.remote, "rev-parse", "v0.2.0^{commit}")).toBe(box.remoteMain());
+    expect(box.bunCalls()).toBe("");
+  });
+
+  test("when main moved, the push step rebases, tests and pushes once more", () => {
+    const box = pushSandbox();
+    const moved = box.moveMain("docs/other.md", "moved\n");
+    const r = box.runStep();
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("main moved during this run");
+    expect(box.git(box.remote, "rev-parse", "main~1")).toBe(moved);
+    expect(box.git(box.remote, "rev-parse", "v0.2.0^{commit}")).toBe(box.remoteMain());
+    expect(box.bunCalls()).toBe("scripts/generate.ts\nrun typecheck\ntest\n");
+  });
+
+  test("a conflicting move of main stops the step without a tag", () => {
+    const box = pushSandbox();
+    const moved = box.moveMain("package.json", "bumped by hand\n");
+    const r = box.runStep();
+    expect(r.status).toBe(1);
+    expect(r.stdout).toContain("does not rebase onto the new main");
+    expect(box.remoteTag()).toBe("");
+    expect(box.remoteMain()).toBe(moved);
+  });
+
+  test("failing tests after the rebase stop the step without a tag", () => {
+    const box = pushSandbox();
+    const moved = box.moveMain("docs/other.md", "moved\n");
+    const r = box.runStep({ BUN_TEST_FAILS: "1" });
+    expect(r.status).not.toBe(0);
+    expect(box.remoteTag()).toBe("");
+    expect(box.remoteMain()).toBe(moved);
   });
 });

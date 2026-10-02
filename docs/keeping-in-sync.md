@@ -81,7 +81,10 @@ Each run:
 4. Bumps the minor version with `npm version minor`.
 5. Writes a changelog entry with `scripts/spec-diff.ts`, which lists new,
    changed and removed commands.
-6. Commits, tags `vX.Y.Z` and pushes to `main`.
+6. Commits, tags `vX.Y.Z`, and pushes `main` and the tag in one atomic push,
+   so a tag never lands without its commit. If `main` moved during the run,
+   it rebases onto the new `main`, regenerates, tests and tries once more.
+   If the rebase conflicts or the second push fails, it stops without a tag.
 7. Calls `.github/workflows/release.yml`, which publishes to npm with
    provenance, builds the standalone binaries and creates the GitHub release.
 
