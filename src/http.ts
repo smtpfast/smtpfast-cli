@@ -77,6 +77,25 @@ async function readBody(res: Response): Promise<unknown> {
   return text;
 }
 
+/** Settle with the promise, or reject as soon as the signal fires, whichever comes first. */
+function abortable<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(signal.reason ?? new Error("Aborted"));
+    if (signal.aborted) onAbort();
+    signal.addEventListener("abort", onAbort, { once: true });
+    promise.then(
+      (value) => {
+        signal.removeEventListener("abort", onAbort);
+        resolve(value);
+      },
+      (err: unknown) => {
+        signal.removeEventListener("abort", onAbort);
+        reject(err);
+      },
+    );
+  });
+}
+
 export class ApiClient {
   readonly baseUrl: string;
 
@@ -138,8 +157,7 @@ export class ApiClient {
     }
 
     for (let attempt = 0; ; attempt++) {
-      const res = await this.send(method, url, headers, payload, o.signal);
-      const data = await readBody(res);
+      const { res, data } = await this.send(method, url, headers, payload, o.signal);
       if (res.status === 429 && attempt === 0) {
         const wait = parseRetryAfter(res.headers.get("retry-after")) ?? 1000;
         if (wait <= (this.options.maxRetryWaitMs ?? 30_000)) {
@@ -161,7 +179,14 @@ export class ApiClient {
     }
   }
 
-  private async send(method: string, url: string, headers: Record<string, string>, body: string | undefined, signal?: AbortSignal): Promise<Response> {
+  /** One HTTP exchange. The timeout and the caller's abort signal stay in force until the whole body is read. */
+  private async send(
+    method: string,
+    url: string,
+    headers: Record<string, string>,
+    body: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<{ res: Response; data: unknown }> {
     const timeoutMs = this.options.timeoutMs ?? 60_000;
     const controller = new AbortController();
     let timedOut = false;
@@ -175,16 +200,20 @@ export class ApiClient {
     const started = Date.now();
     this.options.debug?.(`> ${method} ${url}`);
     if (headers["Idempotency-Key"]) this.options.debug?.(`> Idempotency-Key: ${headers["Idempotency-Key"]}`);
+    let res: Response | undefined;
     try {
-      const res = await this.options.fetch(url, { method, headers, body, signal: controller.signal });
+      res = await abortable(this.options.fetch(url, { method, headers, body, signal: controller.signal }), controller.signal);
       this.options.debug?.(`< ${res.status} ${res.statusText} (${Date.now() - started} ms)`);
-      return res;
+      const data = await abortable(readBody(res), controller.signal);
+      return { res, data };
     } catch (err) {
       if (signal?.aborted) throw signal.reason ?? err;
       if (timedOut) throw new CliError(`Request timed out after ${Math.round(timeoutMs / 1000)}s: ${method} ${url}`);
       const cause = (err as { cause?: { code?: string; message?: string } }).cause;
       const detail = cause?.code ?? cause?.message ?? (err as Error).message;
-      throw new CliError(`Could not reach ${new URL(url).origin}: ${detail}`, 1, "Check your network, or the base URL with --base-url.");
+      const origin = new URL(url).origin;
+      if (res) throw new CliError(`The connection to ${origin} broke while reading the response: ${detail}`);
+      throw new CliError(`Could not reach ${origin}: ${detail}`, 1, "Check your network, or the base URL with --base-url.");
     } finally {
       clearTimeout(timer);
       signal?.removeEventListener("abort", onAbort);

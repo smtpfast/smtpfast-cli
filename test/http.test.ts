@@ -168,6 +168,34 @@ describe("ApiClient", () => {
     const { c } = client(server.url, { timeoutMs: 50 });
     await expect(c.request({ method: "GET", path: "/slow" })).rejects.toThrow("Request timed out");
   });
+
+  const stallAfterHeaders = () =>
+    startMockServer((_req, res) => {
+      res.writeHead(200, { "content-type": "application/json" });
+      res.write('{"partial":');
+    });
+
+  test("the timeout also covers a body that stalls after the headers", async () => {
+    server = await stallAfterHeaders();
+    const { c } = client(server.url, { timeoutMs: 100 });
+    const started = Date.now();
+    await expect(c.request({ method: "GET", path: "/stall" })).rejects.toThrow("Request timed out");
+    expect(Date.now() - started).toBeLessThan(2000);
+  });
+
+  test("the abort signal also stops a body that stalls after the headers", async () => {
+    server = await stallAfterHeaders();
+    const { c } = client(server.url);
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(new Error("stopped by the caller")), 50);
+    await expect(c.request({ method: "GET", path: "/stall", signal: controller.signal })).rejects.toThrow("stopped by the caller");
+  });
+
+  test("a fetch whose body ignores the signal still times out", async () => {
+    const stalled = () => new Response(new ReadableStream({ start() {} }), { headers: { "content-type": "application/json" } });
+    const { c } = client("http://api.test", { timeoutMs: 50, fetch: async () => stalled() });
+    await expect(c.request({ method: "GET", path: "/stall" })).rejects.toThrow("Request timed out");
+  });
 });
 
 describe("parseRetryAfter", () => {

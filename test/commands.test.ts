@@ -186,6 +186,21 @@ describe("logs tail", () => {
     expect(server.requests.map((q) => q.query.get("before"))).toEqual([null, "ev_3", "ev_5"]);
   });
 
+  test("Ctrl-C stops the tail while a response body is still arriving", async () => {
+    server = await startMockServer((_req, res) => {
+      res.writeHead(200, { "content-type": "application/json" });
+      res.write('{"object":"list","data":[');
+    });
+    const r = await run(["logs", "tail"], {
+      env: env(server.url),
+      onInterrupt: (handler) => {
+        const t = setTimeout(handler, 50);
+        return () => clearTimeout(t);
+      },
+    });
+    expect(r.code).toBe(0);
+  });
+
   test("a missing scope stops the tail with a hint", async () => {
     server = await startMockServer((_req, res) => sendJson(res, 403, { error: "API key does not have logs:read scope" }));
     const r = await run(["logs", "tail"], { env: env(server.url) });
