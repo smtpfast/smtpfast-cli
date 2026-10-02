@@ -1,0 +1,113 @@
+name: Spec sync
+
+# Keeps the CLI in step with the API. The smtpfast app sends a
+# repository_dispatch (spec-changed) after a deploy that changed the spec.
+# The daily run catches anything the dispatch missed. When the spec changed,
+# this regenerates the manifest and README, tests, bumps the minor version,
+# tags, and hands over to the release workflow. See docs/keeping-in-sync.md.
+
+on:
+  repository_dispatch:
+    types: [spec-changed]
+  schedule:
+    - cron: "23 5 * * *"
+  workflow_dispatch:
+    inputs:
+      spec_url:
+        description: OpenAPI spec URL
+        required: false
+        default: https://smtpfa.st/api/v1/openapi.json
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: spec-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.diff.outputs.changed }}
+      tag: ${{ steps.bump.outputs.tag }}
+    env:
+      SPEC_URL: ${{ inputs.spec_url || 'https://smtpfa.st/api/v1/openapi.json' }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Keep the current manifest for the release notes
+        run: cp src/generated/manifest.json "$RUNNER_TEMP/old-manifest.json"
+
+      - name: Download the live spec and regenerate
+        run: bun scripts/generate.ts --spec "$SPEC_URL"
+
+      - name: Check for changes
+        id: diff
+        run: |
+          if git diff --quiet -- spec src/generated README.md; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "The live spec matches spec/openapi.json. Nothing to release."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git diff --stat -- spec src/generated README.md
+          fi
+
+      - name: Type check and test
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          bun run typecheck
+          bun test
+
+      - name: Bump the minor version and write the changelog
+        if: steps.diff.outputs.changed == 'true'
+        id: bump
+        run: |
+          npm version minor --no-git-tag-version
+          bun scripts/sync-version.ts
+          version=$(node -p "require('./package.json').version")
+          bun scripts/spec-diff.ts "$RUNNER_TEMP/old-manifest.json" src/generated/manifest.json --changelog "$version" | tee "$RUNNER_TEMP/notes.md"
+          {
+            echo "## Spec sync v$version"
+            echo ""
+            cat "$RUNNER_TEMP/notes.md"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+      - name: Commit, tag and push
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          TAG: ${{ steps.bump.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add spec src/generated src/version.ts README.md CHANGELOG.md package.json
+          git commit -m "Sync with the API spec ($TAG)"
+          git tag "$TAG"
+          git push origin HEAD:main "$TAG"
+
+  release:
+    needs: sync
+    if: needs.sync.outputs.changed == 'true'
+    permissions:
+      contents: write
+      id-token: write
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: ${{ needs.sync.outputs.tag }}
+    secrets: inherit

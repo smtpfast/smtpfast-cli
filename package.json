@@ -1,0 +1,51 @@
+{
+  "name": "smtpfast",
+  "version": "0.1.0",
+  "description": "Command-line tool for the SMTPfast email API. Every API endpoint is a command.",
+  "type": "module",
+  "bin": {
+    "smtpfast": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node -e \"require('fs').cpSync('src/generated','dist/generated',{recursive:true})\"",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "bun test",
+    "generate": "bun scripts/generate.ts",
+    "generate:check": "bun scripts/generate.ts --check",
+    "sync-version": "bun scripts/sync-version.ts",
+    "binaries": "bun scripts/build-binaries.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "smtpfast",
+    "email",
+    "cli",
+    "smtp",
+    "transactional-email",
+    "resend"
+  ],
+  "author": "SMTPfast",
+  "license": "MIT",
+  "homepage": "https://smtpfa.st/docs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/smtpfast/smtpfast-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/smtpfast/smtpfast-cli/issues"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.2",
+    "@types/node": "^20",
+    "typescript": "^7"
+  }
+}

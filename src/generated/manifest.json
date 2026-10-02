@@ -1,0 +1,3331 @@
+{
+  "manifestVersion": 1,
+  "specTitle": "SMTPfast API",
+  "specVersion": "1.0.0",
+  "specHash": "4370f7bf562421bb44c8f167c1390664ce7c4965666a4b4dcd90e47d2715ef33",
+  "operationCount": 78,
+  "groups": [
+    {
+      "name": "account",
+      "description": "The API key's scopes, plan, rate limit and usage"
+    },
+    {
+      "name": "analytics",
+      "description": "Email sending analytics and metrics"
+    },
+    {
+      "name": "api-keys",
+      "description": "Create, list, and revoke API keys"
+    },
+    {
+      "name": "broadcasts",
+      "description": "Create, test, schedule, cancel, and measure broadcast campaigns"
+    },
+    {
+      "name": "contact-properties",
+      "description": "Declare custom contact properties"
+    },
+    {
+      "name": "contacts",
+      "description": "Manage subscribers, subscription status, and custom properties"
+    },
+    {
+      "name": "domains",
+      "description": "Manage and verify sending domains"
+    },
+    {
+      "name": "emails",
+      "description": "Send and track transactional emails"
+    },
+    {
+      "name": "forms",
+      "description": "Signup forms and pending double opt-in signups"
+    },
+    {
+      "name": "logs",
+      "description": "The event log behind the Logs page"
+    },
+    {
+      "name": "received",
+      "description": "Inbound email: received messages and attachments"
+    },
+    {
+      "name": "segments",
+      "description": "Group contacts into segments"
+    },
+    {
+      "name": "suppressions",
+      "description": "Addresses that SMTPfast will not send to"
+    },
+    {
+      "name": "webhooks",
+      "description": "Configure webhook endpoints for delivery events"
+    }
+  ],
+  "operations": [
+    {
+      "operationId": "getCapabilities",
+      "method": "GET",
+      "path": "/v1/me",
+      "group": "account",
+      "command": "capabilities",
+      "summary": "What this API key can do",
+      "description": "The key's scopes, the plan tier, the rate limit, and which send-time safety checks apply to the account. Requires no scope: it exists so a client can plan its calls instead of discovering scopes through 403s.",
+      "tags": [
+        "Account"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "getUsage",
+      "method": "GET",
+      "path": "/v1/usage",
+      "group": "account",
+      "command": "usage",
+      "summary": "Usage against the plan",
+      "description": "Usage and plan limits in the same shape as Resend's GET /usage: emails in the last 24 hours and this month (with the reset time), contacts, segments, broadcasts this month, domains, and the rate limit. A null limit means no cap. Received mail does not count against the email limit, and prepaid credits are an extra field. On a team, the email quota and broadcast cap follow the team owner's plan and the domain limit the team's plan. Requires no scope.",
+      "tags": [
+        "Account"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "getAnalytics",
+      "method": "GET",
+      "path": "/v1/analytics",
+      "group": "analytics",
+      "command": "get",
+      "summary": "Get analytics",
+      "description": "Sending and deliverability totals for the account, plus a 30-day daily series. Pass days and/or domain to add a `window` object holding exact counts for that window and sending domain, aggregated in the database rather than sampled from the event log.",
+      "tags": [
+        "Analytics"
+      ],
+      "pathParams": [],
+      "queryParams": [
+        {
+          "name": "days",
+          "flag": "days",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "Window in days (1-90) for the `window` block. Present in the response only when days or domain is given.",
+          "default": 30
+        },
+        {
+          "name": "domain",
+          "flag": "domain",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Restrict the `window` block to one sending domain, by name or id."
+        }
+      ],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "createApiKey",
+      "method": "POST",
+      "path": "/v1/api-keys",
+      "group": "api-keys",
+      "command": "create",
+      "summary": "Create API key",
+      "description": "Generate a new API key. The full key value is returned only once in the response. Store it securely.",
+      "tags": [
+        "API Keys"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "name",
+            "flag": "name",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "description": "A human-readable name for the key",
+            "example": "Production"
+          },
+          {
+            "name": "scopes",
+            "flag": "scopes",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string",
+            "description": "Optional list of scopes to restrict the key. Available: email:send, email:read, domain:read, domain:write, contact:read, contact:write, form:read, form:write, webhook:read, webhook:write, apikey:manage. If omitted the key gets the default set (everything except apikey:manage). Listing, creating or revoking keys through the API requires apikey:manage.",
+            "example": "email:send,domain:read"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "listApiKeys",
+      "method": "GET",
+      "path": "/v1/api-keys",
+      "group": "api-keys",
+      "command": "list",
+      "summary": "List API keys",
+      "description": "Return all API keys for the current account. The full key value is never included; only the prefix is shown.",
+      "tags": [
+        "API Keys"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "revokeApiKey",
+      "method": "DELETE",
+      "path": "/v1/api-keys/{id}",
+      "group": "api-keys",
+      "command": "revoke",
+      "summary": "Revoke API key",
+      "description": "Permanently revoke an API key. Any requests using this key will be rejected immediately.",
+      "tags": [
+        "API Keys"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The API key ID (e.g. key_abc123)"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "updateApiKey",
+      "method": "PATCH",
+      "path": "/v1/api-keys/{id}",
+      "group": "api-keys",
+      "command": "update",
+      "summary": "Update API key",
+      "description": "Rename a key or change its scopes. The secret is unchanged; scope changes apply on the key's next request. Requires the apikey:manage scope when called with an API key.",
+      "tags": [
+        "API Keys"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The API key ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "name",
+            "flag": "name",
+            "in": "body",
+            "type": "string",
+            "required": false
+          },
+          {
+            "name": "scopes",
+            "flag": "scopes",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string",
+            "description": "Replaces the key's scopes"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "cancelBroadcast",
+      "method": "POST",
+      "path": "/v1/broadcasts/{id}/cancel",
+      "group": "broadcasts",
+      "command": "cancel",
+      "summary": "Cancel a scheduled broadcast",
+      "description": "Cancel a broadcast. A scheduled broadcast is stopped before anything is sent. A queued or sending broadcast stops where it is: emails already accepted are delivered, the rest are dropped and their credits refunded",
+      "tags": [
+        "Broadcasts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The broadcast ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listBroadcastClickedLinks",
+      "method": "GET",
+      "path": "/v1/broadcasts/{id}/clicked-links",
+      "group": "broadcasts",
+      "command": "clicked-links",
+      "summary": "List clicked links",
+      "description": "Every link clicked in this broadcast, with total clicks and the number of distinct recipients who clicked it. Ordered by total clicks.",
+      "tags": [
+        "Broadcasts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The broadcast ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "createBroadcast",
+      "method": "POST",
+      "path": "/v1/broadcasts",
+      "group": "broadcasts",
+      "command": "create",
+      "summary": "Create a broadcast draft",
+      "description": "Create a broadcast campaign draft. Broadcasts can be edited while draft or scheduled, and must include an unsubscribe token before sending.",
+      "tags": [
+        "Broadcasts"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "audience",
+            "flag": "audience",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "enum": [
+              "all_contacts",
+              "segment"
+            ],
+            "default": "all_contacts"
+          },
+          {
+            "name": "audience_meta",
+            "flag": "audience-meta",
+            "in": "body",
+            "type": "object",
+            "required": false,
+            "example": "{\"segment_id\":\"clx_segment123\"}"
+          },
+          {
+            "name": "from",
+            "flag": "from",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "updates@example.com"
+          },
+          {
+            "name": "html",
+            "flag": "html",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "nullable": true
+          },
+          {
+            "name": "markdown",
+            "flag": "markdown",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Markdown body. Must include {{unsubscribe_url}} or {{{RESEND_UNSUBSCRIBE_URL}}} before sending."
+          },
+          {
+            "name": "name",
+            "flag": "name",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "example": "May product update"
+          },
+          {
+            "name": "preview_text",
+            "flag": "preview-text",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "nullable": true
+          },
+          {
+            "name": "reply_to",
+            "flag": "reply-to",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "nullable": true
+          },
+          {
+            "name": "segment_id",
+            "flag": "segment-id",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Required when audience is segment",
+            "example": "clx_segment123"
+          },
+          {
+            "name": "subject",
+            "flag": "subject",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "New features for {{contact.first_name|there}}"
+          },
+          {
+            "name": "text",
+            "flag": "text",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "nullable": true
+          },
+          {
+            "name": "track_clicks",
+            "flag": "track-clicks",
+            "in": "body",
+            "type": "boolean",
+            "required": false,
+            "default": true
+          },
+          {
+            "name": "track_opens",
+            "flag": "track-opens",
+            "in": "body",
+            "type": "boolean",
+            "required": false,
+            "default": true
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "deleteBroadcast",
+      "method": "DELETE",
+      "path": "/v1/broadcasts/{id}",
+      "group": "broadcasts",
+      "command": "delete",
+      "summary": "Delete a draft broadcast",
+      "description": "Delete a broadcast that has not been queued or scheduled.",
+      "tags": [
+        "Broadcasts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The broadcast ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "duplicateBroadcast",
+      "method": "POST",
+      "path": "/v1/broadcasts/{id}/duplicate",
+      "group": "broadcasts",
+      "command": "duplicate",
+      "summary": "Duplicate broadcast",
+      "description": "Copy a broadcast into a new draft. Content and targeting carry over; the schedule, recipients and send history do not. Pass `name` to set the copy's name, otherwise it is the original's with \"(copy)\" appended.",
+      "tags": [
+        "Broadcasts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The broadcast ID to copy"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "getBroadcast",
+      "method": "GET",
+      "path": "/v1/broadcasts/{id}",
+      "group": "broadcasts",
+      "command": "get",
+      "summary": "Get broadcast details",
+      "description": "Retrieve a broadcast with metrics and the latest recipient rows.",
+      "tags": [
+        "Broadcasts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The broadcast ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listBroadcasts",
+      "method": "GET",
+      "path": "/v1/broadcasts",
+      "group": "broadcasts",
+      "command": "list",
+      "summary": "List broadcasts",
+      "description": "Return broadcast campaigns for the current account with recipient rollup metrics.",
+      "tags": [
+        "Broadcasts"
+      ],
+      "pathParams": [],
+      "queryParams": [
+        {
+          "name": "q",
+          "flag": "q",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Search by campaign name, subject, or sender"
+        },
+        {
+          "name": "status",
+          "flag": "status",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Filter by campaign status",
+          "enum": [
+            "all",
+            "draft",
+            "scheduled",
+            "queued",
+            "sent",
+            "paused",
+            "canceled"
+          ],
+          "default": "all"
+        }
+      ],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "sendBroadcast",
+      "method": "POST",
+      "path": "/v1/broadcasts/{id}/send",
+      "group": "broadcasts",
+      "command": "send",
+      "summary": "Send or schedule a broadcast",
+      "description": "Snapshot eligible subscribed contacts, create one queued email per recipient, and send now or schedule within 30 days.",
+      "tags": [
+        "Broadcasts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The broadcast ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": false,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "scheduled_at",
+            "flag": "scheduled-at",
+            "in": "body",
+            "type": "string",
+            "required": false
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "sendBroadcastTest",
+      "method": "POST",
+      "path": "/v1/broadcasts/{id}/test",
+      "group": "broadcasts",
+      "command": "send-test",
+      "summary": "Send a test broadcast email",
+      "description": "Queue a test email to a single recipient using the broadcast content and personalization sample data.",
+      "tags": [
+        "Broadcasts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The broadcast ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "to",
+            "flag": "to",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "example": "you@example.com"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "updateBroadcast",
+      "method": "PATCH",
+      "path": "/v1/broadcasts/{id}",
+      "group": "broadcasts",
+      "command": "update",
+      "summary": "Update a draft or scheduled broadcast",
+      "description": "Update broadcast content. Updating a scheduled broadcast cancels the previous schedule and returns it to draft.",
+      "tags": [
+        "Broadcasts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The broadcast ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "audience",
+            "flag": "audience",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "enum": [
+              "all_contacts",
+              "segment"
+            ],
+            "default": "all_contacts"
+          },
+          {
+            "name": "audience_meta",
+            "flag": "audience-meta",
+            "in": "body",
+            "type": "object",
+            "required": false,
+            "example": "{\"segment_id\":\"clx_segment123\"}"
+          },
+          {
+            "name": "from",
+            "flag": "from",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "updates@example.com"
+          },
+          {
+            "name": "html",
+            "flag": "html",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "nullable": true
+          },
+          {
+            "name": "markdown",
+            "flag": "markdown",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Markdown body. Must include {{unsubscribe_url}} or {{{RESEND_UNSUBSCRIBE_URL}}} before sending."
+          },
+          {
+            "name": "name",
+            "flag": "name",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "example": "May product update"
+          },
+          {
+            "name": "preview_text",
+            "flag": "preview-text",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "nullable": true
+          },
+          {
+            "name": "reply_to",
+            "flag": "reply-to",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "nullable": true
+          },
+          {
+            "name": "segment_id",
+            "flag": "segment-id",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Required when audience is segment",
+            "example": "clx_segment123"
+          },
+          {
+            "name": "subject",
+            "flag": "subject",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "New features for {{contact.first_name|there}}"
+          },
+          {
+            "name": "text",
+            "flag": "text",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "nullable": true
+          },
+          {
+            "name": "track_clicks",
+            "flag": "track-clicks",
+            "in": "body",
+            "type": "boolean",
+            "required": false,
+            "default": true
+          },
+          {
+            "name": "track_opens",
+            "flag": "track-opens",
+            "in": "body",
+            "type": "boolean",
+            "required": false,
+            "default": true
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "createContactProperty",
+      "method": "POST",
+      "path": "/v1/contact-properties",
+      "group": "contact-properties",
+      "command": "create",
+      "summary": "Declare a contact property",
+      "description": "Declare a custom field. Declaring is optional: contacts may carry undeclared properties, and those keep working. Declaring gives the field a default used when a contact has no value, and opts writes to it into type checking.",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "deleteContactProperty",
+      "method": "DELETE",
+      "path": "/v1/contact-properties/{id}",
+      "group": "contact-properties",
+      "command": "delete",
+      "summary": "Delete a contact property",
+      "description": "Removes the declaration only. Contact values stay where they are, so re-declaring the key finds them again.",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The contact property ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "getContactProperty",
+      "method": "GET",
+      "path": "/v1/contact-properties/{id}",
+      "group": "contact-properties",
+      "command": "get",
+      "summary": "Get a contact property",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The contact property ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listContactProperties",
+      "method": "GET",
+      "path": "/v1/contact-properties",
+      "group": "contact-properties",
+      "command": "list",
+      "summary": "List contact properties",
+      "description": "The custom fields this team has declared, with their types and defaults.",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "updateContactProperty",
+      "method": "PATCH",
+      "path": "/v1/contact-properties/{id}",
+      "group": "contact-properties",
+      "command": "update",
+      "summary": "Update a contact property default",
+      "description": "Changes fallback_value only. Key and type are immutable: renaming would orphan the values already stored under the old key.",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The contact property ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "createContact",
+      "method": "POST",
+      "path": "/v1/contacts",
+      "group": "contacts",
+      "command": "create",
+      "summary": "Create a contact",
+      "description": "Create a global contact for the current account. Supports firstName/lastName and first_name/last_name aliases for Resend compatibility.",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "email",
+            "flag": "email",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "description": "The contact email address",
+            "example": "steve@example.com"
+          },
+          {
+            "name": "firstName",
+            "flag": "firstName",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "Steve"
+          },
+          {
+            "name": "first_name",
+            "flag": "first-name",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "Steve"
+          },
+          {
+            "name": "lastName",
+            "flag": "lastName",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "Wozniak"
+          },
+          {
+            "name": "last_name",
+            "flag": "last-name",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "Wozniak"
+          },
+          {
+            "name": "properties",
+            "flag": "properties",
+            "in": "body",
+            "type": "object",
+            "required": false,
+            "example": "{\"company\":\"Acme\",\"plan\":\"pro\"}"
+          },
+          {
+            "name": "segment_ids",
+            "flag": "segment-ids",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string",
+            "description": "Manual segment IDs to assign this contact to",
+            "example": "clx_segment123"
+          },
+          {
+            "name": "unsubscribed",
+            "flag": "unsubscribed",
+            "in": "body",
+            "type": "boolean",
+            "required": false,
+            "description": "Global broadcast subscription status",
+            "example": "false"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "deleteContact",
+      "method": "DELETE",
+      "path": "/v1/contacts/{id}",
+      "group": "contacts",
+      "command": "delete",
+      "summary": "Delete a contact",
+      "description": "Delete a contact by ID or URL-encoded email address.",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The contact ID or URL-encoded email address"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "exportContacts",
+      "method": "GET",
+      "path": "/v1/contacts/export",
+      "group": "contacts",
+      "command": "export",
+      "summary": "Export contacts",
+      "description": "Export up to 10,000 contacts for the current account as CSV or JSON. Optional status and disposable filtering match the list endpoint.",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [],
+      "queryParams": [
+        {
+          "name": "disposable",
+          "flag": "disposable",
+          "in": "query",
+          "type": "boolean",
+          "required": false,
+          "description": "Only contacts on throwaway-mailbox domains (true) or only the rest (false)"
+        },
+        {
+          "name": "format",
+          "flag": "format",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Export format",
+          "enum": [
+            "csv",
+            "json"
+          ],
+          "default": "csv"
+        },
+        {
+          "name": "status",
+          "flag": "status",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Filter by subscription status",
+          "enum": [
+            "all",
+            "subscribed",
+            "unsubscribed"
+          ],
+          "default": "all"
+        }
+      ],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "getContact",
+      "method": "GET",
+      "path": "/v1/contacts/{id}",
+      "group": "contacts",
+      "command": "get",
+      "summary": "Retrieve a contact",
+      "description": "Retrieve a contact by ID or URL-encoded email address.",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The contact ID or URL-encoded email address"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listContacts",
+      "method": "GET",
+      "path": "/v1/contacts",
+      "group": "contacts",
+      "command": "list",
+      "summary": "List contacts",
+      "description": "Return contacts for the current account. Optional query parameters q, status, and limit support filtering.",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [],
+      "queryParams": [
+        {
+          "name": "disposable",
+          "flag": "disposable",
+          "in": "query",
+          "type": "boolean",
+          "required": false,
+          "description": "Only contacts on throwaway-mailbox domains (true) or only the rest (false)"
+        },
+        {
+          "name": "limit",
+          "flag": "limit",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "Number of contacts to return",
+          "default": 50
+        },
+        {
+          "name": "q",
+          "flag": "q",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Search by email, first name, or last name"
+        },
+        {
+          "name": "segment_id",
+          "flag": "segment-id",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Filter contacts by manual segment"
+        },
+        {
+          "name": "status",
+          "flag": "status",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Filter by subscription status",
+          "enum": [
+            "all",
+            "subscribed",
+            "unsubscribed"
+          ],
+          "default": "all"
+        }
+      ],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "updateContact",
+      "method": "PATCH",
+      "path": "/v1/contacts/{id}",
+      "group": "contacts",
+      "command": "update",
+      "summary": "Update a contact",
+      "description": "Update name fields, subscription status, or custom properties. Email addresses cannot be changed.",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The contact ID or URL-encoded email address"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "firstName",
+            "flag": "firstName",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "Steve"
+          },
+          {
+            "name": "first_name",
+            "flag": "first-name",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "Steve"
+          },
+          {
+            "name": "lastName",
+            "flag": "lastName",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "Wozniak"
+          },
+          {
+            "name": "last_name",
+            "flag": "last-name",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "Wozniak"
+          },
+          {
+            "name": "properties",
+            "flag": "properties",
+            "in": "body",
+            "type": "object",
+            "required": false,
+            "example": "{\"company\":\"Acme\"}"
+          },
+          {
+            "name": "segment_ids",
+            "flag": "segment-ids",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string",
+            "description": "Replace this contact's manual segment assignments",
+            "example": "clx_segment123"
+          },
+          {
+            "name": "unsubscribed",
+            "flag": "unsubscribed",
+            "in": "body",
+            "type": "boolean",
+            "required": false,
+            "example": "true"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "addDomain",
+      "method": "POST",
+      "path": "/v1/domains",
+      "group": "domains",
+      "command": "add",
+      "summary": "Add a domain",
+      "description": "Register a new sending domain. Returns the DNS records that must be configured before the domain can be verified.",
+      "tags": [
+        "Domains"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "domain",
+            "flag": "domain",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "description": "The domain name to register for sending",
+            "example": "yourapp.com"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "claimDomain",
+      "method": "POST",
+      "path": "/v1/domains/claim",
+      "group": "domains",
+      "command": "claim",
+      "summary": "Claim a domain held by another account",
+      "description": "Checks the claim TXT record and moves a never-verified domain from the account that holds it to the caller's team, with its verification reset and any mail the previous holder still had queued through it cancelled. POST /v1/domains answers 409 with code domain_claimable and the record when this applies. 422 claim_record_missing when the record is not visible, 503 dns_unavailable when the lookup itself failed. The previous holder is notified. Requires the domain:write scope; 20 checks per hour per team.",
+      "tags": [
+        "Domains"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "domain",
+            "flag": "domain",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "example": "acme.com"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "getDomainClaimRecord",
+      "method": "GET",
+      "path": "/v1/domains/claim",
+      "group": "domains",
+      "command": "claim-record",
+      "summary": "Get the claim record for a domain",
+      "description": "The TXT record a team publishes to prove DNS control before claiming a domain another account added but never verified. 404 when nobody holds the domain, 409 with code already_yours or verified_elsewhere when it cannot be claimed. Requires the domain:read scope.",
+      "tags": [
+        "Domains"
+      ],
+      "pathParams": [],
+      "queryParams": [
+        {
+          "name": "domain",
+          "flag": "domain",
+          "in": "query",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "getDomain",
+      "method": "GET",
+      "path": "/v1/domains/{id}",
+      "group": "domains",
+      "command": "get",
+      "summary": "Get domain details",
+      "description": "Retrieve details for a single domain including its current verification status and DNS records.",
+      "tags": [
+        "Domains"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The domain ID (e.g. dom_xyz789)"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listDomains",
+      "method": "GET",
+      "path": "/v1/domains",
+      "group": "domains",
+      "command": "list",
+      "summary": "List domains",
+      "description": "Return all sending domains associated with the current account.",
+      "tags": [
+        "Domains"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "updateDomainReceiving",
+      "method": "PATCH",
+      "path": "/v1/domains/{id}",
+      "group": "domains",
+      "command": "update-receiving",
+      "summary": "Turn inbound receiving on or off",
+      "description": "Enable or disable inbound email for a verified domain (paid plans). Returns the MX record to publish and the receiving status: disabled, pending, active or failed. Requires the domain:write scope.",
+      "tags": [
+        "Domains",
+        "Receiving"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The domain ID (e.g. dom_xyz789)"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "receiving_enabled",
+            "flag": "receiving-enabled",
+            "in": "body",
+            "type": "boolean",
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "verifyDomain",
+      "method": "POST",
+      "path": "/v1/domains/{id}/verify",
+      "group": "domains",
+      "command": "verify",
+      "summary": "Verify a domain",
+      "description": "Check whether the required DNS records have been configured correctly. If verification succeeds, the domain status changes to verified and it can be used for sending.",
+      "tags": [
+        "Domains"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The domain ID (e.g. dom_xyz789)"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "cancelEmail",
+      "method": "POST",
+      "path": "/v1/emails/{id}/cancel",
+      "group": "emails",
+      "command": "cancel",
+      "summary": "Cancel a scheduled email",
+      "description": "Cancel an email that has not been sent yet. Valid while the email is scheduled or queued; returns 409 once it has left for the provider. Requires the email:send scope.",
+      "tags": [
+        "Emails"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The email id."
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "getEmail",
+      "method": "GET",
+      "path": "/v1/emails/{id}",
+      "group": "emails",
+      "command": "get",
+      "summary": "Get email details",
+      "description": "Retrieve the current status and delivery events for a specific email by its ID.",
+      "tags": [
+        "Emails"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The email ID (e.g. email_abc123)"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listEmails",
+      "method": "GET",
+      "path": "/v1/emails",
+      "group": "emails",
+      "command": "list",
+      "summary": "List sent emails",
+      "description": "List sent emails, newest first. Bodies are not included; fetch one with GET /v1/emails/{id}. Requires the email:read scope.",
+      "tags": [
+        "Emails"
+      ],
+      "pathParams": [],
+      "queryParams": [
+        {
+          "name": "after",
+          "flag": "after",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "The email id after which to retrieve more emails. Not returned in the list. Use either after or before, not both."
+        },
+        {
+          "name": "before",
+          "flag": "before",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "The email id before which to retrieve more emails. Not returned in the list. Use either after or before, not both."
+        },
+        {
+          "name": "limit",
+          "flag": "limit",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "Page size.",
+          "default": 50
+        },
+        {
+          "name": "page",
+          "flag": "page",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "1-based page number.",
+          "default": 1
+        },
+        {
+          "name": "status",
+          "flag": "status",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Filter by current status, e.g. delivered, bounced, failed, scheduled."
+        },
+        {
+          "name": "to",
+          "flag": "to",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Exact recipient address."
+        }
+      ],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "sendEmail",
+      "method": "POST",
+      "path": "/v1/emails",
+      "group": "emails",
+      "command": "send",
+      "summary": "Send an email",
+      "description": "Queue a single email for delivery. The email is validated, queued, and sent asynchronously via the configured sending provider.",
+      "tags": [
+        "Emails"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "attachments",
+            "flag": "attachments",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "object",
+            "description": "Up to 10 files, base64 encoded, 25 MB per message in total. A content_id makes the part inline: reference it from the HTML as cid:<content_id>."
+          },
+          {
+            "name": "from",
+            "flag": "from",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "description": "Sender email address (must belong to a verified domain)",
+            "example": "hello@yourapp.com"
+          },
+          {
+            "name": "html",
+            "flag": "html",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "HTML body of the email. Include `{{unsubscribe_url}}` (or the Resend-compatible `{{{RESEND_UNSUBSCRIBE_URL}}}`) anywhere in the body and SMTPfast substitutes the per-recipient unsubscribe link at send time. The same URL is set on the RFC 8058 `List-Unsubscribe` header automatically.",
+            "example": "<h1>Hello!</h1><p><a href=\"{{unsubscribe_url}}\">Unsubscribe</a></p>"
+          },
+          {
+            "name": "subject",
+            "flag": "subject",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "description": "Email subject line",
+            "example": "Welcome!"
+          },
+          {
+            "name": "text",
+            "flag": "text",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Plain text fallback body. Supports the same `{{unsubscribe_url}}` placeholder as the HTML body.",
+            "example": "Hello! (plain text fallback)"
+          },
+          {
+            "name": "to",
+            "flag": "to",
+            "in": "body",
+            "type": "array",
+            "required": true,
+            "items": "string",
+            "description": "List of recipient email addresses",
+            "example": "user@example.com"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "sendEmailBatch",
+      "method": "POST",
+      "path": "/v1/emails/batch",
+      "group": "emails",
+      "command": "send-batch",
+      "summary": "Send a batch of emails",
+      "description": "Queue up to 100 emails in a single request. The body is a JSON array of email objects, each using the same shape as the single-send endpoint. Validation runs on every item before any are queued — a malformed item rejects the whole batch with 400. Suppressed recipients (to, cc and bcc) are dropped per row; a row left with no deliverable To recipient is recorded with status \"failed\".",
+      "tags": [
+        "Emails"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "array",
+        "fields": []
+      }
+    },
+    {
+      "operationId": "shareEmail",
+      "method": "POST",
+      "path": "/v1/emails/{id}/share",
+      "group": "emails",
+      "command": "share",
+      "summary": "Create a share link for a sent email",
+      "description": "Mint a public, expiring link to the rendered view of one sent email (the stored HTML or text body, in a sandboxed frame). Nothing is stored; the link stops working when it expires. Default lifetime 7 days, maximum 30. Requires the email:read scope.",
+      "tags": [
+        "Emails"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The email ID (e.g. email_abc123)"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": false,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "expires_in",
+            "flag": "expires-in",
+            "in": "body",
+            "type": "integer",
+            "required": false,
+            "description": "Lifetime in seconds (60 to 2592000)",
+            "default": 604800
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "updateEmail",
+      "method": "PATCH",
+      "path": "/v1/emails/{id}",
+      "group": "emails",
+      "command": "update",
+      "summary": "Reschedule a scheduled email",
+      "description": "Change the send time of a scheduled email. Only scheduled_at can be changed; to change content, cancel and send again. Requires the email:send scope.",
+      "tags": [
+        "Emails"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The email id."
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "scheduled_at",
+            "flag": "scheduled-at",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "description": "New send time in ISO 8601. Must be in the future and within 30 days."
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "approveAllPendingSignups",
+      "method": "POST",
+      "path": "/v1/forms/{id}/pending/approve-all",
+      "group": "forms",
+      "command": "approve-all-pending",
+      "summary": "Approve all pending signups",
+      "description": "Confirm pending signups without waiting for the link click, up to 200 per call; call again while `remaining` is above zero. Each one becomes a contact, fires contact.subscribed and gets the welcome email if enabled. Signups whose confirmation email bounced, was marked as spam or failed are left pending and counted in `skipped_undeliverable`. Signups submitted through Tor are left pending and counted in `skipped_tor`. Requires the form:write scope.",
+      "tags": [
+        "Forms"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The signup form ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": false,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "q",
+            "flag": "q",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Only approve signups matching this search"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "approvePendingSignup",
+      "method": "POST",
+      "path": "/v1/forms/{id}/pending/{pendingId}/approve",
+      "group": "forms",
+      "command": "approve-pending",
+      "summary": "Approve a pending signup",
+      "description": "Confirm one pending signup without waiting for the link click. It becomes a contact, fires contact.subscribed and gets the welcome email if enabled. Approving one that is already confirmed returns 200 with already_confirmed. Returns 409 when the form is no longer active. Requires the form:write scope.",
+      "tags": [
+        "Forms"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The signup form ID"
+        },
+        {
+          "name": "pendingId",
+          "flag": "pending-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The pending signup ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "createSignupForm",
+      "method": "POST",
+      "path": "/v1/forms",
+      "group": "forms",
+      "command": "create",
+      "summary": "Create a signup form",
+      "description": "Create a new signup form. After creation, the embed snippet at /api/forms/{id}/submit (HTML) or /api/forms/{id}/embed.js (JavaScript widget) can be used on third-party sites.",
+      "tags": [
+        "Forms"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "active",
+            "flag": "active",
+            "in": "body",
+            "type": "boolean",
+            "required": false,
+            "example": "true"
+          },
+          {
+            "name": "blockDisposableEmails",
+            "flag": "block-disposable-emails",
+            "in": "body",
+            "type": "boolean",
+            "required": false,
+            "example": "true"
+          },
+          {
+            "name": "buttonColor",
+            "flag": "button-color",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "#10b981"
+          },
+          {
+            "name": "buttonText",
+            "flag": "button-text",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "Subscribe"
+          },
+          {
+            "name": "captchaEnabled",
+            "flag": "captcha-enabled",
+            "in": "body",
+            "type": "boolean",
+            "required": false,
+            "example": "false"
+          },
+          {
+            "name": "captchaProvider",
+            "flag": "captcha-provider",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "enum": [
+              "turnstile"
+            ],
+            "example": "turnstile"
+          },
+          {
+            "name": "doubleOptIn",
+            "flag": "double-opt-in",
+            "in": "body",
+            "type": "boolean",
+            "required": false,
+            "example": "true"
+          },
+          {
+            "name": "fields",
+            "flag": "fields",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string",
+            "enum": [
+              "email",
+              "first_name",
+              "last_name"
+            ],
+            "example": "email,first_name"
+          },
+          {
+            "name": "name",
+            "flag": "name",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "example": "Newsletter signup"
+          },
+          {
+            "name": "redirectUrl",
+            "flag": "redirect-url",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "nullable": true
+          },
+          {
+            "name": "successMessage",
+            "flag": "success-message",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "Thanks for subscribing!"
+          },
+          {
+            "name": "turnstileSecretKey",
+            "flag": "turnstile-secret-key",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Write-only. Returned forms expose turnstile_secret_configured instead.",
+            "nullable": true
+          },
+          {
+            "name": "turnstileSiteKey",
+            "flag": "turnstile-site-key",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "nullable": true
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "deleteSignupForm",
+      "method": "DELETE",
+      "path": "/v1/forms/{id}",
+      "group": "forms",
+      "command": "delete",
+      "summary": "Delete a signup form",
+      "description": "Delete a signup form. Embedded snippets pointing at this form will stop working.",
+      "tags": [
+        "Forms"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The signup form ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "getSignupForm",
+      "method": "GET",
+      "path": "/v1/forms/{id}",
+      "group": "forms",
+      "command": "get",
+      "summary": "Retrieve a signup form",
+      "description": "Retrieve a signup form by ID.",
+      "tags": [
+        "Forms"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The signup form ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listSignupForms",
+      "method": "GET",
+      "path": "/v1/forms",
+      "group": "forms",
+      "command": "list",
+      "summary": "List signup forms",
+      "description": "Return all signup forms for the current account.",
+      "tags": [
+        "Forms"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listPendingSignups",
+      "method": "GET",
+      "path": "/v1/forms/{id}/pending",
+      "group": "forms",
+      "command": "pending",
+      "summary": "List pending signups",
+      "description": "Signups on a double opt-in form that have not clicked their confirmation link and have not expired, newest first. Each one carries the status of its confirmation email, the two-letter country it came from and the page it was submitted on, where known. Requires the form:read scope.",
+      "tags": [
+        "Forms"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The signup form ID"
+        }
+      ],
+      "queryParams": [
+        {
+          "name": "page",
+          "flag": "page",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "default": 1
+        },
+        {
+          "name": "per_page",
+          "flag": "per-page",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "default": 20
+        },
+        {
+          "name": "q",
+          "flag": "q",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Search by email, first name or last name"
+        }
+      ],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "removePendingSignup",
+      "method": "DELETE",
+      "path": "/v1/forms/{id}/pending/{pendingId}",
+      "group": "forms",
+      "command": "remove-pending",
+      "summary": "Remove a pending signup",
+      "description": "Remove a pending signup without adding it as a contact. Its confirmation link stops working. Requires the form:write scope.",
+      "tags": [
+        "Forms"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The signup form ID"
+        },
+        {
+          "name": "pendingId",
+          "flag": "pending-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The pending signup ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "updateSignupForm",
+      "method": "PATCH",
+      "path": "/v1/forms/{id}",
+      "group": "forms",
+      "command": "update",
+      "summary": "Update a signup form",
+      "description": "Update fields, styling, double opt-in behaviour, or active state on an existing form.",
+      "tags": [
+        "Forms"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The signup form ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "active",
+            "flag": "active",
+            "in": "body",
+            "type": "boolean",
+            "required": false
+          },
+          {
+            "name": "blockDisposableEmails",
+            "flag": "block-disposable-emails",
+            "in": "body",
+            "type": "boolean",
+            "required": false
+          },
+          {
+            "name": "buttonColor",
+            "flag": "button-color",
+            "in": "body",
+            "type": "string",
+            "required": false
+          },
+          {
+            "name": "buttonText",
+            "flag": "button-text",
+            "in": "body",
+            "type": "string",
+            "required": false
+          },
+          {
+            "name": "captchaEnabled",
+            "flag": "captcha-enabled",
+            "in": "body",
+            "type": "boolean",
+            "required": false
+          },
+          {
+            "name": "captchaProvider",
+            "flag": "captcha-provider",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "enum": [
+              "turnstile"
+            ]
+          },
+          {
+            "name": "doubleOptIn",
+            "flag": "double-opt-in",
+            "in": "body",
+            "type": "boolean",
+            "required": false
+          },
+          {
+            "name": "fields",
+            "flag": "fields",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string",
+            "enum": [
+              "email",
+              "first_name",
+              "last_name"
+            ]
+          },
+          {
+            "name": "name",
+            "flag": "name",
+            "in": "body",
+            "type": "string",
+            "required": false
+          },
+          {
+            "name": "redirectUrl",
+            "flag": "redirect-url",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "nullable": true
+          },
+          {
+            "name": "successMessage",
+            "flag": "success-message",
+            "in": "body",
+            "type": "string",
+            "required": false
+          },
+          {
+            "name": "turnstileSecretKey",
+            "flag": "turnstile-secret-key",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Write-only. Omit to keep the existing secret.",
+            "nullable": true
+          },
+          {
+            "name": "turnstileSiteKey",
+            "flag": "turnstile-site-key",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "nullable": true
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "listLogs",
+      "method": "GET",
+      "path": "/v1/logs",
+      "group": "logs",
+      "command": "list",
+      "summary": "List email events",
+      "description": "The event log behind the dashboard Logs page: every lifecycle event of every sent email, newest first, with keyset pagination (after walks older, before walks newer, exclusive). Filter by event type, time window, recipient, domain, tag or email. Received mail is not in this log; use GET /v1/emails/receiving. Requires the logs:read scope.",
+      "tags": [
+        "Logs"
+      ],
+      "pathParams": [],
+      "queryParams": [
+        {
+          "name": "after",
+          "flag": "after",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Return events older than this event id"
+        },
+        {
+          "name": "before",
+          "flag": "before",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Return events newer than this event id"
+        },
+        {
+          "name": "domain",
+          "flag": "domain",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Sending domain name"
+        },
+        {
+          "name": "domain_id",
+          "flag": "domain-id",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Sending domain id (alternative to domain)"
+        },
+        {
+          "name": "email_id",
+          "flag": "email-id",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Events of one email"
+        },
+        {
+          "name": "limit",
+          "flag": "limit",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "default": 20
+        },
+        {
+          "name": "recipient",
+          "flag": "recipient",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Exact To address"
+        },
+        {
+          "name": "since",
+          "flag": "since",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Only events at or after this time"
+        },
+        {
+          "name": "tag",
+          "flag": "tag",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Tag as name:value, matched exactly"
+        },
+        {
+          "name": "type",
+          "flag": "type",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "One event type or a comma-separated list: queued, scheduled, sending, retrying, sent, delivered, delivery_delayed, bounced, complained, opened, clicked, unsubscribed, suppressed, failed"
+        },
+        {
+          "name": "until",
+          "flag": "until",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Only events at or before this time"
+        }
+      ],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listReceivedEmailAttachments",
+      "method": "GET",
+      "path": "/v1/emails/receiving/{id}/attachments",
+      "group": "received",
+      "command": "attachments",
+      "summary": "List attachments of a received email",
+      "description": "Attachment metadata with a fresh 15-minute download link for each file. Requires the inbound:read scope.",
+      "tags": [
+        "Receiving"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The received email id"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "deleteReceivedEmail",
+      "method": "DELETE",
+      "path": "/v1/emails/receiving/{id}",
+      "group": "received",
+      "command": "delete",
+      "summary": "Delete a received email",
+      "description": "Remove the team's copy of a received email and its attachments. Requires the inbound:delete scope.",
+      "tags": [
+        "Receiving"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The received email id"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "getReceivedEmail",
+      "method": "GET",
+      "path": "/v1/emails/receiving/{id}",
+      "group": "received",
+      "command": "get",
+      "summary": "Get a received email",
+      "description": "One received email with text and HTML bodies, headers, attachment metadata and a 15-minute link to the raw .eml. A quarantined message (virus verdict not PASS) has no body, raw link or attachments.",
+      "tags": [
+        "Receiving"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The received email id"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "getReceivedEmailAttachment",
+      "method": "GET",
+      "path": "/v1/emails/receiving/{id}/attachments/{attachment_id}",
+      "group": "received",
+      "command": "get-attachment",
+      "summary": "Get one attachment of a received email",
+      "description": "Metadata and a fresh 15-minute download link for one attachment. Requires the inbound:read scope.",
+      "tags": [
+        "Receiving"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The received email id"
+        },
+        {
+          "name": "attachment_id",
+          "flag": "attachment-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The attachment id"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listReceivedEmails",
+      "method": "GET",
+      "path": "/v1/emails/receiving",
+      "group": "received",
+      "command": "list",
+      "summary": "List received emails",
+      "description": "Received emails for the team, newest first, with keyset pagination (after walks older, before walks newer, exclusive). List items carry metadata only; fetch one email for the body. Requires the inbound:read scope.",
+      "tags": [
+        "Receiving"
+      ],
+      "pathParams": [],
+      "queryParams": [
+        {
+          "name": "after",
+          "flag": "after",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Return emails older than this id"
+        },
+        {
+          "name": "before",
+          "flag": "before",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Return emails newer than this id"
+        },
+        {
+          "name": "limit",
+          "flag": "limit",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "default": 20
+        }
+      ],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "replyToReceivedEmail",
+      "method": "POST",
+      "path": "/v1/emails/receiving/{id}/reply",
+      "group": "received",
+      "command": "reply",
+      "summary": "Reply to a received email",
+      "description": "Send a reply to a received message through the normal send pipeline (credits, suppression, safety checks, webhooks). The reply is threaded with In-Reply-To and References and linked to the received message. From defaults to the receiving address when its domain is verified for sending, otherwise to the same local part on the nearest verified parent domain with Reply-To set to the receiving address; pass from to pick another verified reply address. To defaults to the sender's Reply-To, then From. Requires the inbound:read and email:send scopes.",
+      "tags": [
+        "Receiving"
+      ],
+      "idempotencyKey": true,
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The received email id"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "cc",
+            "flag": "cc",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string"
+          },
+          {
+            "name": "from",
+            "flag": "from",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "One of the team's reply addresses for this message; see the dashboard detail's reply_from"
+          },
+          {
+            "name": "html",
+            "flag": "html",
+            "in": "body",
+            "type": "string",
+            "required": false
+          },
+          {
+            "name": "subject",
+            "flag": "subject",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Defaults to Re: plus the original subject"
+          },
+          {
+            "name": "text",
+            "flag": "text",
+            "in": "body",
+            "type": "string",
+            "required": false
+          },
+          {
+            "name": "to",
+            "flag": "to",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "listSegmentContacts",
+      "method": "GET",
+      "path": "/v1/segments/{id}/contacts",
+      "group": "segments",
+      "command": "contacts",
+      "summary": "List contacts in a segment",
+      "description": "Return contacts assigned to a manual segment.",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The segment ID"
+        }
+      ],
+      "queryParams": [
+        {
+          "name": "limit",
+          "flag": "limit",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "Number of contacts to return",
+          "default": 50
+        },
+        {
+          "name": "page",
+          "flag": "page",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "Page number for pagination",
+          "default": 1
+        }
+      ],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "createSegment",
+      "method": "POST",
+      "path": "/v1/segments",
+      "group": "segments",
+      "command": "create",
+      "summary": "Create a segment",
+      "description": "Create a manual segment for organizing contacts and targeting broadcasts.",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "color",
+            "flag": "color",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "#10b981",
+            "nullable": true
+          },
+          {
+            "name": "description",
+            "flag": "description",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "Paying customers",
+            "nullable": true
+          },
+          {
+            "name": "name",
+            "flag": "name",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "example": "Customers"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "deleteSegment",
+      "method": "DELETE",
+      "path": "/v1/segments/{id}",
+      "group": "segments",
+      "command": "delete",
+      "summary": "Delete a segment",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The segment ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "getSegment",
+      "method": "GET",
+      "path": "/v1/segments/{id}",
+      "group": "segments",
+      "command": "get",
+      "summary": "Retrieve a segment",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The segment ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listSegments",
+      "method": "GET",
+      "path": "/v1/segments",
+      "group": "segments",
+      "command": "list",
+      "summary": "List segments",
+      "description": "Return manual contact segments for the current account.",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "updateSegment",
+      "method": "PATCH",
+      "path": "/v1/segments/{id}",
+      "group": "segments",
+      "command": "update",
+      "summary": "Update a segment",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The segment ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "color",
+            "flag": "color",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "#10b981",
+            "nullable": true
+          },
+          {
+            "name": "description",
+            "flag": "description",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "Paying customers",
+            "nullable": true
+          },
+          {
+            "name": "name",
+            "flag": "name",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "example": "Customers"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "createSuppression",
+      "method": "POST",
+      "path": "/v1/suppressions",
+      "group": "suppressions",
+      "command": "create",
+      "summary": "Create a manual suppression",
+      "description": "Manually suppress an address so future sends to it are blocked.",
+      "tags": [
+        "Suppressions"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "diagnostic_code",
+            "flag": "diagnostic-code",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Optional internal note for manual suppressions",
+            "example": "Requested by customer support"
+          },
+          {
+            "name": "email",
+            "flag": "email",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "example": "blocked@example.com"
+          },
+          {
+            "name": "reason",
+            "flag": "reason",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "enum": [
+              "manual"
+            ],
+            "default": "manual"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "deleteSuppression",
+      "method": "DELETE",
+      "path": "/v1/suppressions/{id}",
+      "group": "suppressions",
+      "command": "delete",
+      "summary": "Delete a suppression",
+      "description": "Remove a suppression. The address becomes eligible for future sends unless it is suppressed again.",
+      "tags": [
+        "Suppressions"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The suppression ID or URL-encoded email address"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "getSuppression",
+      "method": "GET",
+      "path": "/v1/suppressions/{id}",
+      "group": "suppressions",
+      "command": "get",
+      "summary": "Retrieve a suppression",
+      "description": "Retrieve a suppression by ID or URL-encoded email address.",
+      "tags": [
+        "Suppressions"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The suppression ID or URL-encoded email address"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listSuppressions",
+      "method": "GET",
+      "path": "/v1/suppressions",
+      "group": "suppressions",
+      "command": "list",
+      "summary": "List suppressions",
+      "description": "Return suppressed addresses for the current account. Suppressed recipients are blocked before sending.",
+      "tags": [
+        "Suppressions"
+      ],
+      "pathParams": [],
+      "queryParams": [
+        {
+          "name": "limit",
+          "flag": "limit",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "Number of suppressions to return",
+          "default": 50
+        },
+        {
+          "name": "q",
+          "flag": "q",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Search by suppressed email address"
+        },
+        {
+          "name": "reason",
+          "flag": "reason",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Filter by suppression reason",
+          "enum": [
+            "all",
+            "hard_bounce",
+            "complaint",
+            "manual",
+            "unsubscribe"
+          ],
+          "default": "all"
+        }
+      ],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "createWebhook",
+      "method": "POST",
+      "path": "/v1/webhooks",
+      "group": "webhooks",
+      "command": "create",
+      "summary": "Create webhook",
+      "description": "Register a new webhook endpoint. SMTPfast will POST event payloads to this URL when the specified events occur.",
+      "tags": [
+        "Webhooks"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "events",
+            "flag": "events",
+            "in": "body",
+            "type": "array",
+            "required": true,
+            "items": "string",
+            "description": "List of event types to subscribe to. Legacy unprefixed email aliases are accepted and normalized to Resend-style email.* event names.",
+            "enum": [
+              "email.scheduled",
+              "email.sent",
+              "email.delivered",
+              "email.delivery_delayed",
+              "email.bounced",
+              "email.complained",
+              "email.opened",
+              "email.clicked",
+              "email.failed",
+              "email.suppressed",
+              "email.unsubscribed",
+              "email.received",
+              "domain.created",
+              "domain.updated",
+              "domain.deleted",
+              "contact.created",
+              "contact.updated",
+              "contact.deleted",
+              "contact.subscribed"
+            ],
+            "example": "email.delivered,email.bounced"
+          },
+          {
+            "name": "url",
+            "flag": "url",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "description": "The URL that will receive webhook POST requests",
+            "example": "https://yourapp.com/webhooks/smtpfast"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "deleteWebhook",
+      "method": "DELETE",
+      "path": "/v1/webhooks/{id}",
+      "group": "webhooks",
+      "command": "delete",
+      "summary": "Delete webhook",
+      "description": "Remove a webhook endpoint. Its recorded deliveries are removed with it.",
+      "tags": [
+        "Webhooks"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The webhook ID (e.g. wh_abc123)"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listWebhookDeliveries",
+      "method": "GET",
+      "path": "/v1/webhooks/{id}/deliveries",
+      "group": "webhooks",
+      "command": "deliveries",
+      "summary": "List webhook deliveries",
+      "description": "Delivery log of one webhook, newest first: every event we POSTed with its attempts, status code, response time, response snippet and error. Failed deliveries are retried after 1s, 30s, 5min and 30min; entries are kept for 30 days. Requires the webhook:read scope.",
+      "tags": [
+        "Webhooks"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The webhook ID"
+        }
+      ],
+      "queryParams": [
+        {
+          "name": "after",
+          "flag": "after",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Return deliveries older than this id"
+        },
+        {
+          "name": "limit",
+          "flag": "limit",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "default": 20
+        },
+        {
+          "name": "status",
+          "flag": "status",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "enum": [
+            "pending",
+            "sending",
+            "succeeded",
+            "failed"
+          ]
+        }
+      ],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "getWebhook",
+      "method": "GET",
+      "path": "/v1/webhooks/{id}",
+      "group": "webhooks",
+      "command": "get",
+      "summary": "Get webhook",
+      "description": "Retrieve a single webhook endpoint by ID.",
+      "tags": [
+        "Webhooks"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The webhook ID (e.g. wh_abc123)"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "getWebhookDelivery",
+      "method": "GET",
+      "path": "/v1/webhooks/{id}/deliveries/{delivery_id}",
+      "group": "webhooks",
+      "command": "get-delivery",
+      "summary": "Get a webhook delivery",
+      "description": "One delivery with the exact payload that was sent. Requires the webhook:read scope.",
+      "tags": [
+        "Webhooks"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The webhook ID"
+        },
+        {
+          "name": "delivery_id",
+          "flag": "delivery-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The delivery ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listWebhooks",
+      "method": "GET",
+      "path": "/v1/webhooks",
+      "group": "webhooks",
+      "command": "list",
+      "summary": "List webhooks",
+      "description": "Return all webhook endpoints configured for the current account.",
+      "tags": [
+        "Webhooks"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "updateWebhook",
+      "method": "PUT",
+      "path": "/v1/webhooks/{id}",
+      "group": "webhooks",
+      "command": "replace",
+      "summary": "Update webhook",
+      "description": "Update the URL, events, or active status of an existing webhook endpoint.",
+      "tags": [
+        "Webhooks"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The webhook ID (e.g. wh_abc123)"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "active",
+            "flag": "active",
+            "in": "body",
+            "type": "boolean",
+            "required": false,
+            "description": "Set to false to pause delivery without deleting the webhook",
+            "example": "true"
+          },
+          {
+            "name": "events",
+            "flag": "events",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string",
+            "description": "List of event types to subscribe to. Legacy unprefixed email aliases are accepted and normalized to Resend-style email.* event names.",
+            "enum": [
+              "email.scheduled",
+              "email.sent",
+              "email.delivered",
+              "email.delivery_delayed",
+              "email.bounced",
+              "email.complained",
+              "email.opened",
+              "email.clicked",
+              "email.failed",
+              "email.suppressed",
+              "email.unsubscribed",
+              "email.received",
+              "domain.created",
+              "domain.updated",
+              "domain.deleted",
+              "contact.created",
+              "contact.updated",
+              "contact.deleted",
+              "contact.subscribed"
+            ],
+            "example": "email.delivered,email.bounced"
+          },
+          {
+            "name": "url",
+            "flag": "url",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "https://yourapp.com/webhooks/smtpfast"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "retryWebhookDelivery",
+      "method": "POST",
+      "path": "/v1/webhooks/{id}/deliveries/{delivery_id}/retry",
+      "group": "webhooks",
+      "command": "retry-delivery",
+      "summary": "Retry a webhook delivery",
+      "description": "Send the same payload again, once, right now, and return the result of that attempt. A delivery with a scheduled attempt still pending returns 409. Requires the webhook:write scope.",
+      "tags": [
+        "Webhooks"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The webhook ID"
+        },
+        {
+          "name": "delivery_id",
+          "flag": "delivery-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The delivery ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "testWebhook",
+      "method": "POST",
+      "path": "/v1/webhooks/{id}/test",
+      "group": "webhooks",
+      "command": "test",
+      "summary": "Test webhook",
+      "description": "Send a test event payload to the webhook URL and return the delivery result. Useful for verifying that your endpoint is reachable and responds correctly.",
+      "tags": [
+        "Webhooks"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The webhook ID (e.g. wh_abc123)"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "patchWebhook",
+      "method": "PATCH",
+      "path": "/v1/webhooks/{id}",
+      "group": "webhooks",
+      "command": "update",
+      "summary": "Update webhook",
+      "description": "Same as PUT: a partial update that leaves out any field you omit. Accepted because Resend uses PATCH for this, so ported code works unchanged.",
+      "tags": [
+        "Webhooks"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The webhook ID (e.g. wh_abc123)"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "active",
+            "flag": "active",
+            "in": "body",
+            "type": "boolean",
+            "required": false,
+            "description": "Set to false to pause delivery without deleting the webhook",
+            "example": "true"
+          },
+          {
+            "name": "events",
+            "flag": "events",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string",
+            "description": "List of event types to subscribe to. Legacy unprefixed email aliases are accepted and normalized to Resend-style email.* event names.",
+            "enum": [
+              "email.scheduled",
+              "email.sent",
+              "email.delivered",
+              "email.delivery_delayed",
+              "email.bounced",
+              "email.complained",
+              "email.opened",
+              "email.clicked",
+              "email.failed",
+              "email.suppressed",
+              "email.unsubscribed",
+              "email.received",
+              "domain.created",
+              "domain.updated",
+              "domain.deleted",
+              "contact.created",
+              "contact.updated",
+              "contact.deleted",
+              "contact.subscribed"
+            ],
+            "example": "email.delivered,email.bounced"
+          },
+          {
+            "name": "url",
+            "flag": "url",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "https://yourapp.com/webhooks/smtpfast"
+          }
+        ]
+      }
+    }
+  ]
+}
