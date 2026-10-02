@@ -11,6 +11,18 @@ export function canonicalJson(value: unknown): string {
   return `{${keys.map((k) => `${JSON.stringify(k)}:${canonicalJson(obj[k])}`).join(",")}}`;
 }
 
+/** A copy with object keys sorted at every level, for a snapshot that does not depend on key order. */
+export function sortKeys(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortKeys);
+  if (value === null || typeof value !== "object") return value;
+  const obj = value as Record<string, unknown>;
+  return Object.fromEntries(
+    Object.keys(obj)
+      .sort()
+      .map((k) => [k, sortKeys(obj[k])]),
+  );
+}
+
 export function specHash(spec: unknown): string {
   return createHash("sha256").update(canonicalJson(spec)).digest("hex");
 }

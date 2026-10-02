@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { parseArgs } from "../src/args.js";
 import { buildManifest, serializeManifest } from "../src/spec/build.js";
+import { sortKeys } from "../src/spec/hash.js";
 import { updateReadme } from "./reference.js";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
@@ -39,7 +40,8 @@ export interface GenerateResult {
 export function generate(specText: string, readme: string, paths = PATHS): GenerateResult {
   const spec = JSON.parse(specText) as unknown;
   const { manifest, warnings } = buildManifest(spec);
-  const normalizedSpec = `${JSON.stringify(spec, null, 2)}\n`;
+  // Sorted keys: a spec that only reorders keys gives the same snapshot, so it does not start a release.
+  const normalizedSpec = `${JSON.stringify(sortKeys(spec), null, 2)}\n`;
   return {
     files: {
       [paths.spec]: normalizedSpec,

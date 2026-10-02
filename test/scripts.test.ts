@@ -44,3 +44,21 @@ describe("version", () => {
     expect(readFileSync(join(ROOT, "src", "version.ts"), "utf8")).toBe(versionSource(pkg.version));
   });
 });
+
+describe("spec sync workflow", () => {
+  const workflow = readFileSync(join(ROOT, ".github", "workflows", "spec-sync.yml"), "utf8");
+  const step = (name: string) => {
+    const start = workflow.indexOf(`      - name: ${name}\n`);
+    expect(start).toBeGreaterThan(-1);
+    const end = workflow.indexOf("\n      - name:", start + 1);
+    return workflow.slice(start, end === -1 ? undefined : end);
+  };
+
+  test("decides a change on the spec with sorted keys plus the generated files", () => {
+    const diff = step("Check for changes");
+    expect(diff).toContain("git show HEAD:spec/openapi.json | jq -S -c .");
+    expect(diff).toContain("jq -S -c . spec/openapi.json");
+    expect(diff).toContain("git diff --quiet -- src/generated README.md");
+    expect(diff).not.toContain("git diff --quiet -- spec");
+  });
+});

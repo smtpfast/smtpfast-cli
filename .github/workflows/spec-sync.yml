@@ -60,7 +60,10 @@ jobs:
       - name: Check for changes
         id: diff
         run: |
-          if git diff --quiet -- spec src/generated README.md; then
+          # Compare the spec with sorted keys, so a spec that only reorders keys is not a change.
+          old_spec=$(git show HEAD:spec/openapi.json | jq -S -c . | sha256sum | cut -d' ' -f1)
+          new_spec=$(jq -S -c . spec/openapi.json | sha256sum | cut -d' ' -f1)
+          if [ "$old_spec" = "$new_spec" ] && git diff --quiet -- src/generated README.md; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "The live spec matches spec/openapi.json. Nothing to release."
           else

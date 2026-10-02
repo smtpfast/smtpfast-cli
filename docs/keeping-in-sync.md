@@ -14,7 +14,9 @@ Three layers make that work. Each one covers a gap the others leave.
 
 ## 1. The generated manifest
 
-`scripts/generate.ts` reads the spec and writes two files:
+`scripts/generate.ts` reads the spec and writes two files. With `--spec`, it
+also saves the spec to `spec/openapi.json`, always with sorted keys, so a spec
+that only reorders keys gives the same snapshot.
 
 - `src/generated/manifest.json`: each operation with its group, command name,
   path parameters, query parameters and top-level request body fields. `$ref`
@@ -73,7 +75,8 @@ and the warning tells you to add an override.
 Each run:
 
 1. Downloads the live spec and runs the generator.
-2. Stops if `spec/`, `src/generated/` and `README.md` did not change.
+2. Stops if the spec, compared with sorted keys, and the generated files did
+   not change. A spec that only reorders keys does not make a release.
 3. Runs the type check and the tests. A failure stops the release.
 4. Bumps the minor version with `npm version minor`.
 5. Writes a changelog entry with `scripts/spec-diff.ts`, which lists new,

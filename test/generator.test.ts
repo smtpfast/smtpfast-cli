@@ -114,8 +114,18 @@ describe("determinism", () => {
     expect(serializeManifest(buildManifest(shuffled).manifest)).toBe(serializeManifest(manifest));
   });
 
+  test("a spec that only reorders keys gives a byte-identical snapshot", () => {
+    const readme = readFileSync(PATHS.readme, "utf8");
+    const a = generate(JSON.stringify(fixtureSpec()), readme).files;
+    const b = generate(JSON.stringify(shuffleKeys(fixtureSpec())), readme).files;
+    expect(b[PATHS.spec]).toBe(a[PATHS.spec]!);
+    expect(b[PATHS.manifest]).toBe(a[PATHS.manifest]!);
+    expect(b[PATHS.readme]).toBe(a[PATHS.readme]!);
+  });
+
   test("the committed manifest and README match spec/openapi.json", () => {
     const result = generate(readFileSync(PATHS.spec, "utf8"), readFileSync(PATHS.readme, "utf8"));
+    expect(result.files[PATHS.spec]).toBe(readFileSync(PATHS.spec, "utf8"));
     expect(result.files[PATHS.manifest]).toBe(readFileSync(PATHS.manifest, "utf8"));
     expect(result.files[PATHS.readme]).toBe(readFileSync(PATHS.readme, "utf8"));
     expect(result.warnings).toEqual([]);
