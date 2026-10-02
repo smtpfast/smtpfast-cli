@@ -4,6 +4,7 @@ import { type ConfigFile, configDir, readConfig, resolveSettings, type Settings 
 import type { Context } from "./context.js";
 import { ApiClient } from "./http.js";
 import { Output } from "./output.js";
+import { specUrl } from "./refresh.js";
 import { Registry } from "./registry.js";
 import { VERSION } from "./version.js";
 
@@ -54,6 +55,17 @@ export function toGlobals(values: FlagValues, env: Record<string, string | undef
 
 export const USER_AGENT = `smtpfast-cli/${VERSION}`;
 
+/** The spec URL of the server these flags point at, or undefined when the config cannot be read. */
+export function activeSpecUrl(ctx: Context, globals: Globals): string | undefined {
+  try {
+    const config = readConfig(configDir(ctx.env, ctx.platform, ctx.homedir));
+    const s = resolveSettings({ apiKey: globals.apiKey, profile: globals.profile, baseUrl: globals.baseUrl }, ctx.env, config);
+    return specUrl(s.baseUrl, ctx.env);
+  } catch {
+    return undefined;
+  }
+}
+
 /** One CLI run: the parsed global flags plus lazily loaded config, settings, registry and client. */
 export class Session {
   readonly out: Output;
@@ -91,7 +103,7 @@ export class Session {
   }
 
   registry(): Registry {
-    this.cachedRegistry ??= new Registry(this.configDir);
+    this.cachedRegistry ??= new Registry(this.configDir, activeSpecUrl(this.ctx, this.globals));
     return this.cachedRegistry;
   }
 

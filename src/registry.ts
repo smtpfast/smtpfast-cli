@@ -24,6 +24,8 @@ export class Registry {
 
   constructor(
     private readonly configDir: string,
+    /** The spec URL of the active base URL. Only its cache is read; undefined reads none. */
+    readonly specUrl: string | undefined,
     manifest: Manifest = embeddedManifest(),
   ) {
     this.embedded = manifest;
@@ -35,7 +37,8 @@ export class Registry {
   loadLive(): this {
     if (this.liveLoaded) return this;
     this.liveLoaded = true;
-    const spec = readCachedSpec(this.configDir);
+    if (!this.specUrl) return this;
+    const spec = readCachedSpec(this.configDir, this.specUrl);
     if (!spec) return this;
     let manifest: Manifest;
     try {
@@ -43,7 +46,7 @@ export class Registry {
     } catch {
       return this;
     }
-    this.live = { meta: readMeta(this.configDir), hash: manifest.specHash, operationCount: manifest.operationCount };
+    this.live = { meta: readMeta(this.configDir, this.specUrl), hash: manifest.specHash, operationCount: manifest.operationCount };
     const known = new Set(this.embedded.operations.map((o) => o.operationId));
     const knownRoutes = new Set(this.embedded.operations.map((o) => `${o.method} ${o.path}`));
     const extras = manifest.operations.filter((o) => !known.has(o.operationId) && !knownRoutes.has(`${o.method} ${o.path}`));

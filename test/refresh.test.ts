@@ -11,6 +11,7 @@ afterEach(async () => {
 });
 
 const NOW = Date.parse("2026-10-03T12:00:00Z");
+const DEFAULT_SPEC_URL = "https://smtpfa.st/api/v1/openapi.json";
 
 /** The fixture spec plus one operation this version was not built with. */
 function specWithNewOperation(): Record<string, any> {
@@ -28,11 +29,11 @@ function specWithNewOperation(): Record<string, any> {
   return spec;
 }
 
-function seedCache(configHome: string, spec: unknown, checkedAt = NOW) {
+function seedCache(configHome: string, spec: unknown, checkedAt = NOW, url = DEFAULT_SPEC_URL) {
   const dir = join(configHome, "smtpfast");
   mkdirSync(dir, { recursive: true });
-  writeFileSync(specPath(dir), JSON.stringify(spec));
-  writeMeta(dir, { checked_at: checkedAt });
+  writeFileSync(specPath(dir, url), JSON.stringify(spec));
+  writeMeta(dir, url, { checked_at: checkedAt });
   return dir;
 }
 
@@ -41,19 +42,20 @@ describe("background refresh trigger", () => {
     const dir = join(tempDir(), "smtpfast");
     const spawned: unknown[] = [];
     const spawn = (a: unknown) => spawned.push(a);
-    expect(maybeStartRefresh({ dir, url: "http://x/v1/openapi.json", now: NOW, spawn })).toBe(true);
-    expect(readMeta(dir).checked_at).toBe(NOW);
-    expect(maybeStartRefresh({ dir, url: "u", now: NOW + 60_000, spawn })).toBe(false);
-    expect(maybeStartRefresh({ dir, url: "u", now: NOW + REFRESH_INTERVAL_MS + 1, spawn })).toBe(true);
+    const url = "http://x/v1/openapi.json";
+    expect(maybeStartRefresh({ dir, url, now: NOW, spawn })).toBe(true);
+    expect(readMeta(dir, url).checked_at).toBe(NOW);
+    expect(maybeStartRefresh({ dir, url, now: NOW + 60_000, spawn })).toBe(false);
+    expect(maybeStartRefresh({ dir, url, now: NOW + REFRESH_INTERVAL_MS + 1, spawn })).toBe(true);
     expect(spawned).toEqual([
-      { configDir: dir, url: "http://x/v1/openapi.json" },
-      { configDir: dir, url: "u" },
+      { configDir: dir, url },
+      { configDir: dir, url },
     ]);
   });
 
   test("a stale cache triggers a refresh from a normal command, without waiting for it", async () => {
     const configHome = tempDir();
-    seedCache(configHome, fixtureSpec(), NOW - REFRESH_INTERVAL_MS - 1000);
+    seedCache(configHome, fixtureSpec(), NOW - REFRESH_INTERVAL_MS - 1000, "http://127.0.0.1:1/api/v1/openapi.json");
     const r = await run(["--help"], { configHome, now: () => NOW, env: { SMTPFAST_NO_UPDATE_CHECK: undefined, SMTPFAST_BASE_URL: "http://127.0.0.1:1/api" } });
     expect(r.code).toBe(0);
     expect(r.spawned).toEqual([{ configDir: join(configHome, "smtpfast"), url: "http://127.0.0.1:1/api/v1/openapi.json" }]);
@@ -96,8 +98,8 @@ describe("refreshSpec", () => {
     const dir = join(tempDir(), "smtpfast");
     const args = { dir, url: `${server.url}/api/v1/openapi.json`, fetch: (i: string | URL | Request, o?: RequestInit) => fetch(i, o), userAgent: "t" };
     expect(await refreshSpec({ ...args, now: NOW })).toBe("updated");
-    expect(readFileSync(specPath(dir), "utf8")).toBe(body);
-    const meta = readMeta(dir);
+    expect(readFileSync(specPath(dir, args.url), "utf8")).toBe(body);
+    const meta = readMeta(dir, args.url);
     expect(meta).toMatchObject({ checked_at: NOW, fetched_at: NOW, etag: '"v1"', operation_count: 78 });
     expect(meta.hash).toHaveLength(64);
     expect(server.requests[0]!.path).toBe("/api/v1/openapi.json");
@@ -105,13 +107,10 @@ describe("refreshSpec", () => {
 
     expect(await refreshSpec({ ...args, now: NOW + 5 })).toBe("unchanged");
     expect(server.requests[1]!.headers["if-none-match"]).toBe('"v1"');
-    expect(readMeta(dir)).toMatchObject({ checked_at: NOW + 5, fetched_at: NOW });
+    expect(readMeta(dir, args.url)).toMatchObject({ checked_at: NOW + 5, fetched_at: NOW });
   });
 
   test("failures are silent and keep the old cache", async () => {
-    const configHome = tempDir();
-    const dir = seedCache(configHome, fixtureSpec(), NOW - REFRESH_INTERVAL_MS * 2);
-    const before = readFileSync(specPath(dir), "utf8");
     let mode = "500";
     server = await startMockServer((_req, res) => {
       if (mode === "500") sendJson(res, 500, { error: "boom" });
@@ -121,14 +120,17 @@ describe("refreshSpec", () => {
       } else if (mode === "not-openapi") sendJson(res, 200, { hello: "world" });
       // "hang": never answer
     });
-    const args = { dir, url: `${server.url}/v1/openapi.json`, fetch: (i: string | URL | Request, o?: RequestInit) => fetch(i, o), userAgent: "t", timeoutMs: 100 };
+    const url = `${server.url}/v1/openapi.json`;
+    const dir = seedCache(tempDir(), fixtureSpec(), NOW - REFRESH_INTERVAL_MS * 2, url);
+    const before = readFileSync(specPath(dir, url), "utf8");
+    const args = { dir, url, fetch: (i: string | URL | Request, o?: RequestInit) => fetch(i, o), userAgent: "t", timeoutMs: 100 };
     for (const m of ["500", "junk", "not-openapi", "hang"]) {
       mode = m;
       expect(await refreshSpec({ ...args, now: NOW })).toBe("failed");
-      expect(readFileSync(specPath(dir), "utf8")).toBe(before);
+      expect(readFileSync(specPath(dir, url), "utf8")).toBe(before);
     }
-    expect(readMeta(dir).checked_at).toBe(NOW);
-    expect(readMeta(dir).last_error).toBeTruthy();
+    expect(readMeta(dir, url).checked_at).toBe(NOW);
+    expect(readMeta(dir, url).last_error).toBeTruthy();
     const unreachable = await refreshSpec({ dir, url: "http://127.0.0.1:9/v1/openapi.json", fetch: args.fetch, userAgent: "t", now: NOW });
     expect(unreachable).toBe("failed");
   });
@@ -137,18 +139,19 @@ describe("refreshSpec", () => {
     server = await startMockServer((_req, res) => sendJson(res, 200, fixtureSpec()));
     const configHome = tempDir();
     const dir = join(configHome, "smtpfast");
-    const r = await run(["__refresh-spec", "--url", `${server.url}/v1/openapi.json`, "--config-dir", dir], { configHome });
+    const url = `${server.url}/v1/openapi.json`;
+    const r = await run(["__refresh-spec", "--url", url, "--config-dir", dir], { configHome });
     expect(r.code).toBe(0);
-    expect(existsSync(specPath(dir))).toBe(true);
-    expect(existsSync(metaPath(dir))).toBe(true);
+    expect(existsSync(specPath(dir, url))).toBe(true);
+    expect(existsSync(metaPath(dir, url))).toBe(true);
   });
 });
 
 describe("operations from the cached live spec", () => {
   test("are runnable with the same naming rules", async () => {
-    const configHome = tempDir();
-    seedCache(configHome, specWithNewOperation());
     server = await startMockServer((_req, res) => sendJson(res, 200, { id: "em_1", archived: true }));
+    const configHome = tempDir();
+    seedCache(configHome, specWithNewOperation(), NOW, `${server.url}/v1/openapi.json`);
     const r = await run(["emails", "archive", "em_1", "--reason", "old"], { configHome, env: { SMTPFAST_API_KEY: "k", SMTPFAST_BASE_URL: server.url } });
     expect(r.code).toBe(0);
     expect(server.requests[0]).toMatchObject({ method: "POST", path: "/v1/emails/em_1/archive", json: { reason: "old" } });
@@ -200,6 +203,7 @@ describe("operations from the cached live spec", () => {
     const ids = (JSON.parse(tree.stdout) as Array<{ operationId?: string }>).map((e) => e.operationId);
     for (const id of ["getAdmin", "postAdmin", "listSteal"]) expect(ids).not.toContain(id);
     server = await startMockServer((_req, res) => sendJson(res, 200, {}));
+    seedCache(configHome, spec, NOW, `${server.url}/v1/openapi.json`);
     const r = await run(["steal", "list"], { configHome, env: { SMTPFAST_API_KEY: "k", SMTPFAST_BASE_URL: server.url } });
     expect(r.code).toBe(2);
     expect(server.requests.length).toBe(0);
@@ -220,8 +224,8 @@ describe("operations from the cached live spec", () => {
         ],
       },
     };
-    seedCache(configHome, spec);
     server = await startMockServer((_req, res) => sendJson(res, 200, { object: "list", data: [] }));
+    seedCache(configHome, spec, NOW, `${server.url}/v1/openapi.json`);
     const r = await run(["widgets", "list", "--query-no-debug", "x", "--query-color", "--query-json", "y", "--no-debug", "--no-color"], {
       configHome,
       env: { SMTPFAST_API_KEY: "k", SMTPFAST_BASE_URL: server.url, SMTPFAST_DEBUG: "1" },
@@ -229,7 +233,7 @@ describe("operations from the cached live spec", () => {
     expect(r.code).toBe(0);
     expect(server.requests[0]!.query.toString()).toBe("color=true&json=y&no-debug=x");
     expect(r.stderr).not.toContain("> GET");
-    const help = await run(["widgets", "list", "--help"], { configHome });
+    const help = await run(["widgets", "list", "--help"], { configHome, env: { SMTPFAST_BASE_URL: server.url } });
     expect(help.stdout).toContain("--query-no-debug <string>");
   });
 
@@ -237,9 +241,95 @@ describe("operations from the cached live spec", () => {
     const configHome = tempDir();
     const dir = join(configHome, "smtpfast");
     mkdirSync(dir, { recursive: true });
-    writeFileSync(specPath(dir), "{not json");
+    writeFileSync(specPath(dir, DEFAULT_SPEC_URL), "{not json");
+    writeMeta(dir, DEFAULT_SPEC_URL, { checked_at: NOW });
     const r = await run(["commands", "--json"], { configHome });
     expect(r.code).toBe(0);
     expect(JSON.parse(r.stdout).some((e: { source: string }) => e.source === "live")).toBe(false);
+  });
+});
+
+describe("one cache per server", () => {
+  const STAGING = "https://staging.example.test/api";
+  const STAGING_SPEC = `${STAGING}/v1/openapi.json`;
+  const liveIds = (stdout: string) => (JSON.parse(stdout) as Array<{ source: string; operationId?: string }>).filter((e) => e.source === "live").map((e) => e.operationId);
+
+  test("each spec URL keeps its own files, freshness and ETag", async () => {
+    server = await startMockServer((req, res) => {
+      if (req.headers["if-none-match"]) {
+        res.writeHead(304);
+        res.end();
+        return;
+      }
+      res.writeHead(200, { "content-type": "application/json", etag: `"${req.path}"` });
+      res.end(JSON.stringify(req.path.startsWith("/a/") ? fixtureSpec() : specWithNewOperation()));
+    });
+    const dir = join(tempDir(), "smtpfast");
+    const fetchFn = (i: string | URL | Request, o?: RequestInit) => fetch(i, o);
+    const a = `${server.url}/a/v1/openapi.json`;
+    const b = `${server.url}/b/v1/openapi.json`;
+    expect(await refreshSpec({ dir, url: a, fetch: fetchFn, userAgent: "t", now: NOW })).toBe("updated");
+    // B has never been fetched: no If-None-Match from A's ETag, so the server's 304 cannot be taken for B.
+    expect(await refreshSpec({ dir, url: b, fetch: fetchFn, userAgent: "t", now: NOW })).toBe("updated");
+    expect(server.requests[1]!.headers["if-none-match"]).toBeUndefined();
+    expect(specPath(dir, a)).not.toBe(specPath(dir, b));
+    expect(readMeta(dir, a)).toMatchObject({ url: a, etag: '"/a/v1/openapi.json"', operation_count: 78 });
+    expect(readMeta(dir, b)).toMatchObject({ url: b, etag: '"/b/v1/openapi.json"', operation_count: 80 });
+    expect(maybeStartRefresh({ dir, url: a, now: NOW + 1000, spawn: () => {} })).toBe(false);
+    expect(maybeStartRefresh({ dir, url: "https://other.test/v1/openapi.json", now: NOW + 1000, spawn: () => {} })).toBe(true);
+  });
+
+  test("a 304 to a request without If-None-Match is not taken as unchanged", async () => {
+    server = await startMockServer((_req, res) => {
+      res.writeHead(304);
+      res.end();
+    });
+    const dir = join(tempDir(), "smtpfast");
+    const url = `${server.url}/v1/openapi.json`;
+    expect(await refreshSpec({ dir, url, fetch: (i, o) => fetch(i, o), userAgent: "t", now: NOW })).toBe("failed");
+    expect(existsSync(specPath(dir, url))).toBe(false);
+  });
+
+  test("only the cache of the active base URL is loaded", async () => {
+    const configHome = tempDir();
+    seedCache(configHome, specWithNewOperation(), NOW, STAGING_SPEC);
+    const prod = await run(["commands", "--json"], { configHome });
+    expect(liveIds(prod.stdout)).toEqual([]);
+    const staging = await run(["commands", "--json"], { configHome, env: { SMTPFAST_BASE_URL: STAGING } });
+    expect(liveIds(staging.stdout)).toEqual(["archiveEmail", "listWidgets"]);
+    expect((await run(["widgets", "list"], { configHome, env: { SMTPFAST_API_KEY: "k" } })).code).toBe(2);
+  });
+
+  test("switching profiles switches the cache", async () => {
+    const configHome = tempDir();
+    seedCache(configHome, specWithNewOperation(), NOW, STAGING_SPEC);
+    const dir = join(configHome, "smtpfast");
+    writeFileSync(join(dir, "config.json"), JSON.stringify({ current: "prod", profiles: { prod: { api_key: "k1" }, staging: { api_key: "k2", base_url: STAGING } } }));
+    expect(liveIds((await run(["commands", "--json"], { configHome })).stdout)).toEqual([]);
+    expect(liveIds((await run(["commands", "--json", "--profile", "staging"], { configHome })).stdout)).toEqual(["archiveEmail", "listWidgets"]);
+    expect(liveIds((await run(["--profile", "staging", "commands", "--json"], { configHome })).stdout)).toEqual(["archiveEmail", "listWidgets"]);
+  });
+
+  test("--base-url after a command from the live spec picks that server's cache", async () => {
+    server = await startMockServer((_req, res) => sendJson(res, 200, { object: "list", data: [] }));
+    const configHome = tempDir();
+    seedCache(configHome, specWithNewOperation(), NOW, `${server.url}/v1/openapi.json`);
+    const after = await run(["widgets", "list", "--base-url", server.url], { configHome, env: { SMTPFAST_API_KEY: "k" } });
+    expect(after.code).toBe(0);
+    const before = await run(["--base-url", server.url, "widgets", "list"], { configHome, env: { SMTPFAST_API_KEY: "k" } });
+    expect(before.code).toBe(0);
+    expect(server.requests.map((r) => r.path)).toEqual(["/v1/widgets", "/v1/widgets"]);
+  });
+
+  test("--base-url as another flag's value does not pick that server's cache", async () => {
+    server = await startMockServer((_req, res) => sendJson(res, 200, { object: "list", data: [] }));
+    const configHome = tempDir();
+    const spec = specWithNewOperation();
+    spec.paths["/v1/widgets"].get.parameters = [{ name: "name", in: "query", schema: { type: "string" } }];
+    seedCache(configHome, spec, NOW, STAGING_SPEC);
+    const r = await run(["widgets", "list", "--name", "--base-url", STAGING], { configHome, env: { SMTPFAST_API_KEY: "k", SMTPFAST_BASE_URL: server.url } });
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain('Unknown command "widgets"');
+    expect(server.requests.length).toBe(0);
   });
 });

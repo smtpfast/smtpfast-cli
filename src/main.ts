@@ -12,7 +12,7 @@ import { groupHelp, handHelp, operationHelp, topHelp } from "./help.js";
 import { maybeStartRefresh, refreshSpec, specUrl, updateCheckDisabled } from "./refresh.js";
 import { Registry } from "./registry.js";
 import { operationFlagDefs } from "./request.js";
-import { GLOBAL_FLAGS, type Globals, InterruptError, Session, toGlobals, USER_AGENT } from "./session.js";
+import { activeSpecUrl, GLOBAL_FLAGS, type Globals, InterruptError, Session, toGlobals, USER_AGENT } from "./session.js";
 import type { OperationSpec } from "./spec/types.js";
 import { suggest } from "./util.js";
 
@@ -164,6 +164,23 @@ function apiKeysIn(argv: string[]): string[] {
   return keys;
 }
 
+/**
+ * --base-url and --profile given after the command, as a first guess. The
+ * server decides which cached spec, and so which extra commands, exist,
+ * before the command's own flags are known.
+ */
+function serverFlagsIn(tokens: string[]): Partial<Globals> {
+  const found: Partial<Globals> = {};
+  for (let i = 0; i < tokens.length && tokens[i] !== "--"; i++) {
+    const t = tokens[i]!;
+    for (const [flag, key] of [["--base-url", "baseUrl"], ["--profile", "profile"]] as const) {
+      if (t === flag && tokens[i + 1] !== undefined) found[key] = tokens[i + 1];
+      else if (t.startsWith(`${flag}=`)) found[key] = t.slice(flag.length + 1);
+    }
+  }
+  return found;
+}
+
 /** Run the CLI and return the exit code. Tests call this with a fake context. */
 export async function main(argv: string[], overrides: Partial<Context> = {}): Promise<number> {
   const ctx: Context = { ...defaultContext(), ...overrides };
@@ -185,11 +202,25 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
   try {
     const line = splitCommandLine(argv, GLOBAL_FLAGS, commandWords);
     early = toGlobals(parseArgs(line.globalTokens, GLOBAL_FLAGS).values, ctx.env);
-    const registry = new Registry(configDir(ctx.env, ctx.platform, ctx.homedir));
-    const target = findTarget(registry, line.words, (name) => (helpCommand = name));
+    const dir = configDir(ctx.env, ctx.platform, ctx.homedir);
+    const named = (name: string) => (helpCommand = name);
+    let registry = new Registry(dir, activeSpecUrl(ctx, { ...early, ...serverFlagsIn(line.rest) }));
+    let target = findTarget(registry, line.words, named);
+    let parsed = parseLine(line, target, early);
+    let globals = toGlobals(parsed.global, ctx.env);
+    const url = activeSpecUrl(ctx, globals);
+    if (url !== registry.specUrl) {
+      // The guess was wrong, for example "--profile" was another flag's value. Use the cache of the server the flags really name.
+      const fromCache = target.kind === "op" && registry.isNew(target.op);
+      registry = new Registry(dir, url);
+      if (fromCache) {
+        target = findTarget(registry, line.words, named);
+        parsed = parseLine(line, target, early);
+        globals = toGlobals(parsed.global, ctx.env);
+        if (activeSpecUrl(ctx, globals) !== url) throw new UsageError("Put --base-url and --profile before the command name");
+      }
+    }
     helpCommand = targetName(target);
-    const parsed = parseLine(line, target, early);
-    const globals = toGlobals(parsed.global, ctx.env);
     session = new Session(ctx, globals, registry);
 
     if (!updateCheckDisabled(globals.noUpdateCheck, ctx.env)) {

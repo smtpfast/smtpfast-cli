@@ -105,14 +105,18 @@ making the workflow stop for review when `spec-diff.ts` reports removals.
 
 ## 3. The runtime spec cache
 
-The CLI also keeps a copy of the live spec in its config directory:
+The CLI also keeps a copy of the live spec in its config directory, one
+pair of files per spec URL:
 
 ```
-~/.config/smtpfast/spec.json        the last spec it downloaded
-~/.config/smtpfast/spec-meta.json   when it checked, the ETag, the hash
+~/.config/smtpfast/spec-<hash>.json        the last spec it downloaded from that URL
+~/.config/smtpfast/spec-meta-<hash>.json   the URL, when it checked, the ETag, the hash
 ```
 
-`XDG_CONFIG_HOME` moves both. The rules:
+`<hash>` is the start of the SHA-256 of the spec URL. A staging profile and a
+production profile therefore never share commands, freshness or ETags. A
+command only reads the cache of the base URL it uses. `XDG_CONFIG_HOME` moves
+the files. The rules:
 
 - At most once every 24 hours, a command starts a detached child process that
   downloads `<base-url>/v1/openapi.json`. The command does not wait for it.
