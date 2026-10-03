@@ -24,6 +24,7 @@ export const GROUP_ALIASES: Record<string, string> = {
 /** Extra resource words stripped from operationIds in a group, on top of the group name. */
 export const GROUP_WORDS: Record<string, string[]> = {
   forms: ["signup"],
+  inboxes: ["inbox"],
   received: ["email", "receiving"],
 };
 
@@ -32,6 +33,8 @@ export const COMMAND_OVERRIDES: Record<string, { group?: string; command?: strin
   // PATCH and PUT on the same path. "update" means a partial update everywhere else.
   patchWebhook: { command: "update" },
   updateWebhook: { command: "replace" },
+  // DELETE /v1/contacts (bulk) and DELETE /v1/contacts/{id} would both be "delete".
+  deleteContacts: { command: "delete-many" },
 };
 
 /** Group descriptions for groups whose spec tag has none, or a shared one that reads badly. */

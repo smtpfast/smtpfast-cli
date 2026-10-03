@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { type MockServer, run, sendJson, startMockServer, tempDir } from "./helpers.js";
 
@@ -431,10 +431,15 @@ describe("help", () => {
     expect(r.stdout).toContain("smtpfast: the command-line tool for the SMTPfast email API.");
     expect(r.stdout).toContain("contact-properties");
     const tree = await run(["commands", "--json"]);
-    const entries = JSON.parse(tree.stdout) as Array<{ command: string; source: string }>;
+    const entries = JSON.parse(tree.stdout) as Array<{ command: string; source: string; operationId?: string }>;
     expect(entries.find((e) => e.command === "domains verify")?.source).toBe("hand-written");
     expect(entries.find((e) => e.command === "emails list")?.source).toBe("built-in");
-    expect(entries.filter((e) => e.source === "built-in").length).toBe(77);
+    // Every operation in the built-in manifest is a command, built-in or replaced by a
+    // hand-written one. Counted from the manifest so a spec sync does not break this test.
+    const manifest = JSON.parse(readFileSync(join(import.meta.dir, "..", "src", "generated", "manifest.json"), "utf8"));
+    const fromOperations = entries.filter((e) => e.operationId);
+    expect(fromOperations.length).toBe(manifest.operations.length);
+    expect(fromOperations.every((e) => e.source === "built-in" || e.source === "hand-written")).toBe(true);
   });
 
   test("--version prints the version", async () => {
@@ -456,7 +461,10 @@ describe("completion", () => {
 
   test("__complete suggests groups, commands and flags", async () => {
     expect((await run(["__complete", "dom"])).stdout).toBe("domains\n");
-    expect((await run(["__complete", "webhooks", "re"])).stdout).toBe("replace\nretry-delivery\n");
+    const webhookCommands = (await run(["__complete", "webhooks", ""])).stdout.split("\n").filter(Boolean);
+    const startingWithRe = webhookCommands.filter((c) => c.startsWith("re"));
+    expect(startingWithRe).toContain("replace");
+    expect((await run(["__complete", "webhooks", "re"])).stdout).toBe(startingWithRe.map((c) => `${c}\n`).join(""));
     const flags = (await run(["__complete", "emails", "send", "--su"])).stdout;
     expect(flags).toBe("--subject\n");
     expect((await run(["__complete", "--profile", "x", "logs", "t"])).stdout).toBe("tail\n");

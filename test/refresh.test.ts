@@ -186,7 +186,8 @@ describe("operations from the cached live spec", () => {
 
   test("a cache with the same operations shows nothing new", async () => {
     const configHome = tempDir();
-    seedCache(configHome, fixtureSpec());
+    // The built-in snapshot, not the test fixture: after a spec sync the two differ.
+    seedCache(configHome, JSON.parse(readFileSync(join(import.meta.dir, "..", "spec", "openapi.json"), "utf8")));
     const version = await run(["--version"], { configHome, tty: true });
     expect(version.stdout).toContain("same as built in");
     expect(version.stdout).not.toContain("newer");
