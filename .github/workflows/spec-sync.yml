@@ -3,7 +3,8 @@ name: Spec sync
 # Keeps the CLI in step with the API. The smtpfast app sends a
 # repository_dispatch (spec-changed) after a deploy that changed the spec.
 # The daily run catches anything the dispatch missed. When the spec changed,
-# this regenerates the manifest and README, tests, bumps the minor version,
+# this regenerates the manifest and README, tests, bumps the version (minor
+# when a command, argument or flag changed, patch when only spec text did),
 # tags, and hands over to the release workflow. See docs/keeping-in-sync.md.
 
 on:
@@ -77,11 +78,12 @@ jobs:
           bun run typecheck
           bun test
 
-      - name: Bump the minor version and write the changelog
+      - name: Bump the version and write the changelog
         if: steps.diff.outputs.changed == 'true'
         id: bump
         run: |
-          npm version minor --no-git-tag-version
+          level=$(bun scripts/spec-diff.ts "$RUNNER_TEMP/old-manifest.json" src/generated/manifest.json --level)
+          npm version "$level" --no-git-tag-version
           bun scripts/sync-version.ts
           version=$(node -p "require('./package.json').version")
           bun scripts/spec-diff.ts "$RUNNER_TEMP/old-manifest.json" src/generated/manifest.json --changelog "$version" | tee "$RUNNER_TEMP/notes.md"

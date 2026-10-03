@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { execFileSync, spawnSync } from "node:child_process";
 import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { diffManifests, prependChangelog, renderDiff } from "../scripts/spec-diff.js";
+import { bumpLevel, diffManifests, prependChangelog, renderDiff } from "../scripts/spec-diff.js";
 import { versionSource } from "../scripts/sync-version.js";
 import { buildManifest } from "../src/spec/build.js";
 import { fixtureSpec, tempDir } from "./helpers.js";
@@ -30,6 +30,19 @@ describe("spec-diff", () => {
   test("a text-only spec change says so", () => {
     const m = buildManifest(fixtureSpec()).manifest;
     expect(renderDiff(diffManifests(m, m))).toContain("no command, argument or flag did");
+  });
+
+  test("a text-only change is a patch release, a command change is a minor one", () => {
+    const before = buildManifest(fixtureSpec()).manifest;
+    const textOnly = fixtureSpec();
+    textOnly.paths["/v1/emails"].get.summary = "List the emails you sent";
+    expect(bumpLevel(diffManifests(before, buildManifest(textOnly).manifest))).toBe("patch");
+    const newFlag = fixtureSpec();
+    newFlag.paths["/v1/emails"].get.parameters.push({ name: "tag", in: "query", schema: { type: "string" } });
+    expect(bumpLevel(diffManifests(before, buildManifest(newFlag).manifest))).toBe("minor");
+    const removed = fixtureSpec();
+    delete removed.paths["/v1/analytics"];
+    expect(bumpLevel(diffManifests(before, buildManifest(removed).manifest))).toBe("minor");
   });
 
   test("changelog entries go above the previous release", () => {
@@ -61,6 +74,13 @@ describe("spec sync workflow", () => {
     expect(diff).toContain("jq -S -c . spec/openapi.json");
     expect(diff).toContain("git diff --quiet -- src/generated README.md");
     expect(diff).not.toContain("git diff --quiet -- spec");
+  });
+
+  test("the version bump comes from the command diff, not always minor", () => {
+    const bump = step("Bump the version and write the changelog");
+    expect(bump).toContain('--level)');
+    expect(bump).toContain('npm version "$level" --no-git-tag-version');
+    expect(bump).not.toContain("npm version minor");
   });
 
   test("every push sends main and the tag together, atomically", () => {

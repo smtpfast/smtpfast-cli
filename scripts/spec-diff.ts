@@ -4,6 +4,7 @@
  *
  *   bun scripts/spec-diff.ts <old-manifest.json> <new-manifest.json>
  *   bun scripts/spec-diff.ts <old> <new> --changelog 0.3.0   also prepend an entry to CHANGELOG.md
+ *   bun scripts/spec-diff.ts <old> <new> --level             print "minor" or "patch" only
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -56,6 +57,15 @@ export function diffManifests(before: Manifest, after: Manifest): ManifestDiff {
   return { added, removed, changed };
 }
 
+/**
+ * The version bump a diff deserves: minor when a command, argument or flag
+ * was added, removed or changed, patch when only the spec text changed (help
+ * text, descriptions, examples).
+ */
+export function bumpLevel(diff: ManifestDiff): "minor" | "patch" {
+  return diff.added.length > 0 || diff.removed.length > 0 || diff.changed.length > 0 ? "minor" : "patch";
+}
+
 export function renderDiff(diff: ManifestDiff): string {
   const lines: string[] = [];
   if (diff.added.length > 0) {
@@ -87,12 +97,17 @@ export function prependChangelog(changelog: string, version: string, date: strin
 if (import.meta.main) {
   const [oldPath, newPath] = process.argv.slice(2);
   if (!oldPath || !newPath) {
-    process.stderr.write("Usage: bun scripts/spec-diff.ts <old-manifest.json> <new-manifest.json> [--changelog <version>]\n");
+    process.stderr.write("Usage: bun scripts/spec-diff.ts <old-manifest.json> <new-manifest.json> [--changelog <version> | --level]\n");
     process.exit(2);
   }
   const before = existsSync(oldPath) ? (JSON.parse(readFileSync(oldPath, "utf8")) as Manifest) : ({ operations: [] } as unknown as Manifest);
   const after = JSON.parse(readFileSync(newPath, "utf8")) as Manifest;
-  const notes = renderDiff(diffManifests(before, after));
+  const diff = diffManifests(before, after);
+  if (process.argv.includes("--level")) {
+    process.stdout.write(`${bumpLevel(diff)}\n`);
+    process.exit(0);
+  }
+  const notes = renderDiff(diff);
   const i = process.argv.indexOf("--changelog");
   if (i !== -1 && process.argv[i + 1]) {
     const file = join(ROOT, "CHANGELOG.md");
