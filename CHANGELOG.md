@@ -2,6 +2,12 @@
 
 All notable changes to the smtpfast CLI. The spec sync workflow adds an entry for each release it publishes.
 
+## [0.2.2] - 2026-10-03
+
+### Changed
+
+- The release workflow no longer reads an npm token at all; publishing relies only on trusted publishing.
+
 ## [0.2.1] - 2026-10-03
 
 ### Changed
