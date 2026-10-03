@@ -8831,7 +8831,7 @@
     },
     "/v1/emails/receiving/{id}/reply": {
       "post": {
-        "description": "Send a reply to a received message through the normal send pipeline (credits, suppression, safety checks, webhooks). The reply is threaded with In-Reply-To and References and linked to the received message. From defaults to the receiving address when its domain is verified for sending, otherwise to the same local part on the nearest verified parent domain with Reply-To set to the receiving address; pass from to pick another verified reply address. To defaults to the sender's Reply-To, then From. Requires the inbound:read and email:send scopes.",
+        "description": "Send a reply to a received message through the normal send pipeline (credits, suppression, safety checks, webhooks). The reply is threaded with In-Reply-To and References and linked to the received message. From defaults to the receiving address when it can send (its domain is verified, or it is a receiving subdomain of a verified domain), otherwise to the same local part on the nearest verified parent domain with Reply-To set to the receiving address; pass from to pick another verified reply address. To defaults to the sender's Reply-To, then From. Requires the inbound:read and email:send scopes.",
         "operationId": "replyToReceivedEmail",
         "parameters": [
           {
@@ -10522,7 +10522,7 @@
         ]
       },
       "post": {
-        "description": "Organise one address on your own domain as an inbox with threads, labels, folders and drafts. The domain must be verified for sending (mail from the inbox is sent from its address) and have receiving turned on. SMTPfast never provisions addresses on a shared domain, so forwarding: true is refused and receiving_address is always null. Mail the address already received in the last 30 days is filed into threads. Requires the domain:write scope on a key created by a team owner or admin.",
+        "description": "Organise one address on your own domain as an inbox with threads, labels, folders and drafts. The domain must have receiving turned on and be able to send (mail from the inbox is sent from its address): verified for sending, or a receiving subdomain of a verified domain. SMTPfast never provisions addresses on a shared domain, so forwarding: true is refused and receiving_address is always null. Mail the address already received in the last 30 days is filed into threads. Requires the domain:write scope on a key created by a team owner or admin.",
         "operationId": "createInbox",
         "requestBody": {
           "content": {
