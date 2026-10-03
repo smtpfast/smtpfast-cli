@@ -7668,20 +7668,8 @@
     },
     "/v1/emails/batch": {
       "post": {
-        "description": "Queue up to 100 emails in a single request. The body is a JSON array of email objects, each using the same shape as the single-send endpoint. Validation runs on every item before any are queued — a malformed item rejects the whole batch with 400. Suppressed recipients (to, cc and bcc) are dropped per row; a row left with no deliverable To recipient is recorded with status \"failed\".",
+        "description": "Queue up to 100 emails in a single request. The body is a JSON array of email objects, each using the same shape as the single-send endpoint. Validation runs on every item before any are queued — a malformed item rejects the whole batch with 400. Suppressed recipients (to, cc and bcc) are dropped per row; a row left with no deliverable To recipient is recorded with status \"failed\". The batch endpoint does not take an Idempotency-Key yet: a retried batch sends again, so retry only when the first request failed.",
         "operationId": "sendEmailBatch",
-        "parameters": [
-          {
-            "description": "A unique key; up to 255 characters are used. Repeating a request with the same key and body within 24 hours returns the first result instead of sending again.",
-            "in": "header",
-            "name": "Idempotency-Key",
-            "required": false,
-            "schema": {
-              "maxLength": 255,
-              "type": "string"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
