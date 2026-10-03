@@ -2,6 +2,12 @@
 
 All notable changes to the smtpfast CLI. The spec sync workflow adds an entry for each release it publishes.
 
+## [0.2.1] - 2026-10-03
+
+### Changed
+
+- Releases are published with npm trusted publishing: GitHub Actions proves its identity to npm, so no npm token is stored anywhere. Each version carries provenance that links it to the commit and workflow that built it.
+
 ## [0.2.0] - 2026-10-03
 
 Updated from the live API spec.
