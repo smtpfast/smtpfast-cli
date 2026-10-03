@@ -14,9 +14,6 @@ on:
         description: Tag to release, like v0.2.0
         required: true
         type: string
-    secrets:
-      NPM_TOKEN:
-        required: false
   workflow_dispatch:
     inputs:
       tag:
@@ -86,14 +83,11 @@ jobs:
         run: ./dist-bin/smtpfast-linux-x64 --version
 
       # Trusted publishing (OIDC) needs npm 11.5.1 or later; Node 22 ships npm 10.
-      # With a trusted publisher set up on npmjs.com, npm uses the workflow's
-      # identity and NPM_TOKEN is not needed. Without one, it falls back to the token.
+      # npm proves this workflow's identity to the registry, so no token is used.
       - name: Update npm for trusted publishing
         run: npm install -g npm@^11.5.1
 
       - name: Publish to npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           if npm view "smtpfast@$VERSION" version > /dev/null 2>&1; then
             echo "smtpfast@$VERSION is already on npm, skipping"

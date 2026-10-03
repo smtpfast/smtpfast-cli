@@ -101,7 +101,7 @@ so a forged dispatch can at most start a run that finds nothing to do.
   two GitHub Actions publishers for `smtpfast/smtpfast-cli`: workflow
   `release.yml` (a tag pushed by a person or a manual run) and workflow
   `spec-sync.yml` (npm checks the calling workflow when spec sync starts a
-  release). An `NPM_TOKEN` secret still works as a fallback if neither is set.
+  release).
 - Under Settings, Actions, General, set workflow permissions to read and write.
 - If `main` is protected, let the `github-actions[bot]` push to it, or the
   commit step fails. The tests already ran in the same job.
