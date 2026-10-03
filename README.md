@@ -181,7 +181,7 @@ Errors go to stderr with the HTTP status and the API's message. When a key lacks
 New API endpoints become commands without code changes in this repo:
 
 - Each release ships a manifest generated from the API's OpenAPI spec.
-- When the API spec changes, a workflow in this repo regenerates the manifest, runs the tests and publishes a new minor version.
+- When the API spec changes, a workflow in this repo regenerates the manifest, runs the tests and publishes a new version: minor when commands or flags change, patch when only help text does.
 - Between releases, the CLI downloads the live spec in the background, at most once a day. Operations that are new in it run right away. `smtpfast --version` and `smtpfast commands` tell you when your version is behind.
 
 The background download never blocks or fails a command, and it never sends your key. Each base URL has its own cache, so a staging profile never shows production's commands. Turn it off with `--no-update-check` or `SMTPFAST_NO_UPDATE_CHECK=1`. [docs/keeping-in-sync.md](docs/keeping-in-sync.md) explains the whole flow.

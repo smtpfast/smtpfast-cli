@@ -9,7 +9,7 @@ Three layers make that work. Each one covers a gap the others leave.
 | Layer | When it runs | What it does |
 | --- | --- | --- |
 | Generated manifest | Every build | Turns `spec/openapi.json` into `src/generated/manifest.json`, one entry per operation. |
-| Spec sync workflow | After an API deploy, and daily | Downloads the live spec. If it changed, regenerates, tests, bumps the minor version and publishes. |
+| Spec sync workflow | After an API deploy, and daily | Downloads the live spec. If it changed, regenerates, tests, bumps the version (minor for command changes, patch for text-only changes) and publishes. |
 | Runtime spec cache | At most once a day on each user's machine | Downloads the live spec in the background, so new operations run even before the user upgrades. |
 
 ## 1. The generated manifest
@@ -78,7 +78,7 @@ Each run:
 2. Stops if the spec, compared with sorted keys, and the generated files did
    not change. A spec that only reorders keys does not make a release.
 3. Runs the type check and the tests. A failure stops the release.
-4. Bumps the minor version with `npm version minor`.
+4. Bumps the version with `npm version minor` when a command, argument or flag was added, removed or changed, and `npm version patch` when only spec text changed (`bun scripts/spec-diff.ts <old> <new> --level` decides).
 5. Writes a changelog entry with `scripts/spec-diff.ts`, which lists new,
    changed and removed commands.
 6. Commits, tags `vX.Y.Z`, and pushes `main` and the tag in one atomic push,
