@@ -96,8 +96,12 @@ so a forged dispatch can at most start a run that finds nothing to do.
 
 ### Setup in this repo
 
-- Add an `NPM_TOKEN` secret: an npm granular access token with publish rights
-  for the `smtpfast` package.
+- Publishing uses npm trusted publishing, so no npm token is stored. On
+  npmjs.com, under the `smtpfast` package's Settings, Trusted publishing, add
+  two GitHub Actions publishers for `smtpfast/smtpfast-cli`: workflow
+  `release.yml` (a tag pushed by a person or a manual run) and workflow
+  `spec-sync.yml` (npm checks the calling workflow when spec sync starts a
+  release). An `NPM_TOKEN` secret still works as a fallback if neither is set.
 - Under Settings, Actions, General, set workflow permissions to read and write.
 - If `main` is protected, let the `github-actions[bot]` push to it, or the
   commit step fails. The tests already ran in the same job.
