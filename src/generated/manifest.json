@@ -2,8 +2,8 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "4370f7bf562421bb44c8f167c1390664ce7c4965666a4b4dcd90e47d2715ef33",
-  "operationCount": 78,
+  "specHash": "64387ce65b141edf5d3d65d6e6a574de1a2bc528b2a358743ac14446b734929b",
+  "operationCount": 135,
   "groups": [
     {
       "name": "account",
@@ -42,6 +42,10 @@
       "description": "Signup forms and pending double opt-in signups"
     },
     {
+      "name": "inboxes",
+      "description": "Addresses on your own domains organised as mailboxes: threads, labels, folders and drafts"
+    },
+    {
       "name": "logs",
       "description": "The event log behind the Logs page"
     },
@@ -56,6 +60,14 @@
     {
       "name": "suppressions",
       "description": "Addresses that SMTPfast will not send to"
+    },
+    {
+      "name": "team",
+      "description": "Members and invitations"
+    },
+    {
+      "name": "templates",
+      "description": "Reusable emails with variables, Resend-compatible: draft, publish, then send by id or alias"
     },
     {
       "name": "webhooks",
@@ -164,7 +176,7 @@
             "type": "array",
             "required": false,
             "items": "string",
-            "description": "Optional list of scopes to restrict the key. Available: email:send, email:read, domain:read, domain:write, contact:read, contact:write, form:read, form:write, webhook:read, webhook:write, apikey:manage. If omitted the key gets the default set (everything except apikey:manage). Listing, creating or revoking keys through the API requires apikey:manage.",
+            "description": "Optional list of scopes to restrict the key. Available: email:send, email:read, domain:read, domain:write, contact:read, contact:write, form:read, form:write, webhook:read, webhook:write, logs:read, inbound:read, inbound:delete, team:read, team:manage, apikey:manage. If omitted the key gets the default set: everything except logs:read, inbound:read, inbound:delete, team:read, team:manage and apikey:manage. Listing, creating or revoking keys through the API requires apikey:manage.",
             "example": "email:send,domain:read"
           }
         ]
@@ -257,6 +269,31 @@
           }
         ]
       }
+    },
+    {
+      "operationId": "getBroadcastAudience",
+      "method": "GET",
+      "path": "/v1/broadcasts/audience",
+      "group": "broadcasts",
+      "command": "audience",
+      "summary": "Preview a broadcast audience",
+      "description": "How many contacts a broadcast to all contacts, or to one segment, would reach after unsubscribes, suppressions and invalid addresses are skipped, plus the plan's broadcast allowance this month. Not in Resend. Requires the email:read scope.",
+      "tags": [
+        "Broadcasts"
+      ],
+      "pathParams": [],
+      "queryParams": [
+        {
+          "name": "segment_id",
+          "flag": "segment-id",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Preview one segment instead of all contacts"
+        }
+      ],
+      "headerParams": [],
+      "body": null
     },
     {
       "operationId": "cancelBroadcast",
@@ -376,7 +413,7 @@
             "flag": "name",
             "in": "body",
             "type": "string",
-            "required": true,
+            "required": false,
             "example": "May product update"
           },
           {
@@ -411,6 +448,15 @@
             "type": "string",
             "required": false,
             "example": "New features for {{contact.first_name|there}}"
+          },
+          {
+            "name": "template_id",
+            "flag": "template-id",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Not in Resend, and only on create (PATCH ignores it). Start from a template (id or alias): its current content, as the template editor shows it, is copied into the new draft, with declared fallbacks written inline. Fields sent alongside win. name defaults to the template's name.",
+            "example": "product-update"
           },
           {
             "name": "text",
@@ -552,6 +598,94 @@
             "canceled"
           ],
           "default": "all"
+        }
+      ],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listBroadcastRecipients",
+      "method": "GET",
+      "path": "/v1/broadcasts/{id}/recipients",
+      "group": "broadcasts",
+      "command": "recipients",
+      "summary": "List broadcast recipients",
+      "description": "Resend-compatible: recipients of a broadcast for one event type (sent, delivered, opened, clicked, bounced, complained, unsubscribed, suppressed), newest first, with after/before cursors. Each has contact_id; opened and clicked add count, clicked adds clicked_links, bounced adds bounce_type. Without type, every recipient (not in Resend). Requires the email:read scope.",
+      "tags": [
+        "Broadcasts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The broadcast ID"
+        }
+      ],
+      "queryParams": [
+        {
+          "name": "after",
+          "flag": "after",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Return recipients after this recipient ID"
+        },
+        {
+          "name": "before",
+          "flag": "before",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Return recipients before this recipient ID"
+        },
+        {
+          "name": "bounce_type",
+          "flag": "bounce-type",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "With type=bounced only",
+          "enum": [
+            "permanent",
+            "transient",
+            "undetermined"
+          ]
+        },
+        {
+          "name": "email",
+          "flag": "email",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Recipients whose address contains this text"
+        },
+        {
+          "name": "limit",
+          "flag": "limit",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "default": 20
+        },
+        {
+          "name": "type",
+          "flag": "type",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "enum": [
+            "sent",
+            "delivered",
+            "opened",
+            "clicked",
+            "bounced",
+            "complained",
+            "unsubscribed",
+            "suppressed"
+          ]
         }
       ],
       "headerParams": [],
@@ -711,7 +845,7 @@
             "flag": "name",
             "in": "body",
             "type": "string",
-            "required": true,
+            "required": false,
             "example": "May product update"
           },
           {
@@ -746,6 +880,15 @@
             "type": "string",
             "required": false,
             "example": "New features for {{contact.first_name|there}}"
+          },
+          {
+            "name": "template_id",
+            "flag": "template-id",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Not in Resend, and only on create (PATCH ignores it). Start from a template (id or alias): its current content, as the template editor shows it, is copied into the new draft, with declared fallbacks written inline. Fields sent alongside win. name defaults to the template's name.",
+            "example": "product-update"
           },
           {
             "name": "text",
@@ -788,7 +931,41 @@
       "pathParams": [],
       "queryParams": [],
       "headerParams": [],
-      "body": null
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "fallback_value",
+            "flag": "fallback-value",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Used when a contact has no value",
+            "nullable": true
+          },
+          {
+            "name": "key",
+            "flag": "key",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "example": "plan"
+          },
+          {
+            "name": "type",
+            "flag": "type",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "enum": [
+              "string",
+              "number"
+            ]
+          }
+        ]
+      }
     },
     {
       "operationId": "deleteContactProperty",
@@ -874,6 +1051,54 @@
           "type": "string",
           "required": true,
           "description": "The contact property ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "fallback_value",
+            "flag": "fallback-value",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "description": "The new fallback; null clears it. key and type cannot change.",
+            "nullable": true
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "addContactToSegment",
+      "method": "POST",
+      "path": "/v1/contacts/{id}/segments/{segment_id}",
+      "group": "contacts",
+      "command": "add-to-segment",
+      "summary": "Add a contact to a segment",
+      "description": "Resend-compatible. Adding a contact that is already in the segment is not an error. Requires the contact:write scope.",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The contact ID or email address"
+        },
+        {
+          "name": "segment_id",
+          "flag": "segment-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The segment ID"
         }
       ],
       "queryParams": [],
@@ -994,6 +1219,58 @@
       "queryParams": [],
       "headerParams": [],
       "body": null
+    },
+    {
+      "operationId": "deleteContacts",
+      "method": "DELETE",
+      "path": "/v1/contacts",
+      "group": "contacts",
+      "command": "delete-many",
+      "summary": "Delete contacts in bulk",
+      "description": "Delete up to 500 contacts by id with {\"ids\": [...]}, or the whole audience with {\"confirm\": \"all\"} (optionally with status subscribed or unsubscribed). Not in Resend. Deleting the whole audience needs an owner or admin. Requires the contact:write scope.",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "confirm",
+            "flag": "confirm",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "enum": [
+              "all"
+            ]
+          },
+          {
+            "name": "ids",
+            "flag": "ids",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string"
+          },
+          {
+            "name": "status",
+            "flag": "status",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "enum": [
+              "all",
+              "subscribed",
+              "unsubscribed"
+            ]
+          }
+        ]
+      }
     },
     {
       "operationId": "exportContacts",
@@ -1133,6 +1410,64 @@
           "default": "all"
         }
       ],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "removeContactFromSegment",
+      "method": "DELETE",
+      "path": "/v1/contacts/{id}/segments/{segment_id}",
+      "group": "contacts",
+      "command": "remove-from-segment",
+      "summary": "Remove a contact from a segment",
+      "description": "Resend-compatible. The contact stays in the audience. Requires the contact:write scope.",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The contact ID or email address"
+        },
+        {
+          "name": "segment_id",
+          "flag": "segment-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The segment ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listContactSegments",
+      "method": "GET",
+      "path": "/v1/contacts/{id}/segments",
+      "group": "contacts",
+      "command": "segments",
+      "summary": "List a contact's segments",
+      "description": "The segments one contact belongs to. The contact can be named by id or email address, like Resend. Requires the contact:read scope.",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The contact ID or email address"
+        }
+      ],
+      "queryParams": [],
       "headerParams": [],
       "body": null
     },
@@ -1311,6 +1646,31 @@
       "body": null
     },
     {
+      "operationId": "deleteDomain",
+      "method": "DELETE",
+      "path": "/v1/domains/{id}",
+      "group": "domains",
+      "command": "delete",
+      "summary": "Delete a domain",
+      "description": "Resend-compatible. Removes the domain and its sending identity at the provider. Mail from it stops at once. Requires the domain:write scope and an owner or admin.",
+      "tags": [
+        "Domains"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The domain ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
       "operationId": "getDomain",
       "method": "GET",
       "path": "/v1/domains/{id}",
@@ -1347,6 +1707,56 @@
         "Domains"
       ],
       "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "startCloudflareDomainConnect",
+      "method": "POST",
+      "path": "/v1/domains/{id}/domain-connect/cloudflare",
+      "group": "domains",
+      "command": "start-cloudflare-connect",
+      "summary": "Set up sending DNS on Cloudflare in one click",
+      "description": "For a domain whose DNS is on Cloudflare, returns a signed Domain Connect link. The domain owner opens it, approves the change in Cloudflare, and the sending records are added for them. Not in Resend. Requires the domain:write scope.",
+      "tags": [
+        "Domains"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The domain ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "startCloudflareInboundDomainConnect",
+      "method": "POST",
+      "path": "/v1/domains/{id}/domain-connect/cloudflare-inbound",
+      "group": "domains",
+      "command": "start-cloudflare-inbound-connect",
+      "summary": "Set up receiving DNS on Cloudflare in one click",
+      "description": "Like the sending version, for the MX record that turns on receiving. Not in Resend. Requires the domain:write scope.",
+      "tags": [
+        "Domains"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The domain ID"
+        }
+      ],
       "queryParams": [],
       "headerParams": [],
       "body": null
@@ -1437,6 +1847,47 @@
         }
       ],
       "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listClickedLinks",
+      "method": "GET",
+      "path": "/v1/emails/clicked-links",
+      "group": "emails",
+      "command": "clicked-links",
+      "summary": "List clicked links",
+      "description": "Clicked links across all email over the last N days, ranked by clicks, with unique clicks (distinct emails). Pass url for one link's totals, daily series and the emails it was clicked in. Not in Resend, which lists clicked links per broadcast only. Requires the email:read scope.",
+      "tags": [
+        "Emails"
+      ],
+      "pathParams": [],
+      "queryParams": [
+        {
+          "name": "days",
+          "flag": "days",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "Window in days, 1 to 365, default 30"
+        },
+        {
+          "name": "domain_id",
+          "flag": "domain-id",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Only clicks in email sent from this domain"
+        },
+        {
+          "name": "url",
+          "flag": "url",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Detail for one exact destination URL"
+        }
+      ],
       "headerParams": [],
       "body": null
     },
@@ -1533,6 +1984,103 @@
       "body": null
     },
     {
+      "operationId": "getEmailMetrics",
+      "method": "GET",
+      "path": "/v1/emails/metrics",
+      "group": "emails",
+      "command": "metrics",
+      "summary": "Retrieve email metrics",
+      "description": "Resend-compatible counts and rates over a date range, for transactional and broadcast email together. Leave dimensions out for one totals row; add period, domain, email or broadcast (email and broadcast cannot be combined) to break the numbers down. Each lifecycle timestamp counts in its own period. Sends where every recipient is the SES mailbox simulator are left out. Rates are percentages with one decimal. Open and click metrics need tracking on. Requires the email:read scope.",
+      "tags": [
+        "Emails"
+      ],
+      "pathParams": [],
+      "queryParams": [
+        {
+          "name": "broadcast_id",
+          "flag": "broadcast-id",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated broadcast ids, up to 100. Not with email."
+        },
+        {
+          "name": "dimensions",
+          "flag": "dimensions",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated: period, domain, email, broadcast.",
+          "example": "period,domain"
+        },
+        {
+          "name": "domain_id",
+          "flag": "domain-id",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated domain ids, up to 100."
+        },
+        {
+          "name": "email_id",
+          "flag": "email-id",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated email ids, up to 100. Not with broadcast."
+        },
+        {
+          "name": "end_date",
+          "flag": "end-date",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "ISO 8601 date (the whole day is included) or datetime. Future values are clamped to now. Defaults to now."
+        },
+        {
+          "name": "granularity",
+          "flag": "granularity",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Period size when period is a dimension. Default daily.",
+          "enum": [
+            "hourly",
+            "daily",
+            "weekly",
+            "monthly"
+          ]
+        },
+        {
+          "name": "metrics",
+          "flag": "metrics",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated metrics to include. Omit for all.",
+          "example": "sent,delivered,open_rate"
+        },
+        {
+          "name": "start_date",
+          "flag": "start-date",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "ISO 8601 date or datetime. A date means midnight in timezone. Defaults to 6 days before end_date."
+        },
+        {
+          "name": "timezone",
+          "flag": "timezone",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "IANA time zone for dates and periods, e.g. America/New_York. Default UTC."
+        }
+      ],
+      "headerParams": [],
+      "body": null
+    },
+    {
       "operationId": "sendEmail",
       "method": "POST",
       "path": "/v1/emails",
@@ -1543,6 +2091,7 @@
       "tags": [
         "Emails"
       ],
+      "idempotencyKey": true,
       "pathParams": [],
       "queryParams": [],
       "headerParams": [],
@@ -1561,13 +2110,40 @@
             "description": "Up to 10 files, base64 encoded, 25 MB per message in total. A content_id makes the part inline: reference it from the HTML as cid:<content_id>."
           },
           {
+            "name": "bcc",
+            "flag": "bcc",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string",
+            "description": "Bcc recipients"
+          },
+          {
+            "name": "cc",
+            "flag": "cc",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string",
+            "description": "Cc recipients"
+          },
+          {
             "name": "from",
             "flag": "from",
             "in": "body",
             "type": "string",
-            "required": true,
+            "required": false,
             "description": "Sender email address (must belong to a verified domain)",
             "example": "hello@yourapp.com"
+          },
+          {
+            "name": "headers",
+            "flag": "headers",
+            "in": "body",
+            "type": "object",
+            "required": false,
+            "description": "Custom headers, e.g. X-Entity-Ref-ID",
+            "example": "{\"X-Entity-Ref-ID\":\"abc-123\"}"
           },
           {
             "name": "html",
@@ -1579,13 +2155,49 @@
             "example": "<h1>Hello!</h1><p><a href=\"{{unsubscribe_url}}\">Unsubscribe</a></p>"
           },
           {
+            "name": "reply_to",
+            "flag": "reply-to",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string",
+            "description": "Reply-To address or addresses"
+          },
+          {
+            "name": "scheduled_at",
+            "flag": "scheduled-at",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Send later, up to 30 days ahead (ISO 8601)",
+            "example": "2026-04-10T14:00:00Z"
+          },
+          {
             "name": "subject",
             "flag": "subject",
             "in": "body",
             "type": "string",
-            "required": true,
+            "required": false,
             "description": "Email subject line",
             "example": "Welcome!"
+          },
+          {
+            "name": "tags",
+            "flag": "tags",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "object",
+            "description": "Up to 50 name/value pairs, returned on events and webhooks and filterable in logs",
+            "example": "[{\"name\":\"category\",\"value\":\"welcome\"}]"
+          },
+          {
+            "name": "template",
+            "flag": "template",
+            "in": "body",
+            "type": "object",
+            "required": false,
+            "description": "Send a published template instead of html and text, as in Resend. The published version is rendered with the variables, then every normal send rule applies. from, subject and reply_to in the request win over the template's defaults; a subject in the request is rendered with the same variables."
           },
           {
             "name": "text",
@@ -1603,7 +2215,7 @@
             "type": "array",
             "required": true,
             "items": "string",
-            "description": "List of recipient email addresses",
+            "description": "One recipient address, or a list of them",
             "example": "user@example.com"
           }
         ]
@@ -1620,6 +2232,7 @@
       "tags": [
         "Emails"
       ],
+      "idempotencyKey": true,
       "pathParams": [],
       "queryParams": [],
       "headerParams": [],
@@ -2034,6 +2647,58 @@
       "body": null
     },
     {
+      "operationId": "previewFormWelcomeEmail",
+      "method": "POST",
+      "path": "/v1/forms/{id}/welcome-preview",
+      "group": "forms",
+      "command": "preview-welcome-email",
+      "summary": "Preview a form's welcome email",
+      "description": "Render the welcome email of a signup form for a sample contact, without sending it. Pass subject and markdown to preview unsaved changes. Not in Resend. Requires the form:read scope.",
+      "tags": [
+        "Forms"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The form ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": false,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "markdown",
+            "flag": "markdown",
+            "in": "body",
+            "type": "string",
+            "required": false
+          },
+          {
+            "name": "sample",
+            "flag": "sample",
+            "in": "body",
+            "type": "object",
+            "required": false
+          },
+          {
+            "name": "subject",
+            "flag": "subject",
+            "in": "body",
+            "type": "string",
+            "required": false
+          }
+        ]
+      }
+    },
+    {
       "operationId": "removePendingSignup",
       "method": "DELETE",
       "path": "/v1/forms/{id}/pending/{pendingId}",
@@ -2197,6 +2862,1246 @@
             "type": "string",
             "required": false,
             "nullable": true
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "createInbox",
+      "method": "POST",
+      "path": "/v1/inboxes",
+      "group": "inboxes",
+      "command": "create",
+      "summary": "Create an inbox",
+      "description": "Organise one address on your own domain as an inbox with threads, labels, folders and drafts. The domain must be verified for sending (mail from the inbox is sent from its address) and have receiving turned on. SMTPfast never provisions addresses on a shared domain, so forwarding: true is refused and receiving_address is always null. Mail the address already received in the last 30 days is filed into threads. Requires the domain:write scope on a key created by a team owner or admin.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "email_address",
+            "flag": "email-address",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "description": "A plain address on one of your domains, such as support@example.com"
+          },
+          {
+            "name": "forwarding",
+            "flag": "forwarding",
+            "in": "body",
+            "type": "boolean",
+            "required": false,
+            "description": "Not available: must be false or omitted. Inboxes receive through your domain's MX record."
+          },
+          {
+            "name": "from_name",
+            "flag": "from-name",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "The name recipients see. A plain name, not a Name <email> address."
+          },
+          {
+            "name": "name",
+            "flag": "name",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Internal name. Defaults to email_address."
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "createInboxDraft",
+      "method": "POST",
+      "path": "/v1/inboxes/{inbox_id}/drafts",
+      "group": "inboxes",
+      "command": "create-draft",
+      "summary": "Create a draft",
+      "description": "Create a draft for a person to review and send. Nothing is sent, so it needs only the inbound:read scope: give an agent a key without email:send and every message it writes waits here for approval. Omit thread_id for a new conversation; send thread_id and reply_to_email_id together for a reply (recipients are not copied, set to before sending). At least one of to, cc, bcc, subject, text or html must be non-empty; 50 recipients at most; subject up to 900 characters (Resend allows 2000; a longer subject could never be sent here). Returns 201 for a new draft, or 200 when an unsent reply draft for that message already exists, updated with the fields sent.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "bcc",
+            "flag": "bcc",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string",
+            "nullable": true
+          },
+          {
+            "name": "cc",
+            "flag": "cc",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string",
+            "nullable": true
+          },
+          {
+            "name": "html",
+            "flag": "html",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "nullable": true
+          },
+          {
+            "name": "reply_to_email_id",
+            "flag": "reply-to-email-id",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "The message to reply to. Send with thread_id."
+          },
+          {
+            "name": "subject",
+            "flag": "subject",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "nullable": true
+          },
+          {
+            "name": "text",
+            "flag": "text",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "nullable": true
+          },
+          {
+            "name": "thread_id",
+            "flag": "thread-id",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "The thread to reply in. Send with reply_to_email_id."
+          },
+          {
+            "name": "to",
+            "flag": "to",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string",
+            "nullable": true
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "createInboxLabel",
+      "method": "POST",
+      "path": "/v1/inboxes/{inbox_id}/labels",
+      "group": "inboxes",
+      "command": "create-label",
+      "summary": "Create a label",
+      "description": "A named, colored tag on one inbox. Names are unique per inbox, ignoring case; an inbox holds up to 100 labels. color defaults to mauve. Organising mail needs only the inbound:read scope.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "color",
+            "flag": "color",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "enum": [
+              "cyan",
+              "teal",
+              "grass",
+              "lime",
+              "yellow",
+              "orange",
+              "iris",
+              "plum",
+              "crimson",
+              "bronze",
+              "mauve"
+            ]
+          },
+          {
+            "name": "name",
+            "flag": "name",
+            "in": "body",
+            "type": "string",
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "deleteInbox",
+      "method": "DELETE",
+      "path": "/v1/inboxes/{inbox_id}",
+      "group": "inboxes",
+      "command": "delete",
+      "summary": "Delete an inbox",
+      "description": "Delete the inbox with its threads, labels and drafts. Received messages stay in GET /v1/emails/receiving until the 30-day retention removes them, and the address keeps receiving, because receiving belongs to the domain. Requires the domain:write scope on a key created by a team owner or admin.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "deleteInboxDraft",
+      "method": "DELETE",
+      "path": "/v1/inboxes/{inbox_id}/drafts/{draft_id}",
+      "group": "inboxes",
+      "command": "delete-draft",
+      "summary": "Delete a draft",
+      "description": "Discard a draft. Requires the inbound:read scope.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        },
+        {
+          "name": "draft_id",
+          "flag": "draft-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The draft id"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "deleteInboxLabel",
+      "method": "DELETE",
+      "path": "/v1/inboxes/{inbox_id}/labels/{label_id}",
+      "group": "inboxes",
+      "command": "delete-label",
+      "summary": "Delete a label",
+      "description": "Remove the label from the inbox and from every thread that carries it. No message is removed. Requires the inbound:read scope.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        },
+        {
+          "name": "label_id",
+          "flag": "label-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The label id"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "deleteInboxThread",
+      "method": "DELETE",
+      "path": "/v1/inboxes/{inbox_id}/threads/{thread_id}",
+      "group": "inboxes",
+      "command": "delete-thread",
+      "summary": "Delete a thread",
+      "description": "Move the thread to trash; it and its received messages are removed 30 days later. Reversible until then by moving it back with PATCH. deleted is false when it was already in trash. Requires the inbound:delete scope on a key created by a team owner or admin.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        },
+        {
+          "name": "thread_id",
+          "flag": "thread-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The thread id"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listInboxDrafts",
+      "method": "GET",
+      "path": "/v1/inboxes/{inbox_id}/drafts",
+      "group": "inboxes",
+      "command": "drafts",
+      "summary": "List drafts",
+      "description": "Unsent drafts, most recently updated first: the queue a person reviews. created_via and created_at are not in Resend. Requires the inbound:read scope.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        }
+      ],
+      "queryParams": [
+        {
+          "name": "after",
+          "flag": "after",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "The id of the last draft on the page; returns the next, older page"
+        },
+        {
+          "name": "before",
+          "flag": "before",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "The id of the first draft on the page; returns the previous, newer page. Not with after."
+        },
+        {
+          "name": "limit",
+          "flag": "limit",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "default": 20
+        }
+      ],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "forwardInboxThreadEmail",
+      "method": "POST",
+      "path": "/v1/inboxes/{inbox_id}/threads/{thread_id}/emails/{email_id}/forward",
+      "group": "inboxes",
+      "command": "forward-thread-email",
+      "summary": "Forward a thread email",
+      "description": "Sends real email: a forward from the inbox address with the original quoted under a forwarded-message banner, through the normal send path. to is required; 50 recipients at most with cc and bcc. html or text is a note above the original. subject defaults to Fwd: plus the thread subject. Attachments of the original are not included. The forward joins the thread. Supports Idempotency-Key. Requires the inbound:read and email:send scopes.",
+      "tags": [
+        "Inboxes"
+      ],
+      "idempotencyKey": true,
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        },
+        {
+          "name": "thread_id",
+          "flag": "thread-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The thread id"
+        },
+        {
+          "name": "email_id",
+          "flag": "email-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The message to forward"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "bcc",
+            "flag": "bcc",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string"
+          },
+          {
+            "name": "cc",
+            "flag": "cc",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string"
+          },
+          {
+            "name": "html",
+            "flag": "html",
+            "in": "body",
+            "type": "string",
+            "required": false
+          },
+          {
+            "name": "subject",
+            "flag": "subject",
+            "in": "body",
+            "type": "string",
+            "required": false
+          },
+          {
+            "name": "text",
+            "flag": "text",
+            "in": "body",
+            "type": "string",
+            "required": false
+          },
+          {
+            "name": "to",
+            "flag": "to",
+            "in": "body",
+            "type": "array",
+            "required": true,
+            "items": "string"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "getInbox",
+      "method": "GET",
+      "path": "/v1/inboxes/{inbox_id}",
+      "group": "inboxes",
+      "command": "get",
+      "summary": "Retrieve an inbox",
+      "description": "One inbox by id or by its email address. Requires the inbound:read scope.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "getInboxDraft",
+      "method": "GET",
+      "path": "/v1/inboxes/{inbox_id}/drafts/{draft_id}",
+      "group": "inboxes",
+      "command": "get-draft",
+      "summary": "Retrieve a draft",
+      "description": "One draft, sent or not. Requires the inbound:read scope.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        },
+        {
+          "name": "draft_id",
+          "flag": "draft-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The draft id"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "getInboxThread",
+      "method": "GET",
+      "path": "/v1/inboxes/{inbox_id}/threads/{thread_id}",
+      "group": "inboxes",
+      "command": "get-thread",
+      "summary": "Retrieve a thread",
+      "description": "The thread summary; list its messages with GET .../threads/{thread_id}/emails. Requires the inbound:read scope.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        },
+        {
+          "name": "thread_id",
+          "flag": "thread-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The thread id"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "getInboxThreadEmail",
+      "method": "GET",
+      "path": "/v1/inboxes/{inbox_id}/threads/{thread_id}/emails/{email_id}",
+      "group": "inboxes",
+      "command": "get-thread-email",
+      "summary": "Retrieve a thread email",
+      "description": "One message of a thread. For a received message the id is also the received email id, so its attachments download through GET /v1/emails/receiving/{id}/attachments. Requires the inbound:read scope.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        },
+        {
+          "name": "thread_id",
+          "flag": "thread-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The thread id"
+        },
+        {
+          "name": "email_id",
+          "flag": "email-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The message id from the thread's email list"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listInboxLabels",
+      "method": "GET",
+      "path": "/v1/inboxes/{inbox_id}/labels",
+      "group": "inboxes",
+      "command": "labels",
+      "summary": "List labels",
+      "description": "Every label on the inbox, oldest first. Requires the inbound:read scope.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listInboxes",
+      "method": "GET",
+      "path": "/v1/inboxes",
+      "group": "inboxes",
+      "command": "list",
+      "summary": "List inboxes",
+      "description": "The team's inboxes, newest first, with cursor paging (after walks older, before walks newer). unread counts threads in the inbox folder with at least one unread message. domain_id, drafts and created_at on list items are not in Resend's list item. Requires the inbound:read scope.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [],
+      "queryParams": [
+        {
+          "name": "after",
+          "flag": "after",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "The id of the last inboxe on the page; returns the next, older page"
+        },
+        {
+          "name": "before",
+          "flag": "before",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "The id of the first inboxe on the page; returns the previous, newer page. Not with after."
+        },
+        {
+          "name": "limit",
+          "flag": "limit",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "default": 20
+        }
+      ],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "replyToInboxThreadEmail",
+      "method": "POST",
+      "path": "/v1/inboxes/{inbox_id}/threads/{thread_id}/emails/{email_id}/reply",
+      "group": "inboxes",
+      "command": "reply-to-thread-email",
+      "summary": "Reply to a thread email",
+      "description": "Sends real email: a reply from the inbox address, threaded with In-Reply-To and References, through the normal send path (verified domain, suppression, plan limits, credits, safety checks). to is taken from the message: a received message's Reply-To or From, or a sent message's recipients. Passing to or from is refused. Add cc and bcc; 50 recipients at most. subject defaults to Re: plus the thread subject (900 characters at most, the send path's limit). Supports Idempotency-Key. To have a person approve the text first, create a reply draft instead. Requires the inbound:read and email:send scopes.",
+      "tags": [
+        "Inboxes"
+      ],
+      "idempotencyKey": true,
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        },
+        {
+          "name": "thread_id",
+          "flag": "thread-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The thread id"
+        },
+        {
+          "name": "email_id",
+          "flag": "email-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The message to reply to"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "bcc",
+            "flag": "bcc",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string"
+          },
+          {
+            "name": "cc",
+            "flag": "cc",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string"
+          },
+          {
+            "name": "html",
+            "flag": "html",
+            "in": "body",
+            "type": "string",
+            "required": false
+          },
+          {
+            "name": "subject",
+            "flag": "subject",
+            "in": "body",
+            "type": "string",
+            "required": false
+          },
+          {
+            "name": "text",
+            "flag": "text",
+            "in": "body",
+            "type": "string",
+            "required": false
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "sendInboxDraft",
+      "method": "POST",
+      "path": "/v1/inboxes/{inbox_id}/drafts/{draft_id}/send",
+      "group": "inboxes",
+      "command": "send-draft",
+      "summary": "Send a draft",
+      "description": "Sends real email: the approval step for a draft. It goes out from the inbox address through the normal send path; a reply draft joins its thread with threading headers, a new conversation starts a thread in sent. The draft needs a recipient and a body (and a subject when it is not a reply). The send claims the draft on the version it read, so an edit cannot slip in while it runs. Not in Resend: pass the revision a person reviewed; if the draft changed since, nothing is sent and the answer is 409 with code draft_changed. Without a body this is Resend's call. Sending the same draft twice queues one email; a draft that was already sent returns 409. Requires the inbound:read and email:send scopes.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        },
+        {
+          "name": "draft_id",
+          "flag": "draft-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The draft id"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": false,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "revision",
+            "flag": "revision",
+            "in": "body",
+            "type": "integer",
+            "required": false,
+            "description": "Send only if the draft is still at this revision, the one that was reviewed. Not in Resend."
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "listInboxThreadEmails",
+      "method": "GET",
+      "path": "/v1/inboxes/{inbox_id}/threads/{thread_id}/emails",
+      "group": "inboxes",
+      "command": "thread-emails",
+      "summary": "List thread emails",
+      "description": "The messages of a thread, received and sent together, oldest first (after walks newer, before walks older). Not in Resend: latest=true returns the newest page instead of the oldest, still oldest first within it, so has_more means older messages exist; page back with before. Received messages carry status and the SPF, DKIM, DMARC, spam and virus verdicts (not in Resend), so an agent can tell a spoofed or flagged message from a clean one. Reading does not mark anything read. Requires the inbound:read scope.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        },
+        {
+          "name": "thread_id",
+          "flag": "thread-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The thread id"
+        }
+      ],
+      "queryParams": [
+        {
+          "name": "after",
+          "flag": "after",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "The id of the last message on the page; returns the next, newer page"
+        },
+        {
+          "name": "before",
+          "flag": "before",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "The id of the first message on the page; returns the previous, older page. Not with after."
+        },
+        {
+          "name": "latest",
+          "flag": "latest",
+          "in": "query",
+          "type": "boolean",
+          "required": false,
+          "description": "Start from the newest page. Not with after. Not in Resend.",
+          "default": false
+        },
+        {
+          "name": "limit",
+          "flag": "limit",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "default": 20
+        }
+      ],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listInboxThreads",
+      "method": "GET",
+      "path": "/v1/inboxes/{inbox_id}/threads",
+      "group": "inboxes",
+      "command": "threads",
+      "summary": "List threads",
+      "description": "Threads in one folder, most recently active first. query matches the subject and label names (case-insensitive, up to 256 characters); label filters to threads carrying any of the given label ids. read is true only when every message is read; it follows the same read state as the received email API. folder, unread_count and snippet are not in Resend. Requires the inbound:read scope.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        }
+      ],
+      "queryParams": [
+        {
+          "name": "after",
+          "flag": "after",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "The id of the last thread on the page; returns the next, older page"
+        },
+        {
+          "name": "before",
+          "flag": "before",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "The id of the first thread on the page; returns the previous, newer page. Not with after."
+        },
+        {
+          "name": "folder",
+          "flag": "folder",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "enum": [
+            "inbox",
+            "archive",
+            "spam",
+            "sent",
+            "trash"
+          ],
+          "default": "inbox"
+        },
+        {
+          "name": "label",
+          "flag": "label",
+          "in": "query",
+          "type": "array",
+          "required": false,
+          "items": "string",
+          "description": "Label ids; repeat the parameter or separate with commas"
+        },
+        {
+          "name": "limit",
+          "flag": "limit",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "default": 20
+        },
+        {
+          "name": "query",
+          "flag": "query",
+          "in": "query",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "updateInbox",
+      "method": "PATCH",
+      "path": "/v1/inboxes/{inbox_id}",
+      "group": "inboxes",
+      "command": "update",
+      "summary": "Update an inbox",
+      "description": "Change the internal name or the name recipients see. At least one of name or from_name. from_name: null clears it (not in Resend). Requires the domain:write scope on a key created by a team owner or admin.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "from_name",
+            "flag": "from-name",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "nullable": true
+          },
+          {
+            "name": "name",
+            "flag": "name",
+            "in": "body",
+            "type": "string",
+            "required": false
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "updateInboxDraft",
+      "method": "PATCH",
+      "path": "/v1/inboxes/{inbox_id}/drafts/{draft_id}",
+      "group": "inboxes",
+      "command": "update-draft",
+      "summary": "Update a draft",
+      "description": "Omitted fields stay as they are; null clears one. The result must keep at least one non-empty field and at most 50 recipients. A sent draft, or one being sent, returns 409. Not in Resend: pass revision (from the draft object) to make the edit land only on that version; if the draft changed since, nothing is written and the answer is 409 with code draft_changed and the current revision. Requires the inbound:read scope.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        },
+        {
+          "name": "draft_id",
+          "flag": "draft-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The draft id"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "bcc",
+            "flag": "bcc",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string",
+            "nullable": true
+          },
+          {
+            "name": "cc",
+            "flag": "cc",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string",
+            "nullable": true
+          },
+          {
+            "name": "html",
+            "flag": "html",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "nullable": true
+          },
+          {
+            "name": "revision",
+            "flag": "revision",
+            "in": "body",
+            "type": "integer",
+            "required": false,
+            "description": "Only write if the draft is still at this revision. Not in Resend."
+          },
+          {
+            "name": "subject",
+            "flag": "subject",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "nullable": true
+          },
+          {
+            "name": "text",
+            "flag": "text",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "nullable": true
+          },
+          {
+            "name": "to",
+            "flag": "to",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string",
+            "nullable": true
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "updateInboxLabel",
+      "method": "PATCH",
+      "path": "/v1/inboxes/{inbox_id}/labels/{label_id}",
+      "group": "inboxes",
+      "command": "update-label",
+      "summary": "Update a label",
+      "description": "Rename or recolor a label. At least one of name or color. Requires the inbound:read scope.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        },
+        {
+          "name": "label_id",
+          "flag": "label-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The label id"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "color",
+            "flag": "color",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "enum": [
+              "cyan",
+              "teal",
+              "grass",
+              "lime",
+              "yellow",
+              "orange",
+              "iris",
+              "plum",
+              "crimson",
+              "bronze",
+              "mauve"
+            ]
+          },
+          {
+            "name": "name",
+            "flag": "name",
+            "in": "body",
+            "type": "string",
+            "required": false
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "updateInboxThread",
+      "method": "PATCH",
+      "path": "/v1/inboxes/{inbox_id}/threads/{thread_id}",
+      "group": "inboxes",
+      "command": "update-thread",
+      "summary": "Update a thread",
+      "description": "Mark every message read or unread (the same read state the mailbox and GET /v1/emails/receiving show), move the thread to inbox, archive, spam or trash (sent is assigned automatically), apply a label, or remove one with remove_label_id (not in Resend). At least one of read, folder, label_id or remove_label_id. Requires the inbound:read scope; moving to trash is a delete and needs the inbound:delete scope on a key created by a team owner or admin.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        },
+        {
+          "name": "thread_id",
+          "flag": "thread-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The thread id"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "folder",
+            "flag": "folder",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "enum": [
+              "inbox",
+              "archive",
+              "spam",
+              "trash"
+            ]
+          },
+          {
+            "name": "label_id",
+            "flag": "label-id",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Apply this label of the same inbox"
+          },
+          {
+            "name": "read",
+            "flag": "read",
+            "in": "body",
+            "type": "boolean",
+            "required": false
+          },
+          {
+            "name": "remove_label_id",
+            "flag": "remove-label-id",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Remove this label. Not in Resend."
           }
         ]
       }
@@ -2444,16 +4349,85 @@
           "description": "Return emails newer than this id"
         },
         {
+          "name": "domain_id",
+          "flag": "domain-id",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Only mail received on this domain (not in Resend)"
+        },
+        {
           "name": "limit",
           "flag": "limit",
           "in": "query",
           "type": "integer",
           "required": false,
           "default": 20
+        },
+        {
+          "name": "q",
+          "flag": "q",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Search subject, sender and recipient (not in Resend)"
+        },
+        {
+          "name": "to",
+          "flag": "to",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Only mail received for this address (not in Resend)"
+        },
+        {
+          "name": "unread",
+          "flag": "unread",
+          "in": "query",
+          "type": "boolean",
+          "required": false,
+          "description": "true for unread mail only (not in Resend)"
         }
       ],
       "headerParams": [],
       "body": null
+    },
+    {
+      "operationId": "markReceivedEmails",
+      "method": "PATCH",
+      "path": "/v1/emails/receiving",
+      "group": "received",
+      "command": "mark",
+      "summary": "Mark received emails read or unread",
+      "description": "Set the read state of up to 100 received emails at once. Not in Resend. Ids that are not the team's are skipped. Requires the inbound:read scope.",
+      "tags": [
+        "Receiving"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "ids",
+            "flag": "ids",
+            "in": "body",
+            "type": "array",
+            "required": true,
+            "items": "string"
+          },
+          {
+            "name": "read",
+            "flag": "read",
+            "in": "body",
+            "type": "boolean",
+            "required": true
+          }
+        ]
+      }
     },
     {
       "operationId": "replyToReceivedEmail",
@@ -2529,6 +4503,44 @@
             "type": "array",
             "required": false,
             "items": "string"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "updateReceivedEmail",
+      "method": "PATCH",
+      "path": "/v1/emails/receiving/{id}",
+      "group": "received",
+      "command": "update",
+      "summary": "Mark a received email read or unread",
+      "description": "Set the read state of one received email. Not in Resend. Requires the inbound:read scope.",
+      "tags": [
+        "Receiving"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The received email ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "read",
+            "flag": "read",
+            "in": "body",
+            "type": "boolean",
+            "required": true
           }
         ]
       }
@@ -2746,6 +4758,36 @@
       }
     },
     {
+      "operationId": "addSuppressionsBatch",
+      "method": "POST",
+      "path": "/v1/suppressions/batch/add",
+      "group": "suppressions",
+      "command": "add-batch",
+      "summary": "Suppress addresses in bulk",
+      "description": "Resend-compatible: add 1 to 100 addresses as manual suppressions. An address already suppressed keeps its record. Requires the contact:write scope.",
+      "tags": [
+        "Suppressions"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "emails",
+            "flag": "emails",
+            "in": "body",
+            "type": "array",
+            "required": true,
+            "items": "string"
+          }
+        ]
+      }
+    },
+    {
       "operationId": "createSuppression",
       "method": "POST",
       "path": "/v1/suppressions",
@@ -2896,6 +4938,642 @@
       "body": null
     },
     {
+      "operationId": "removeSuppressionsBatch",
+      "method": "POST",
+      "path": "/v1/suppressions/batch/remove",
+      "group": "suppressions",
+      "command": "remove-batch",
+      "summary": "Remove suppressions in bulk",
+      "description": "Resend-compatible: remove 1 to 100 suppressions by emails or by ids, not both. Hard bounces and complaints are released from the provider's account list too. Requires the contact:write scope and an owner or admin.",
+      "tags": [
+        "Suppressions"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "emails",
+            "flag": "emails",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string"
+          },
+          {
+            "name": "ids",
+            "flag": "ids",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "createTeamInvite",
+      "method": "POST",
+      "path": "/v1/team/invites",
+      "group": "team",
+      "command": "create-invite",
+      "summary": "Invite someone to the team",
+      "description": "Emails an invitation link that is valid for 7 days. The person signs in with the invited address to accept. Inviting the same address again sends a fresh link. Needs a paid plan and a free seat. Limited to 20 invitations an hour per inviter and 3 an hour per address. Owner or admin only; requires the team:manage scope.",
+      "tags": [
+        "Team"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "email",
+            "flag": "email",
+            "in": "body",
+            "type": "string",
+            "required": true
+          },
+          {
+            "name": "role",
+            "flag": "role",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "enum": [
+              "admin",
+              "member"
+            ],
+            "default": "member"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "listTeamInvites",
+      "method": "GET",
+      "path": "/v1/team/invites",
+      "group": "team",
+      "command": "invites",
+      "summary": "List pending invitations",
+      "description": "Invitations that are not accepted and not expired, newest first. Owner or admin only; requires the team:read scope.",
+      "tags": [
+        "Team"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listTeamMembers",
+      "method": "GET",
+      "path": "/v1/team/members",
+      "group": "team",
+      "command": "members",
+      "summary": "List team members",
+      "description": "Everyone on the key's team, oldest first, with their role. Any member can list. Requires the team:read scope.",
+      "tags": [
+        "Team"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "removeTeamMember",
+      "method": "DELETE",
+      "path": "/v1/team/members/{id}",
+      "group": "team",
+      "command": "remove-member",
+      "summary": "Remove a member",
+      "description": "Removes the person from the team and revokes their API keys for it. Team resources stay. You cannot remove yourself this way, and the last owner cannot be removed. Owner or admin only; requires the team:manage scope.",
+      "tags": [
+        "Team"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The membership ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "revokeTeamInvite",
+      "method": "DELETE",
+      "path": "/v1/team/invites/{id}",
+      "group": "team",
+      "command": "revoke-invite",
+      "summary": "Revoke an invitation",
+      "description": "The link stops working at once. Owner or admin only; requires the team:manage scope.",
+      "tags": [
+        "Team"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The invitation ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "updateTeamMember",
+      "method": "PATCH",
+      "path": "/v1/team/members/{id}",
+      "group": "team",
+      "command": "update-member",
+      "summary": "Change a member's role or billing access",
+      "description": "Send role, can_manage_billing, or both. Owners and admins can change roles under the same rules as the Members page (an admin cannot touch an owner, a team keeps at least one owner). Only an owner can change billing access. The member gets an email when their role changes. Requires the team:manage scope.",
+      "tags": [
+        "Team"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The membership ID from List team members"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "can_manage_billing",
+            "flag": "can-manage-billing",
+            "in": "body",
+            "type": "boolean",
+            "required": false
+          },
+          {
+            "name": "role",
+            "flag": "role",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "enum": [
+              "owner",
+              "admin",
+              "member"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "createTemplate",
+      "method": "POST",
+      "path": "/v1/templates",
+      "group": "templates",
+      "command": "create",
+      "summary": "Create a template",
+      "description": "Create a template as a draft. Publish it with POST /v1/templates/{id}/publish before sending with it. Same body as Resend's create template; markdown, preview_text and category are SMTPfast additions. Requires the email:send scope.",
+      "tags": [
+        "Templates"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "alias",
+            "flag": "alias",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "A second handle, unique in the team, that works wherever the id does.",
+            "example": "order-confirmation",
+            "nullable": true
+          },
+          {
+            "name": "category",
+            "flag": "category",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Not in Resend. A label for grouping templates in the dashboard.",
+            "nullable": true
+          },
+          {
+            "name": "from",
+            "flag": "from",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Default sender, e.g. \"Acme <orders@acme.com>\". A send can override it.",
+            "example": "Acme <orders@acme.com>",
+            "nullable": true
+          },
+          {
+            "name": "html",
+            "flag": "html",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "The HTML body. Variables are written {{{KEY}}}, optionally with an inline fallback: {{{KEY|default}}}."
+          },
+          {
+            "name": "markdown",
+            "flag": "markdown",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Not in Resend. A Markdown body, rendered into SMTPfast's email layout. Used when html is empty.",
+            "nullable": true
+          },
+          {
+            "name": "name",
+            "flag": "name",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "example": "order-confirmation"
+          },
+          {
+            "name": "preview_text",
+            "flag": "preview-text",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Not in Resend. The inbox preview line, put into the email as a hidden first line.",
+            "nullable": true
+          },
+          {
+            "name": "reply_to",
+            "flag": "reply-to",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string",
+            "description": "Default Reply-To address or addresses. A send can override it.",
+            "nullable": true
+          },
+          {
+            "name": "subject",
+            "flag": "subject",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Default subject. Can use variables. A send can override it.",
+            "example": "Your order {{{ORDER_ID}}}",
+            "nullable": true
+          },
+          {
+            "name": "text",
+            "flag": "text",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Plain-text body. When left out, the text part is generated from the HTML at send time. Exactly \"\" stops that, as in Resend; the email then carries an empty plain-text alternative.",
+            "nullable": true
+          },
+          {
+            "name": "variables",
+            "flag": "variables",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "object"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "deleteTemplate",
+      "method": "DELETE",
+      "path": "/v1/templates/{id}",
+      "group": "templates",
+      "command": "delete",
+      "summary": "Delete a template",
+      "description": "Delete a template by id or alias. Emails already sent with it are not affected. Requires the email:send scope.",
+      "tags": [
+        "Templates"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The template id or alias"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "duplicateTemplate",
+      "method": "POST",
+      "path": "/v1/templates/{id}/duplicate",
+      "group": "templates",
+      "command": "duplicate",
+      "summary": "Duplicate a template",
+      "description": "Copy a template's draft into a new draft template named with \"(copy)\" appended. The alias is not copied and nothing is published. Requires the email:send scope.",
+      "tags": [
+        "Templates"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The template id or alias"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "getTemplate",
+      "method": "GET",
+      "path": "/v1/templates/{id}",
+      "group": "templates",
+      "command": "get",
+      "summary": "Get a template",
+      "description": "Get one template by id or alias. The content fields are the current draft; has_unpublished_versions says whether it differs from the published version that sends use. Requires the email:read scope.",
+      "tags": [
+        "Templates"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The template id or alias"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listTemplates",
+      "method": "GET",
+      "path": "/v1/templates",
+      "group": "templates",
+      "command": "list",
+      "summary": "List templates",
+      "description": "List the team's templates, newest first, in Resend's list shape. Page with limit and an after or before id (not both). Rows carry no content; get one template for that. Requires the email:read scope.",
+      "tags": [
+        "Templates"
+      ],
+      "pathParams": [],
+      "queryParams": [
+        {
+          "name": "after",
+          "flag": "after",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Return templates created before this template id (older). Not included in the result. Cannot be used with before."
+        },
+        {
+          "name": "before",
+          "flag": "before",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Return templates created after this template id (newer). Cannot be used with after."
+        },
+        {
+          "name": "limit",
+          "flag": "limit",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "Number of templates to return.",
+          "default": 20
+        },
+        {
+          "name": "q",
+          "flag": "q",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Not in Resend. Search name, alias and subject."
+        }
+      ],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "publishTemplate",
+      "method": "POST",
+      "path": "/v1/templates/{id}/publish",
+      "group": "templates",
+      "command": "publish",
+      "summary": "Publish a template",
+      "description": "Publish the current draft. From then on, sends that name this template render this version; later edits change only the draft until the next publish. Pass the updated_at you loaded as expected_updated_at to publish only that version: if the template changed since, it answers 409 revision_conflict. Requires the email:send scope.",
+      "tags": [
+        "Templates"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The template id or alias"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": false,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "expected_updated_at",
+            "flag": "expected-updated-at",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Not in Resend. The updated_at you loaded."
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "updateTemplate",
+      "method": "PATCH",
+      "path": "/v1/templates/{id}",
+      "group": "templates",
+      "command": "update",
+      "summary": "Update a template",
+      "description": "Change the draft. Only the fields you send change. Sends keep using the published version until you publish again. Pass expected_updated_at to refuse the change if someone else edited the template since you loaded it. Requires the email:send scope.",
+      "tags": [
+        "Templates"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The template id or alias"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "alias",
+            "flag": "alias",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "A second handle, unique in the team, that works wherever the id does.",
+            "example": "order-confirmation",
+            "nullable": true
+          },
+          {
+            "name": "category",
+            "flag": "category",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Not in Resend. A label for grouping templates in the dashboard.",
+            "nullable": true
+          },
+          {
+            "name": "expected_updated_at",
+            "flag": "expected-updated-at",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Not in Resend. The updated_at you loaded. If the template changed since, the update is refused with 409 revision_conflict instead of overwriting the newer version."
+          },
+          {
+            "name": "from",
+            "flag": "from",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Default sender, e.g. \"Acme <orders@acme.com>\". A send can override it.",
+            "example": "Acme <orders@acme.com>",
+            "nullable": true
+          },
+          {
+            "name": "html",
+            "flag": "html",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "The HTML body. Variables are written {{{KEY}}}, optionally with an inline fallback: {{{KEY|default}}}."
+          },
+          {
+            "name": "markdown",
+            "flag": "markdown",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Not in Resend. A Markdown body, rendered into SMTPfast's email layout. Used when html is empty.",
+            "nullable": true
+          },
+          {
+            "name": "name",
+            "flag": "name",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "example": "order-confirmation"
+          },
+          {
+            "name": "preview_text",
+            "flag": "preview-text",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Not in Resend. The inbox preview line, put into the email as a hidden first line.",
+            "nullable": true
+          },
+          {
+            "name": "reply_to",
+            "flag": "reply-to",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string",
+            "description": "Default Reply-To address or addresses. A send can override it.",
+            "nullable": true
+          },
+          {
+            "name": "subject",
+            "flag": "subject",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Default subject. Can use variables. A send can override it.",
+            "example": "Your order {{{ORDER_ID}}}",
+            "nullable": true
+          },
+          {
+            "name": "text",
+            "flag": "text",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Plain-text body. When left out, the text part is generated from the HTML at send time. Exactly \"\" stops that, as in Resend; the email then carries an empty plain-text alternative.",
+            "nullable": true
+          },
+          {
+            "name": "variables",
+            "flag": "variables",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "object"
+          }
+        ]
+      }
+    },
+    {
       "operationId": "createWebhook",
       "method": "POST",
       "path": "/v1/webhooks",
@@ -3038,6 +5716,95 @@
       "body": null
     },
     {
+      "operationId": "listWebhookEventAttempts",
+      "method": "GET",
+      "path": "/v1/webhooks/{id}/events/{event_id}/attempts",
+      "group": "webhooks",
+      "command": "event-attempts",
+      "summary": "List the attempts of a webhook event",
+      "description": "Every attempt to deliver one event, newest first, with the HTTP status your endpoint returned. The latest attempt carries the start of the response body; earlier ones carry the error, if any. Requires the webhook:read scope.",
+      "tags": [
+        "Webhooks"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The webhook ID"
+        },
+        {
+          "name": "event_id",
+          "flag": "event-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The event ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listWebhookEvents",
+      "method": "GET",
+      "path": "/v1/webhooks/{id}/events",
+      "group": "webhooks",
+      "command": "events",
+      "summary": "List webhook events",
+      "description": "Resend-compatible list of the events sent to one webhook, newest first, each with its delivery status: success, failed, attempting (a retry is scheduled) or pending (not tried yet). Requires the webhook:read scope.",
+      "tags": [
+        "Webhooks"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The webhook ID"
+        }
+      ],
+      "queryParams": [
+        {
+          "name": "after",
+          "flag": "after",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Return events older than this event ID"
+        },
+        {
+          "name": "limit",
+          "flag": "limit",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "Page size, 1 to 100 (default 20)"
+        },
+        {
+          "name": "status",
+          "flag": "status",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Only events in this status",
+          "enum": [
+            "success",
+            "failed",
+            "attempting",
+            "pending"
+          ]
+        }
+      ],
+      "headerParams": [],
+      "body": null
+    },
+    {
       "operationId": "getWebhook",
       "method": "GET",
       "path": "/v1/webhooks/{id}",
@@ -3089,6 +5856,39 @@
           "type": "string",
           "required": true,
           "description": "The delivery ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "getWebhookEvent",
+      "method": "GET",
+      "path": "/v1/webhooks/{id}/events/{event_id}",
+      "group": "webhooks",
+      "command": "get-event",
+      "summary": "Retrieve a webhook event",
+      "description": "One event with the exact payload that was sent and the time of the next retry, if any. Requires the webhook:read scope.",
+      "tags": [
+        "Webhooks"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The webhook ID"
+        },
+        {
+          "name": "event_id",
+          "flag": "event-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The event ID"
         }
       ],
       "queryParams": [],
@@ -3191,6 +5991,39 @@
       }
     },
     {
+      "operationId": "replayWebhookEvent",
+      "method": "POST",
+      "path": "/v1/webhooks/{id}/events/{event_id}/replay",
+      "group": "webhooks",
+      "command": "replay-event",
+      "summary": "Replay a webhook event",
+      "description": "One more delivery attempt for an event, now, with the same body, signed with the current secret. A retry that is already scheduled is brought forward instead of doubled; only an attempt in flight right now returns 409. Requires the webhook:write scope.",
+      "tags": [
+        "Webhooks"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The webhook ID"
+        },
+        {
+          "name": "event_id",
+          "flag": "event-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The event ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
       "operationId": "retryWebhookDelivery",
       "method": "POST",
       "path": "/v1/webhooks/{id}/deliveries/{delivery_id}/retry",
@@ -3217,6 +6050,31 @@
           "type": "string",
           "required": true,
           "description": "The delivery ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "rotateWebhookSigningSecret",
+      "method": "POST",
+      "path": "/v1/webhooks/{id}/signing-secret/rotate",
+      "group": "webhooks",
+      "command": "rotate-signing-secret",
+      "summary": "Rotate a webhook signing secret",
+      "description": "Replace the signing secret. The new secret is in this response only, and every event sent after this call, retries included, is signed with it, so update your endpoint at once. Requires the webhook:write scope and an owner or admin.",
+      "tags": [
+        "Webhooks"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The webhook ID"
         }
       ],
       "queryParams": [],
