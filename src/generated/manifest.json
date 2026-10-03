@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "3fb9fafdb624bedb5159f52bc6981ea0b71d958581551197e85cf702828897e4",
+  "specHash": "9712fbd43910911051ec160b967e4e895e89cdfb676cc08290432a766a621f83",
   "operationCount": 135,
   "groups": [
     {
@@ -5623,6 +5623,19 @@
             "example": "email.delivered,email.bounced"
           },
           {
+            "name": "format",
+            "flag": "format",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Payload format. standard is the signed JSON envelope; discord and slack post readable messages to a chat webhook URL. Detected from the URL when left out.",
+            "enum": [
+              "standard",
+              "discord",
+              "slack"
+            ]
+          },
+          {
             "name": "url",
             "flag": "url",
             "in": "body",
@@ -5979,6 +5992,18 @@
             "example": "email.delivered,email.bounced"
           },
           {
+            "name": "format",
+            "flag": "format",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "enum": [
+              "standard",
+              "discord",
+              "slack"
+            ]
+          },
+          {
             "name": "url",
             "flag": "url",
             "in": "body",
@@ -6172,6 +6197,18 @@
               "contact.subscribed"
             ],
             "example": "email.delivered,email.bounced"
+          },
+          {
+            "name": "format",
+            "flag": "format",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "enum": [
+              "standard",
+              "discord",
+              "slack"
+            ]
           },
           {
             "name": "url",

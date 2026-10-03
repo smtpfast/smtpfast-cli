@@ -2,6 +2,16 @@
 
 All notable changes to the smtpfast CLI. The spec sync workflow adds an entry for each release it publishes.
 
+## [0.5.0] - 2026-10-03
+
+Updated from the live API spec.
+
+### Changed commands
+
+- `smtpfast webhooks create`: new flags --format
+- `smtpfast webhooks replace`: new flags --format
+- `smtpfast webhooks update`: new flags --format
+
 ## [0.4.0] - 2026-10-03
 
 Updated from the live API spec.

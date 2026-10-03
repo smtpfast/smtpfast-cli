@@ -203,14 +203,32 @@
         "type": "object"
       },
       "ApiKey": {
+        "description": "List and update responses also carry the same values in camelCase (keyPrefix, createdAt, lastUsedAt, revokedAt, expiresAt, grantExpiresAt) for older clients.",
         "properties": {
           "created_at": {
             "example": "2026-04-05T12:00:00Z",
             "format": "date-time",
             "type": "string"
           },
+          "expires_at": {
+            "description": "Set for connected-app keys, which rotate.",
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "grant_expires_at": {
+            "description": "When a connected app's grant ends.",
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
           "id": {
             "example": "key_abc123",
+            "type": "string"
+          },
+          "last_used_at": {
+            "format": "date-time",
+            "nullable": true,
             "type": "string"
           },
           "name": {
@@ -221,10 +239,15 @@
             "example": "sf_live_a",
             "type": "string"
           },
+          "revoked_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
           "scopes": {
             "example": [
-              "emails:send",
-              "domains:read"
+              "email:send",
+              "domain:read"
             ],
             "items": {
               "type": "string"
@@ -1151,6 +1174,15 @@
               "type": "string"
             },
             "type": "array"
+          },
+          "format": {
+            "description": "Payload format. standard is the signed JSON envelope; discord and slack post readable messages to a chat webhook URL. Detected from the URL when left out.",
+            "enum": [
+              "standard",
+              "discord",
+              "slack"
+            ],
+            "type": "string"
           },
           "url": {
             "description": "The URL that will receive webhook POST requests",
@@ -3557,6 +3589,14 @@
             },
             "type": "array"
           },
+          "format": {
+            "enum": [
+              "standard",
+              "discord",
+              "slack"
+            ],
+            "type": "string"
+          },
           "url": {
             "example": "https://yourapp.com/webhooks/smtpfast",
             "format": "uri",
@@ -3566,6 +3606,7 @@
         "type": "object"
       },
       "Webhook": {
+        "description": "List and read responses also carry createdAt and updatedAt in camelCase for older clients.",
         "properties": {
           "active": {
             "example": true,
@@ -3607,8 +3648,24 @@
             },
             "type": "array"
           },
+          "format": {
+            "enum": [
+              "standard",
+              "discord",
+              "slack"
+            ],
+            "type": "string"
+          },
           "id": {
             "example": "wh_abc123",
+            "type": "string"
+          },
+          "secret": {
+            "description": "The signing secret. Returned once, in the create response.",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
             "type": "string"
           },
           "url": {
