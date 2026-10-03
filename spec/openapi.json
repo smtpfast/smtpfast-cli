@@ -340,6 +340,22 @@
             "example": 2,
             "type": "integer"
           },
+          "data": {
+            "description": "The same ids in Resend's batch response shape: one { id } per item, in request order.",
+            "items": {
+              "properties": {
+                "id": {
+                  "example": "email_abc123",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
           "emails": {
             "description": "Per-row result. status is \"queued\" for normal sends, \"scheduled\" if scheduled_at is in the future, or \"failed\" if the row has no deliverable To recipient left after suppression (cc and bcc alone do not send).",
             "items": {
@@ -370,7 +386,8 @@
         "required": [
           "batch_id",
           "count",
-          "emails"
+          "emails",
+          "data"
         ],
         "type": "object"
       },
@@ -7725,8 +7742,20 @@
     },
     "/v1/emails/batch": {
       "post": {
-        "description": "Queue up to 100 emails in a single request. The body is a JSON array of email objects, each using the same shape as the single-send endpoint. Validation runs on every item before any are queued — a malformed item rejects the whole batch with 400. Suppressed recipients (to, cc and bcc) are dropped per row; a row left with no deliverable To recipient is recorded with status \"failed\". The batch endpoint does not take an Idempotency-Key yet: a retried batch sends again, so retry only when the first request failed.",
+        "description": "Queue up to 100 emails in a single request. The body is a JSON array of email objects, each using the same shape as the single-send endpoint. Validation runs on every item before any are queued — a malformed item rejects the whole batch with 400. Suppressed recipients (to, cc and bcc) are dropped per row; a row left with no deliverable To recipient is recorded with status \"failed\". The batch is accepted whole or not at all: every email is recorded and queued, or none is, so there is no partial success to reconcile. A 4xx means nothing was queued. After a 5xx or a lost response, retry with the same Idempotency-Key: you get the first answer if the batch was accepted, or a fresh attempt if it was not.",
         "operationId": "sendEmailBatch",
+        "parameters": [
+          {
+            "description": "A unique key for the whole batch; up to 255 characters are used. Repeating a request with the same key and body within 24 hours returns the first result instead of sending again. The same key with a different body is a 409, as is a retry while the first request with the key is still running.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "maxLength": 255,
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -7777,6 +7806,26 @@
               }
             },
             "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Conflict - the resource already exists or changed meanwhile"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The request is well formed but cannot be carried out in the current state, for example an unpublished template"
           },
           "429": {
             "content": {
