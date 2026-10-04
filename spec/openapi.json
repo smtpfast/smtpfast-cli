@@ -973,40 +973,51 @@
         "type": "object"
       },
       "CreateSignupFormRequest": {
+        "description": "Keys are snake_case, as in the form object. The older camelCase spelling of each key (buttonText, doubleOptIn, welcomeEmailEnabled and so on) is still accepted; sending both spellings of one field is a 400.",
         "properties": {
           "active": {
             "example": true,
             "type": "boolean"
           },
-          "blockDisposableEmails": {
+          "block_disposable_emails": {
             "example": true,
             "type": "boolean"
           },
-          "buttonColor": {
+          "button_color": {
             "example": "#10b981",
             "pattern": "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$",
             "type": "string"
           },
-          "buttonText": {
+          "button_text": {
             "example": "Subscribe",
+            "maxLength": 50,
             "type": "string"
           },
-          "captchaEnabled": {
+          "captcha_enabled": {
+            "description": "Needs turnstile_site_key and turnstile_secret_key.",
             "example": false,
             "type": "boolean"
           },
-          "captchaProvider": {
+          "captcha_provider": {
             "enum": [
               "turnstile"
             ],
             "example": "turnstile",
             "type": "string"
           },
-          "doubleOptIn": {
+          "confirmation_email_from": {
+            "description": "Sender of the double opt-in confirmation email. The platform address is used when this is unset or its domain is not verified.",
+            "example": "Acme <hello@acme.com>",
+            "maxLength": 200,
+            "nullable": true,
+            "type": "string"
+          },
+          "double_opt_in": {
             "example": true,
             "type": "boolean"
           },
           "fields": {
+            "description": "email is always included.",
             "example": [
               "email",
               "first_name"
@@ -1023,24 +1034,48 @@
           },
           "name": {
             "example": "Newsletter signup",
+            "maxLength": 100,
             "type": "string"
           },
-          "redirectUrl": {
+          "redirect_url": {
+            "description": "Must start with http:// or https://.",
             "example": null,
             "nullable": true,
             "type": "string"
           },
-          "successMessage": {
+          "success_message": {
             "example": "Thanks for subscribing!",
+            "maxLength": 200,
             "type": "string"
           },
-          "turnstileSecretKey": {
+          "turnstile_secret_key": {
             "description": "Write-only. Returned forms expose turnstile_secret_configured instead.",
             "nullable": true,
             "type": "string"
           },
-          "turnstileSiteKey": {
+          "turnstile_site_key": {
             "example": null,
+            "nullable": true,
+            "type": "string"
+          },
+          "welcome_email_enabled": {
+            "description": "Send a welcome email to each new contact from this form.",
+            "type": "boolean"
+          },
+          "welcome_email_from": {
+            "description": "Sender of the welcome email. Its domain must be verified, or the welcome email is skipped.",
+            "maxLength": 200,
+            "nullable": true,
+            "type": "string"
+          },
+          "welcome_email_markdown": {
+            "description": "Welcome email body as Markdown.",
+            "maxLength": 50000,
+            "nullable": true,
+            "type": "string"
+          },
+          "welcome_email_subject": {
+            "maxLength": 200,
             "nullable": true,
             "type": "string"
           }
@@ -2784,6 +2819,12 @@
             "example": "turnstile",
             "type": "string"
           },
+          "confirmation_email_from": {
+            "description": "Sender of the double opt-in confirmation email. Create, retrieve and update return it; list items leave it out.",
+            "example": "Acme <hello@acme.com>",
+            "nullable": true,
+            "type": "string"
+          },
           "created_at": {
             "format": "date-time",
             "type": "string"
@@ -2819,6 +2860,42 @@
             "example": "signup_form",
             "type": "string"
           },
+          "pending_confirmations_count": {
+            "description": "Signups waiting on their confirmation click. List items leave it out.",
+            "example": 0,
+            "type": "integer"
+          },
+          "recent_pending_confirmations": {
+            "description": "Up to 5 of the newest pending signups. List items leave it out.",
+            "items": {
+              "properties": {
+                "created_at": {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                },
+                "expires_at": {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                "first_name": {
+                  "nullable": true,
+                  "type": "string"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "last_name": {
+                  "nullable": true,
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
           "redirect_url": {
             "example": null,
             "nullable": true,
@@ -2840,6 +2917,55 @@
           "updated_at": {
             "format": "date-time",
             "type": "string"
+          },
+          "welcome_email_enabled": {
+            "description": "Create, retrieve and update return it; list items leave it out.",
+            "example": false,
+            "type": "boolean"
+          },
+          "welcome_email_from": {
+            "description": "Create, retrieve and update return it; list items leave it out.",
+            "example": null,
+            "nullable": true,
+            "type": "string"
+          },
+          "welcome_email_markdown": {
+            "description": "Create, retrieve and update return it; list items leave it out.",
+            "example": null,
+            "nullable": true,
+            "type": "string"
+          },
+          "welcome_email_subject": {
+            "description": "Create, retrieve and update return it; list items leave it out.",
+            "example": null,
+            "nullable": true,
+            "type": "string"
+          },
+          "welcome_stats": {
+            "description": "Welcome emails sent and skipped for this form, and how many were delivered, opened and clicked. List items leave it out.",
+            "properties": {
+              "clicked": {
+                "example": 0,
+                "type": "integer"
+              },
+              "delivered": {
+                "example": 0,
+                "type": "integer"
+              },
+              "opened": {
+                "example": 0,
+                "type": "integer"
+              },
+              "sent": {
+                "example": 0,
+                "type": "integer"
+              },
+              "skipped": {
+                "example": 0,
+                "type": "integer"
+              }
+            },
+            "type": "object"
           }
         },
         "required": [
@@ -3489,30 +3615,39 @@
         "type": "object"
       },
       "UpdateSignupFormRequest": {
+        "description": "Only the fields sent change. Keys are snake_case, as in the form object. The older camelCase spelling of each key (buttonText, doubleOptIn, welcomeEmailEnabled and so on) is still accepted; sending both spellings of one field is a 400.",
         "properties": {
           "active": {
             "type": "boolean"
           },
-          "blockDisposableEmails": {
+          "block_disposable_emails": {
             "type": "boolean"
           },
-          "buttonColor": {
+          "button_color": {
             "pattern": "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$",
             "type": "string"
           },
-          "buttonText": {
+          "button_text": {
+            "maxLength": 50,
             "type": "string"
           },
-          "captchaEnabled": {
+          "captcha_enabled": {
             "type": "boolean"
           },
-          "captchaProvider": {
+          "captcha_provider": {
             "enum": [
               "turnstile"
             ],
             "type": "string"
           },
-          "doubleOptIn": {
+          "confirmation_email_from": {
+            "description": "Sender of the double opt-in confirmation email. The platform address is used when this is unset or its domain is not verified.",
+            "example": "Acme <hello@acme.com>",
+            "maxLength": 200,
+            "nullable": true,
+            "type": "string"
+          },
+          "double_opt_in": {
             "type": "boolean"
           },
           "fields": {
@@ -3527,21 +3662,44 @@
             "type": "array"
           },
           "name": {
+            "maxLength": 100,
             "type": "string"
           },
-          "redirectUrl": {
+          "redirect_url": {
             "nullable": true,
             "type": "string"
           },
-          "successMessage": {
+          "success_message": {
+            "maxLength": 200,
             "type": "string"
           },
-          "turnstileSecretKey": {
+          "turnstile_secret_key": {
             "description": "Write-only. Omit to keep the existing secret.",
             "nullable": true,
             "type": "string"
           },
-          "turnstileSiteKey": {
+          "turnstile_site_key": {
+            "nullable": true,
+            "type": "string"
+          },
+          "welcome_email_enabled": {
+            "description": "Send a welcome email to each new contact from this form.",
+            "type": "boolean"
+          },
+          "welcome_email_from": {
+            "description": "Sender of the welcome email. Its domain must be verified, or the welcome email is skipped.",
+            "maxLength": 200,
+            "nullable": true,
+            "type": "string"
+          },
+          "welcome_email_markdown": {
+            "description": "Welcome email body as Markdown.",
+            "maxLength": 50000,
+            "nullable": true,
+            "type": "string"
+          },
+          "welcome_email_subject": {
+            "maxLength": 200,
             "nullable": true,
             "type": "string"
           }
@@ -9561,7 +9719,7 @@
         ]
       },
       "post": {
-        "description": "Create a new signup form. After creation, the embed snippet at /api/forms/{id}/submit (HTML) or /api/forms/{id}/embed.js (JavaScript widget) can be used on third-party sites.",
+        "description": "Create a new signup form, including its confirmation sender and welcome email if you send them. After creation, the embed snippet at /api/forms/{id}/submit (HTML) or /api/forms/{id}/embed.js (JavaScript widget) can be used on third-party sites. Request keys are snake_case; the older camelCase keys are still accepted. Requires the form:write scope.",
         "operationId": "createSignupForm",
         "requestBody": {
           "content": {
@@ -9805,7 +9963,7 @@
         ]
       },
       "patch": {
-        "description": "Update fields, styling, double opt-in behaviour, or active state on an existing form.",
+        "description": "Update fields, styling, double opt-in behaviour, the confirmation and welcome emails, or active state on an existing form. Only the fields sent change. Request keys are snake_case; the older camelCase keys are still accepted. Requires the form:write scope.",
         "operationId": "updateSignupForm",
         "parameters": [
           {
@@ -12245,6 +12403,96 @@
           "Inboxes"
         ]
       },
+      "get": {
+        "description": "One label of the inbox, in the same shape as the list items. 404 when the label belongs to another inbox. Not in Resend. Requires the inbound:read scope.",
+        "operationId": "getInboxLabel",
+        "parameters": [
+          {
+            "description": "The inbox id or its email address",
+            "in": "path",
+            "name": "inbox_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The label id",
+            "in": "path",
+            "name": "label_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxLabel"
+                }
+              }
+            },
+            "description": "The label"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Retrieve a label",
+        "tags": [
+          "Inboxes"
+        ]
+      },
       "patch": {
         "description": "Rename or recolor a label. At least one of name or color. Requires the inbound:read scope.",
         "operationId": "updateInboxLabel",
@@ -13729,10 +13977,95 @@
     },
     "/v1/me": {
       "get": {
-        "description": "The key's scopes, the plan tier, the rate limit, and which send-time safety checks apply to the account. Requires no scope: it exists so a client can plan its calls instead of discovering scopes through 403s.",
+        "description": "The key's scopes, the user who created it, its team, the plan tier, the rate limit, and which send-time safety checks apply to the account. Requires no scope: it exists so a client can plan its calls instead of discovering scopes through 403s.",
         "operationId": "getCapabilities",
         "responses": {
           "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "account": {
+                      "properties": {
+                        "status": {
+                          "example": "active",
+                          "type": "string"
+                        },
+                        "tier": {
+                          "example": "pro",
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "api_key_id": {
+                      "type": "string"
+                    },
+                    "rate_limit": {
+                      "properties": {
+                        "per_second": {
+                          "type": "integer"
+                        },
+                        "remaining": {
+                          "type": "integer"
+                        },
+                        "reset": {
+                          "description": "When the current one-second window resets, in milliseconds since the epoch.",
+                          "type": "integer"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "scopes": {
+                      "example": [
+                        "email:send",
+                        "domain:read"
+                      ],
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "send_checks": {
+                      "description": "Which send-time safety checks apply to this account.",
+                      "properties": {
+                        "display_name_enforced": {
+                          "type": "boolean"
+                        },
+                        "link_scan_enforced": {
+                          "type": "boolean"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "team_id": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "team_sending_status": {
+                      "example": "active",
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "user_id": {
+                      "description": "The user who created the key. Matches user_id on GET /v1/team/members.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "api_key_id",
+                    "user_id",
+                    "scopes",
+                    "team_id",
+                    "team_sending_status",
+                    "account",
+                    "send_checks",
+                    "rate_limit"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "Key and account capabilities"
           },
           "401": {
@@ -15113,6 +15446,87 @@
           }
         },
         "summary": "Revoke an invitation",
+        "tags": [
+          "Team"
+        ]
+      },
+      "get": {
+        "description": "One invitation, in the same shape as the list items. 404 once it is accepted, expired or revoked, or when it belongs to another team. Owner or admin only; requires the team:read scope.",
+        "operationId": "getTeamInvite",
+        "parameters": [
+          {
+            "description": "The invitation ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamInvite"
+                }
+              }
+            },
+            "description": "The invitation"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Retrieve a pending invitation",
         "tags": [
           "Team"
         ]

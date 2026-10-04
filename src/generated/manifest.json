@@ -2,8 +2,8 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "df1feecee011a07e360266054b80f27c6bdb05b589dfd50077f3731c87df11ac",
-  "operationCount": 135,
+  "specHash": "8e747853c078d99293d7000199d5da63490687797abba0f40e2b4f61dca1ba31",
+  "operationCount": 137,
   "groups": [
     {
       "name": "account",
@@ -82,7 +82,7 @@
       "group": "account",
       "command": "capabilities",
       "summary": "What this API key can do",
-      "description": "The key's scopes, the plan tier, the rate limit, and which send-time safety checks apply to the account. Requires no scope: it exists so a client can plan its calls instead of discovering scopes through 403s.",
+      "description": "The key's scopes, the user who created it, its team, the plan tier, the rate limit, and which send-time safety checks apply to the account. Requires no scope: it exists so a client can plan its calls instead of discovering scopes through 403s.",
       "tags": [
         "Account"
       ],
@@ -2401,7 +2401,7 @@
       "group": "forms",
       "command": "create",
       "summary": "Create a signup form",
-      "description": "Create a new signup form. After creation, the embed snippet at /api/forms/{id}/submit (HTML) or /api/forms/{id}/embed.js (JavaScript widget) can be used on third-party sites.",
+      "description": "Create a new signup form, including its confirmation sender and welcome email if you send them. After creation, the embed snippet at /api/forms/{id}/submit (HTML) or /api/forms/{id}/embed.js (JavaScript widget) can be used on third-party sites. Request keys are snake_case; the older camelCase keys are still accepted. Requires the form:write scope.",
       "tags": [
         "Forms"
       ],
@@ -2422,7 +2422,7 @@
             "example": "true"
           },
           {
-            "name": "blockDisposableEmails",
+            "name": "block_disposable_emails",
             "flag": "block-disposable-emails",
             "in": "body",
             "type": "boolean",
@@ -2430,7 +2430,7 @@
             "example": "true"
           },
           {
-            "name": "buttonColor",
+            "name": "button_color",
             "flag": "button-color",
             "in": "body",
             "type": "string",
@@ -2438,7 +2438,7 @@
             "example": "#10b981"
           },
           {
-            "name": "buttonText",
+            "name": "button_text",
             "flag": "button-text",
             "in": "body",
             "type": "string",
@@ -2446,15 +2446,16 @@
             "example": "Subscribe"
           },
           {
-            "name": "captchaEnabled",
+            "name": "captcha_enabled",
             "flag": "captcha-enabled",
             "in": "body",
             "type": "boolean",
             "required": false,
+            "description": "Needs turnstile_site_key and turnstile_secret_key.",
             "example": "false"
           },
           {
-            "name": "captchaProvider",
+            "name": "captcha_provider",
             "flag": "captcha-provider",
             "in": "body",
             "type": "string",
@@ -2465,7 +2466,17 @@
             "example": "turnstile"
           },
           {
-            "name": "doubleOptIn",
+            "name": "confirmation_email_from",
+            "flag": "confirmation-email-from",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Sender of the double opt-in confirmation email. The platform address is used when this is unset or its domain is not verified.",
+            "example": "Acme <hello@acme.com>",
+            "nullable": true
+          },
+          {
+            "name": "double_opt_in",
             "flag": "double-opt-in",
             "in": "body",
             "type": "boolean",
@@ -2479,6 +2490,7 @@
             "type": "array",
             "required": false,
             "items": "string",
+            "description": "email is always included.",
             "enum": [
               "email",
               "first_name",
@@ -2495,15 +2507,16 @@
             "example": "Newsletter signup"
           },
           {
-            "name": "redirectUrl",
+            "name": "redirect_url",
             "flag": "redirect-url",
             "in": "body",
             "type": "string",
             "required": false,
+            "description": "Must start with http:// or https://.",
             "nullable": true
           },
           {
-            "name": "successMessage",
+            "name": "success_message",
             "flag": "success-message",
             "in": "body",
             "type": "string",
@@ -2511,7 +2524,7 @@
             "example": "Thanks for subscribing!"
           },
           {
-            "name": "turnstileSecretKey",
+            "name": "turnstile_secret_key",
             "flag": "turnstile-secret-key",
             "in": "body",
             "type": "string",
@@ -2520,8 +2533,42 @@
             "nullable": true
           },
           {
-            "name": "turnstileSiteKey",
+            "name": "turnstile_site_key",
             "flag": "turnstile-site-key",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "nullable": true
+          },
+          {
+            "name": "welcome_email_enabled",
+            "flag": "welcome-email-enabled",
+            "in": "body",
+            "type": "boolean",
+            "required": false,
+            "description": "Send a welcome email to each new contact from this form."
+          },
+          {
+            "name": "welcome_email_from",
+            "flag": "welcome-email-from",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Sender of the welcome email. Its domain must be verified, or the welcome email is skipped.",
+            "nullable": true
+          },
+          {
+            "name": "welcome_email_markdown",
+            "flag": "welcome-email-markdown",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Welcome email body as Markdown.",
+            "nullable": true
+          },
+          {
+            "name": "welcome_email_subject",
+            "flag": "welcome-email-subject",
             "in": "body",
             "type": "string",
             "required": false,
@@ -2738,7 +2785,7 @@
       "group": "forms",
       "command": "update",
       "summary": "Update a signup form",
-      "description": "Update fields, styling, double opt-in behaviour, or active state on an existing form.",
+      "description": "Update fields, styling, double opt-in behaviour, the confirmation and welcome emails, or active state on an existing form. Only the fields sent change. Request keys are snake_case; the older camelCase keys are still accepted. Requires the form:write scope.",
       "tags": [
         "Forms"
       ],
@@ -2767,35 +2814,35 @@
             "required": false
           },
           {
-            "name": "blockDisposableEmails",
+            "name": "block_disposable_emails",
             "flag": "block-disposable-emails",
             "in": "body",
             "type": "boolean",
             "required": false
           },
           {
-            "name": "buttonColor",
+            "name": "button_color",
             "flag": "button-color",
             "in": "body",
             "type": "string",
             "required": false
           },
           {
-            "name": "buttonText",
+            "name": "button_text",
             "flag": "button-text",
             "in": "body",
             "type": "string",
             "required": false
           },
           {
-            "name": "captchaEnabled",
+            "name": "captcha_enabled",
             "flag": "captcha-enabled",
             "in": "body",
             "type": "boolean",
             "required": false
           },
           {
-            "name": "captchaProvider",
+            "name": "captcha_provider",
             "flag": "captcha-provider",
             "in": "body",
             "type": "string",
@@ -2805,7 +2852,17 @@
             ]
           },
           {
-            "name": "doubleOptIn",
+            "name": "confirmation_email_from",
+            "flag": "confirmation-email-from",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Sender of the double opt-in confirmation email. The platform address is used when this is unset or its domain is not verified.",
+            "example": "Acme <hello@acme.com>",
+            "nullable": true
+          },
+          {
+            "name": "double_opt_in",
             "flag": "double-opt-in",
             "in": "body",
             "type": "boolean",
@@ -2832,7 +2889,7 @@
             "required": false
           },
           {
-            "name": "redirectUrl",
+            "name": "redirect_url",
             "flag": "redirect-url",
             "in": "body",
             "type": "string",
@@ -2840,14 +2897,14 @@
             "nullable": true
           },
           {
-            "name": "successMessage",
+            "name": "success_message",
             "flag": "success-message",
             "in": "body",
             "type": "string",
             "required": false
           },
           {
-            "name": "turnstileSecretKey",
+            "name": "turnstile_secret_key",
             "flag": "turnstile-secret-key",
             "in": "body",
             "type": "string",
@@ -2856,8 +2913,42 @@
             "nullable": true
           },
           {
-            "name": "turnstileSiteKey",
+            "name": "turnstile_site_key",
             "flag": "turnstile-site-key",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "nullable": true
+          },
+          {
+            "name": "welcome_email_enabled",
+            "flag": "welcome-email-enabled",
+            "in": "body",
+            "type": "boolean",
+            "required": false,
+            "description": "Send a welcome email to each new contact from this form."
+          },
+          {
+            "name": "welcome_email_from",
+            "flag": "welcome-email-from",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Sender of the welcome email. Its domain must be verified, or the welcome email is skipped.",
+            "nullable": true
+          },
+          {
+            "name": "welcome_email_markdown",
+            "flag": "welcome-email-markdown",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Welcome email body as Markdown.",
+            "nullable": true
+          },
+          {
+            "name": "welcome_email_subject",
+            "flag": "welcome-email-subject",
             "in": "body",
             "type": "string",
             "required": false,
@@ -3395,6 +3486,39 @@
           "type": "string",
           "required": true,
           "description": "The draft id"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "getInboxLabel",
+      "method": "GET",
+      "path": "/v1/inboxes/{inbox_id}/labels/{label_id}",
+      "group": "inboxes",
+      "command": "get-label",
+      "summary": "Retrieve a label",
+      "description": "One label of the inbox, in the same shape as the list items. 404 when the label belongs to another inbox. Not in Resend. Requires the inbound:read scope.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        },
+        {
+          "name": "label_id",
+          "flag": "label-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The label id"
         }
       ],
       "queryParams": [],
@@ -5015,6 +5139,31 @@
           }
         ]
       }
+    },
+    {
+      "operationId": "getTeamInvite",
+      "method": "GET",
+      "path": "/v1/team/invites/{id}",
+      "group": "team",
+      "command": "get-invite",
+      "summary": "Retrieve a pending invitation",
+      "description": "One invitation, in the same shape as the list items. 404 once it is accepted, expired or revoked, or when it belongs to another team. Owner or admin only; requires the team:read scope.",
+      "tags": [
+        "Team"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The invitation ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
     },
     {
       "operationId": "listTeamInvites",

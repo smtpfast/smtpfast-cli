@@ -2,6 +2,20 @@
 
 All notable changes to the smtpfast CLI. The spec sync workflow adds an entry for each release it publishes.
 
+## [0.6.0] - 2026-10-04
+
+Updated from the live API spec.
+
+### New commands
+
+- `smtpfast inboxes get-label` (GET /v1/inboxes/{inbox_id}/labels/{label_id}): Retrieve a label
+- `smtpfast team get-invite` (GET /v1/team/invites/{id}): Retrieve a pending invitation
+
+### Changed commands
+
+- `smtpfast forms create`: new flags --confirmation-email-from, --welcome-email-enabled, --welcome-email-from, --welcome-email-markdown, --welcome-email-subject
+- `smtpfast forms update`: new flags --confirmation-email-from, --welcome-email-enabled, --welcome-email-from, --welcome-email-markdown, --welcome-email-subject
+
 ## [0.5.1] - 2026-10-03
 
 Updated from the live API spec.
