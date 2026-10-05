@@ -7619,6 +7619,10 @@
                       },
                       "type": "object"
                     },
+                    "dkim_check_restarted": {
+                      "description": "True when the email provider had stopped checking DKIM and this request restarted the check.",
+                      "type": "boolean"
+                    },
                     "domain": {
                       "example": "mail.example.com",
                       "type": "string"
