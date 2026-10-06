@@ -7810,7 +7810,7 @@
         ]
       },
       "post": {
-        "description": "Queue a single email for delivery. The email is validated, queued, and sent asynchronously via the configured sending provider.",
+        "description": "Queue a single email for delivery. The email is validated, queued, and sent asynchronously via the configured sending provider. Recipients on domains reserved for documentation and tests (example.com, example.net, example.org, and anything under .test, .example, .invalid or .localhost) are refused with 400; for test sends use an address at simulator.amazonses.com, such as success@simulator.amazonses.com.",
         "operationId": "sendEmail",
         "parameters": [
           {

@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "4a96c7ee8bddcf7fc09ff40c8b039c02231f5da36e553fd4b57649f71abd88b3",
+  "specHash": "0c1cb593b9926d0e3b457fa17e3c2ae31a690edd3ebc543dd63c81ffb56379fd",
   "operationCount": 137,
   "groups": [
     {
@@ -2087,7 +2087,7 @@
       "group": "emails",
       "command": "send",
       "summary": "Send an email",
-      "description": "Queue a single email for delivery. The email is validated, queued, and sent asynchronously via the configured sending provider.",
+      "description": "Queue a single email for delivery. The email is validated, queued, and sent asynchronously via the configured sending provider. Recipients on domains reserved for documentation and tests (example.com, example.net, example.org, and anything under .test, .example, .invalid or .localhost) are refused with 400; for test sends use an address at simulator.amazonses.com, such as success@simulator.amazonses.com.",
       "tags": [
         "Emails"
       ],
