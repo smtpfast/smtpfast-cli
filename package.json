@@ -1,6 +1,6 @@
 {
   "name": "smtpfast",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "description": "Command-line tool for the SMTPfast email API. Every API endpoint is a command.",
   "type": "module",
   "bin": {

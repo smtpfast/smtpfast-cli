@@ -168,8 +168,10 @@
                 "type": "integer"
               },
               "domain": {
-                "nullable": true,
-                "type": "string"
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "from": {
                 "format": "date-time",
@@ -213,14 +215,18 @@
           "expires_at": {
             "description": "Set for connected-app keys, which rotate.",
             "format": "date-time",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "grant_expires_at": {
             "description": "When a connected app's grant ends.",
             "format": "date-time",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "id": {
             "example": "key_abc123",
@@ -228,8 +234,10 @@
           },
           "last_used_at": {
             "format": "date-time",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "name": {
             "example": "Production",
@@ -241,8 +249,10 @@
           },
           "revoked_at": {
             "format": "date-time",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "scopes": {
             "example": [
@@ -298,6 +308,14 @@
             },
             "type": "array"
           }
+        },
+        "type": "object"
+      },
+      "AudienceMeta": {
+        "additionalProperties": true,
+        "description": "Details of the audience, such as the segment_id",
+        "example": {
+          "segment_id": "clx_segment123"
         },
         "type": "object"
       },
@@ -398,29 +416,56 @@
             "type": "string"
           },
           "audience_meta": {
-            "additionalProperties": true,
-            "type": "object"
+            "$ref": "#/components/schemas/AudienceMeta"
+          },
+          "canceled_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "created_at": {
             "format": "date-time",
             "type": "string"
           },
+          "expected_recipients": {
+            "description": "Eligible recipients counted when the send was accepted",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "fanout_completed_at": {
+            "description": "When every recipient of the send had been created",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "from": {
             "example": "updates@example.com",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "html": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "id": {
             "example": "clx_broadcast123",
             "type": "string"
           },
           "markdown": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "metrics": {
             "$ref": "#/components/schemas/BroadcastMetrics"
@@ -435,41 +480,55 @@
           },
           "pause_reason": {
             "description": "Why the campaign was paused, for example the complaint rate that tripped the guard",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "paused_at": {
             "description": "Set when the campaign was stopped mid-send by the deliverability guard",
             "format": "date-time",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "preview_text": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "queued_at": {
             "format": "date-time",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "recipient_count": {
             "example": 1250,
             "type": "integer"
           },
           "reply_to": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "scheduled_at": {
             "format": "date-time",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "sent_at": {
             "format": "date-time",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "status": {
             "enum": [
@@ -486,12 +545,24 @@
             "type": "string"
           },
           "subject": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "text": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "track_clicks": {
+            "example": true,
+            "type": "boolean"
+          },
+          "track_opens": {
+            "example": true,
+            "type": "boolean"
           },
           "updated_at": {
             "format": "date-time",
@@ -547,12 +618,20 @@
             "example": 9,
             "type": "integer"
           },
+          "canceled": {
+            "example": 0,
+            "type": "integer"
+          },
           "click_rate": {
             "example": 17.3,
             "type": "number"
           },
           "clicked": {
             "example": 208,
+            "type": "integer"
+          },
+          "complained": {
+            "example": 1,
             "type": "integer"
           },
           "delivered": {
@@ -576,6 +655,10 @@
             "type": "integer"
           },
           "queued": {
+            "example": 0,
+            "type": "integer"
+          },
+          "sending": {
             "example": 0,
             "type": "integer"
           },
@@ -703,6 +786,44 @@
         ],
         "type": "object"
       },
+      "ContactProperty": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "fallback_value": {
+            "description": "Used when a contact has no value. A number for a number property; null when unset.",
+            "type": [
+              "string",
+              "number",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "key": {
+            "example": "plan",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "string",
+              "number"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "type",
+          "fallback_value",
+          "created_at"
+        ],
+        "type": "object"
+      },
       "ContactSummary": {
         "properties": {
           "created_at": {
@@ -721,8 +842,10 @@
           },
           "first_name": {
             "example": "Steve",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "id": {
             "example": "clx_contact123",
@@ -730,8 +853,10 @@
           },
           "last_name": {
             "example": "Wozniak",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "segments": {
             "items": {
@@ -821,11 +946,7 @@
             "type": "string"
           },
           "audience_meta": {
-            "additionalProperties": true,
-            "example": {
-              "segment_id": "clx_segment123"
-            },
-            "type": "object"
+            "$ref": "#/components/schemas/AudienceMeta"
           },
           "from": {
             "example": "updates@example.com",
@@ -833,8 +954,10 @@
             "type": "string"
           },
           "html": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "markdown": {
             "description": "Markdown body. Must include {{unsubscribe_url}} or {{{RESEND_UNSUBSCRIBE_URL}}} before sending.",
@@ -845,13 +968,17 @@
             "type": "string"
           },
           "preview_text": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "reply_to": {
             "format": "email",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "segment_id": {
             "description": "Required when audience is segment",
@@ -868,8 +995,10 @@
             "type": "string"
           },
           "text": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "track_clicks": {
             "default": true,
@@ -954,13 +1083,17 @@
         "properties": {
           "color": {
             "example": "#10b981",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "description": {
             "example": "Paying customers",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "name": {
             "example": "Customers",
@@ -1009,8 +1142,10 @@
             "description": "Sender of the double opt-in confirmation email. The platform address is used when this is unset or its domain is not verified.",
             "example": "Acme <hello@acme.com>",
             "maxLength": 200,
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "double_opt_in": {
             "example": true,
@@ -1040,8 +1175,10 @@
           "redirect_url": {
             "description": "Must start with http:// or https://.",
             "example": null,
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "success_message": {
             "example": "Thanks for subscribing!",
@@ -1050,13 +1187,17 @@
           },
           "turnstile_secret_key": {
             "description": "Write-only. Returned forms expose turnstile_secret_configured instead.",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "turnstile_site_key": {
             "example": null,
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "welcome_email_enabled": {
             "description": "Send a welcome email to each new contact from this form.",
@@ -1065,19 +1206,25 @@
           "welcome_email_from": {
             "description": "Sender of the welcome email. Its domain must be verified, or the welcome email is skipped.",
             "maxLength": 200,
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "welcome_email_markdown": {
             "description": "Welcome email body as Markdown.",
             "maxLength": 50000,
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "welcome_email_subject": {
             "maxLength": 200,
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -1116,21 +1263,27 @@
           "alias": {
             "description": "A second handle, unique in the team, that works wherever the id does.",
             "example": "order-confirmation",
-            "nullable": true,
             "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$",
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "category": {
             "description": "Not in Resend. A label for grouping templates in the dashboard.",
             "maxLength": 50,
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "from": {
             "description": "Default sender, e.g. \"Acme <orders@acme.com>\". A send can override it.",
             "example": "Acme <orders@acme.com>",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "html": {
             "description": "The HTML body. Variables are written {{{KEY}}}, optionally with an inline fallback: {{{KEY|default}}}.",
@@ -1139,8 +1292,10 @@
           },
           "markdown": {
             "description": "Not in Resend. A Markdown body, rendered into SMTPfast's email layout. Used when html is empty.",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "name": {
             "example": "order-confirmation",
@@ -1150,35 +1305,47 @@
           "preview_text": {
             "description": "Not in Resend. The inbox preview line, put into the email as a hidden first line.",
             "maxLength": 255,
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "reply_to": {
-            "description": "Default Reply-To address or addresses. A send can override it.",
-            "nullable": true,
-            "oneOf": [
+            "anyOf": [
               {
-                "type": "string"
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 10,
+                    "type": "array"
+                  }
+                ]
               },
               {
-                "items": {
-                  "type": "string"
-                },
-                "maxItems": 10,
-                "type": "array"
+                "type": "null"
               }
-            ]
+            ],
+            "description": "Default Reply-To address or addresses. A send can override it."
           },
           "subject": {
             "description": "Default subject. Can use variables. A send can override it.",
             "example": "Your order {{{ORDER_ID}}}",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "text": {
             "description": "Plain-text body. When left out, the text part is generated from the HTML at send time. Exactly \"\" stops that, as in Resend; the email then carries an empty plain-text alternative.",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "variables": {
             "items": {
@@ -1335,6 +1502,68 @@
         ],
         "type": "object"
       },
+      "DomainListItem": {
+        "description": "A domain as the list returns it. The field names are camelCase here, unlike the rest of the API.",
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "dkimStatus": {
+            "example": "verified",
+            "type": "string"
+          },
+          "dmarcStatus": {
+            "example": "pending",
+            "type": "string"
+          },
+          "domain": {
+            "example": "yourapp.com",
+            "type": "string"
+          },
+          "id": {
+            "example": "dom_xyz789",
+            "type": "string"
+          },
+          "receivingEnabled": {
+            "type": "boolean"
+          },
+          "receivingStatus": {
+            "description": "disabled, pending, active or failed",
+            "example": "disabled",
+            "type": "string"
+          },
+          "spfStatus": {
+            "example": "verified",
+            "type": "string"
+          },
+          "status": {
+            "description": "pending, verifying, verified or failed",
+            "example": "verified",
+            "type": "string"
+          },
+          "verifiedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "domain",
+          "status",
+          "dkimStatus",
+          "spfStatus",
+          "dmarcStatus",
+          "verifiedAt",
+          "createdAt",
+          "receivingEnabled",
+          "receivingStatus"
+        ],
+        "type": "object"
+      },
       "DomainReceiving": {
         "properties": {
           "competing_mx": {
@@ -1396,22 +1625,22 @@
             "type": "string"
           },
           "from": {
+            "description": "As sent, so it can include a display name: Name <hello@yourapp.com>",
             "example": "hello@yourapp.com",
-            "format": "email",
             "type": "string"
           },
           "html": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "id": {
             "example": "email_abc123",
             "type": "string"
           },
           "source": {
-            "enum": [
-              "api",
-              "smtp"
-            ],
+            "description": "api, smtp, dashboard, broadcast or broadcast_test",
             "example": "api",
             "type": "string"
           },
@@ -1426,7 +1655,8 @@
               "clicked",
               "bounced",
               "complained",
-              "failed"
+              "failed",
+              "canceled"
             ],
             "example": "queued",
             "type": "string"
@@ -1436,7 +1666,10 @@
             "type": "string"
           },
           "text": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "to": {
             "example": [
@@ -1457,6 +1690,137 @@
           "status",
           "source",
           "created_at"
+        ],
+        "type": "object"
+      },
+      "EmailList": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/EmailSummary"
+            },
+            "type": "array"
+          },
+          "has_more": {
+            "example": true,
+            "type": "boolean"
+          },
+          "limit": {
+            "example": 50,
+            "type": "integer"
+          },
+          "page": {
+            "description": "Absent when paging with after or before",
+            "example": 1,
+            "type": "integer"
+          },
+          "total": {
+            "description": "Emails matching the filters; with after or before, only those past that email",
+            "example": 1204,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "data",
+          "limit",
+          "total",
+          "has_more"
+        ],
+        "type": "object"
+      },
+      "EmailSummary": {
+        "properties": {
+          "bounced_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "clicked_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "delivered_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "error_message": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "from": {
+            "example": "hello@yourapp.com",
+            "type": "string"
+          },
+          "id": {
+            "example": "email_abc123",
+            "type": "string"
+          },
+          "opened_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sent_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source": {
+            "description": "api, smtp, dashboard, broadcast or broadcast_test",
+            "example": "api",
+            "type": "string"
+          },
+          "status": {
+            "description": "queued, scheduled, sending, sent, delivered, opened, clicked, bounced, complained, failed or canceled",
+            "example": "delivered",
+            "type": "string"
+          },
+          "subject": {
+            "example": "Welcome!",
+            "type": "string"
+          },
+          "to": {
+            "example": [
+              "user@example.com"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "from",
+          "to",
+          "subject",
+          "status",
+          "source",
+          "created_at",
+          "sent_at",
+          "delivered_at",
+          "opened_at",
+          "clicked_at",
+          "bounced_at",
+          "error_message"
         ],
         "type": "object"
       },
@@ -2138,8 +2502,10 @@
             "type": "object"
           },
           "domain_id": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "email_id": {
             "type": "string"
@@ -2188,7 +2554,6 @@
         "properties": {
           "confirmation_email": {
             "description": "The confirmation email and its current status. Null when no email was queued for this signup, or for signups recorded before this was tracked.",
-            "nullable": true,
             "properties": {
               "id": {
                 "example": "clx_email123",
@@ -2199,13 +2564,18 @@
                 "type": "string"
               }
             },
-            "type": "object"
+            "type": [
+              "object",
+              "null"
+            ]
           },
           "country": {
             "description": "Two-letter country code, or T1 when the signup came through Tor. The IP address is not stored.",
             "example": "US",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "created_at": {
             "format": "date-time",
@@ -2220,22 +2590,28 @@
             "type": "string"
           },
           "first_name": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "id": {
             "example": "clx_pending123",
             "type": "string"
           },
           "last_name": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "source_url": {
             "description": "The page the form was submitted on: address plus utm_* parameters only.",
             "example": "https://example.com/blog/launch?utm_source=newsletter",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -2308,8 +2684,10 @@
             "type": "string"
           },
           "content_id": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "content_type": {
             "type": "string"
@@ -2349,11 +2727,12 @@
                 "type": "object"
               },
               "html": {
-                "nullable": true,
-                "type": "string"
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "raw": {
-                "nullable": true,
                 "properties": {
                   "download_url": {
                     "format": "uri",
@@ -2364,11 +2743,16 @@
                     "type": "string"
                   }
                 },
-                "type": "object"
+                "type": [
+                  "object",
+                  "null"
+                ]
               },
               "text": {
-                "nullable": true,
-                "type": "string"
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             },
             "type": "object"
@@ -2400,12 +2784,16 @@
             "type": "string"
           },
           "domain_id": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "envelope_from": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "envelope_to": {
             "items": {
@@ -2420,8 +2808,10 @@
             "type": "string"
           },
           "in_reply_to": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "message_id": {
             "type": "string"
@@ -2449,8 +2839,10 @@
             "type": "array"
           },
           "size": {
-            "nullable": true,
-            "type": "integer"
+            "type": [
+              "integer",
+              "null"
+            ]
           },
           "status": {
             "enum": [
@@ -2471,24 +2863,34 @@
           "verdicts": {
             "properties": {
               "dkim": {
-                "nullable": true,
-                "type": "string"
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "dmarc": {
-                "nullable": true,
-                "type": "string"
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "spam": {
-                "nullable": true,
-                "type": "string"
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "spf": {
-                "nullable": true,
-                "type": "string"
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "virus": {
-                "nullable": true,
-                "type": "string"
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             },
             "type": "object"
@@ -2549,8 +2951,10 @@
         "properties": {
           "color": {
             "example": "#10b981",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "contact_count": {
             "example": 42,
@@ -2561,8 +2965,10 @@
             "type": "string"
           },
           "description": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "id": {
             "example": "clx_segment123",
@@ -2822,8 +3228,10 @@
           "confirmation_email_from": {
             "description": "Sender of the double opt-in confirmation email. Create, retrieve and update return it; list items leave it out.",
             "example": "Acme <hello@acme.com>",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "created_at": {
             "format": "date-time",
@@ -2881,15 +3289,19 @@
                   "type": "string"
                 },
                 "first_name": {
-                  "nullable": true,
-                  "type": "string"
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "id": {
                   "type": "string"
                 },
                 "last_name": {
-                  "nullable": true,
-                  "type": "string"
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 }
               },
               "type": "object"
@@ -2898,8 +3310,10 @@
           },
           "redirect_url": {
             "example": null,
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "success_message": {
             "example": "Thanks for subscribing!",
@@ -2911,8 +3325,10 @@
           },
           "turnstile_site_key": {
             "example": null,
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "updated_at": {
             "format": "date-time",
@@ -2926,20 +3342,26 @@
           "welcome_email_from": {
             "description": "Create, retrieve and update return it; list items leave it out.",
             "example": null,
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "welcome_email_markdown": {
             "description": "Create, retrieve and update return it; list items leave it out.",
             "example": null,
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "welcome_email_subject": {
             "description": "Create, retrieve and update return it; list items leave it out.",
             "example": null,
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "welcome_stats": {
             "description": "Welcome emails sent and skipped for this form, and how many were delivered, opened and clicked. List items leave it out.",
@@ -3033,20 +3455,36 @@
         ],
         "type": "object"
       },
+      "Success": {
+        "properties": {
+          "success": {
+            "example": true,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success"
+        ],
+        "type": "object"
+      },
       "Suppression": {
         "properties": {
           "bounce_type": {
             "example": "permanent",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "created_at": {
             "format": "date-time",
             "type": "string"
           },
           "diagnostic_code": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "email": {
             "example": "blocked@example.com",
@@ -3054,16 +3492,22 @@
             "type": "string"
           },
           "email_id": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "event_id": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "feedback_id": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "id": {
             "example": "clx_suppression123",
@@ -3089,13 +3533,17 @@
           },
           "related_email": {
             "additionalProperties": true,
-            "nullable": true,
-            "type": "object"
+            "type": [
+              "object",
+              "null"
+            ]
           },
           "related_event": {
             "additionalProperties": true,
-            "nullable": true,
-            "type": "object"
+            "type": [
+              "object",
+              "null"
+            ]
           },
           "source": {
             "example": "ses",
@@ -3239,8 +3687,10 @@
             "type": "string"
           },
           "name": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "object": {
             "enum": [
@@ -3275,13 +3725,17 @@
         "properties": {
           "alias": {
             "example": "order-confirmation",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "category": {
             "description": "Not in Resend.",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "created_at": {
             "format": "date-time",
@@ -3289,20 +3743,26 @@
           },
           "current_version_id": {
             "description": "Id of the published version; null until the first publish.",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "from": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "has_unpublished_versions": {
             "description": "The draft differs from the published version. Always true before the first publish.",
             "type": "boolean"
           },
           "html": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "id": {
             "example": "clx_tpl123",
@@ -3310,8 +3770,10 @@
           },
           "markdown": {
             "description": "Not in Resend.",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "name": {
             "example": "order-confirmation",
@@ -3323,20 +3785,26 @@
           },
           "preview_text": {
             "description": "Not in Resend.",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "published_at": {
             "format": "date-time",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "reply_to": {
             "items": {
               "type": "string"
             },
-            "nullable": true,
-            "type": "array"
+            "type": [
+              "array",
+              "null"
+            ]
           },
           "status": {
             "enum": [
@@ -3346,12 +3814,16 @@
             "type": "string"
           },
           "subject": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "text": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "updated_at": {
             "format": "date-time",
@@ -3446,8 +3918,10 @@
           "published_at": {
             "description": "Not in Resend.",
             "format": "date-time",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "status": {
             "description": "Not in Resend.",
@@ -3468,13 +3942,17 @@
       "TemplateSummary": {
         "properties": {
           "alias": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "category": {
             "description": "Not in Resend.",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "created_at": {
             "format": "date-time",
@@ -3492,8 +3970,10 @@
           },
           "published_at": {
             "format": "date-time",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "status": {
             "enum": [
@@ -3504,8 +3984,10 @@
           },
           "subject": {
             "description": "Not in Resend.",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "updated_at": {
             "format": "date-time",
@@ -3522,18 +4004,24 @@
             "type": "string"
           },
           "fallback_value": {
-            "description": "Used when a send gives no value. Must match the type. Without one, every send must pass a value for this variable or it answers 422.",
-            "example": "item",
-            "nullable": true,
-            "oneOf": [
+            "anyOf": [
               {
-                "maxLength": 2000,
-                "type": "string"
+                "oneOf": [
+                  {
+                    "maxLength": 2000,
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
               },
               {
-                "type": "number"
+                "type": "null"
               }
-            ]
+            ],
+            "description": "Used when a send gives no value. Must match the type. Without one, every send must pass a value for this variable or it answers 422.",
+            "example": "item"
           },
           "id": {
             "example": "e169aa45-1ecf-4183-9955-b1499d5701d3",
@@ -3614,6 +4102,29 @@
         },
         "type": "object"
       },
+      "UpdateSegmentRequest": {
+        "properties": {
+          "color": {
+            "example": "#10b981",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "description": {
+            "example": "Paying customers",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "example": "Customers",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "UpdateSignupFormRequest": {
         "description": "Only the fields sent change. Keys are snake_case, as in the form object. The older camelCase spelling of each key (buttonText, doubleOptIn, welcomeEmailEnabled and so on) is still accepted; sending both spellings of one field is a 400.",
         "properties": {
@@ -3644,8 +4155,10 @@
             "description": "Sender of the double opt-in confirmation email. The platform address is used when this is unset or its domain is not verified.",
             "example": "Acme <hello@acme.com>",
             "maxLength": 200,
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "double_opt_in": {
             "type": "boolean"
@@ -3666,8 +4179,10 @@
             "type": "string"
           },
           "redirect_url": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "success_message": {
             "maxLength": 200,
@@ -3675,12 +4190,16 @@
           },
           "turnstile_secret_key": {
             "description": "Write-only. Omit to keep the existing secret.",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "turnstile_site_key": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "welcome_email_enabled": {
             "description": "Send a welcome email to each new contact from this form.",
@@ -3689,40 +4208,138 @@
           "welcome_email_from": {
             "description": "Sender of the welcome email. Its domain must be verified, or the welcome email is skipped.",
             "maxLength": 200,
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "welcome_email_markdown": {
             "description": "Welcome email body as Markdown.",
             "maxLength": 50000,
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "welcome_email_subject": {
             "maxLength": 200,
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "type": "object"
       },
       "UpdateTemplateRequest": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/CreateTemplateRequest"
-          },
-          {
-            "properties": {
-              "expected_updated_at": {
-                "description": "Not in Resend. The updated_at you loaded. If the template changed since, the update is refused with 409 revision_conflict instead of overwriting the newer version.",
-                "format": "date-time",
-                "type": "string"
-              }
-            },
-            "type": "object"
-          }
-        ],
         "description": "Any field of CreateTemplateRequest. Only the fields sent change; variables, when sent, replace the whole list.",
+        "properties": {
+          "alias": {
+            "description": "A second handle, unique in the team, that works wherever the id does.",
+            "example": "order-confirmation",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "category": {
+            "description": "Not in Resend. A label for grouping templates in the dashboard.",
+            "maxLength": 50,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "expected_updated_at": {
+            "description": "Not in Resend. The updated_at you loaded. If the template changed since, the update is refused with 409 revision_conflict instead of overwriting the newer version.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "from": {
+            "description": "Default sender, e.g. \"Acme <orders@acme.com>\". A send can override it.",
+            "example": "Acme <orders@acme.com>",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "html": {
+            "description": "The HTML body. Variables are written {{{KEY}}}, optionally with an inline fallback: {{{KEY|default}}}.",
+            "maxLength": 100000,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "markdown": {
+            "description": "Not in Resend. A Markdown body, rendered into SMTPfast's email layout. Used when html is empty.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "example": "order-confirmation",
+            "maxLength": 200,
+            "type": "string"
+          },
+          "preview_text": {
+            "description": "Not in Resend. The inbox preview line, put into the email as a hidden first line.",
+            "maxLength": 255,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reply_to": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 10,
+                    "type": "array"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Default Reply-To address or addresses. A send can override it."
+          },
+          "subject": {
+            "description": "Default subject. Can use variables. A send can override it.",
+            "example": "Your order {{{ORDER_ID}}}",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "text": {
+            "description": "Plain-text body. When left out, the text part is generated from the HTML at send time. Exactly \"\" stops that, as in Resend; the email then carries an empty plain-text alternative.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "variables": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateVariable"
+            },
+            "maxItems": 50,
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
         "type": "object"
       },
       "UpdateWebhookRequest": {
@@ -3778,6 +4395,265 @@
             "type": "string"
           }
         },
+        "type": "object"
+      },
+      "Usage": {
+        "properties": {
+          "ai_credits": {
+            "description": "Not offered: always 0, with a null next_increase_at",
+            "properties": {
+              "limit": {
+                "example": 0,
+                "type": "integer"
+              },
+              "next_increase_at": {
+                "format": "date-time",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "used": {
+                "example": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "used",
+              "limit",
+              "next_increase_at"
+            ],
+            "type": "object"
+          },
+          "automation_runs": {
+            "description": "Not offered: always 0",
+            "properties": {
+              "limit": {
+                "example": 0,
+                "type": "integer"
+              },
+              "resets_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "used": {
+                "example": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "used",
+              "limit",
+              "resets_at"
+            ],
+            "type": "object"
+          },
+          "broadcasts": {
+            "description": "Broadcasts queued, scheduled or sent this month",
+            "properties": {
+              "limit": {
+                "example": 50,
+                "type": "integer"
+              },
+              "used": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "used",
+              "limit"
+            ],
+            "type": "object"
+          },
+          "contacts": {
+            "properties": {
+              "limit": {
+                "example": 25000,
+                "type": "integer"
+              },
+              "used": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "used",
+              "limit"
+            ],
+            "type": "object"
+          },
+          "domains": {
+            "description": "A null limit means no cap",
+            "properties": {
+              "limit": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "used": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "used",
+              "limit"
+            ],
+            "type": "object"
+          },
+          "emails": {
+            "properties": {
+              "credits": {
+                "properties": {
+                  "balance": {
+                    "description": "Prepaid credits",
+                    "example": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "balance"
+                ],
+                "type": "object"
+              },
+              "daily": {
+                "description": "The last 24 hours. There is no daily cap, so limit and resets_at are null.",
+                "properties": {
+                  "limit": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "received": {
+                    "example": 4,
+                    "type": "integer"
+                  },
+                  "resets_at": {
+                    "format": "date-time",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "sent": {
+                    "example": 312,
+                    "type": "integer"
+                  },
+                  "used": {
+                    "example": 312,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "used",
+                  "limit",
+                  "sent",
+                  "received",
+                  "resets_at"
+                ],
+                "type": "object"
+              },
+              "effective_remaining": {
+                "description": "What can still be sent before a send is refused: the monthly allowance left plus credits",
+                "example": 41580,
+                "type": "integer"
+              },
+              "monthly": {
+                "description": "This month. Received mail does not count, so used equals sent.",
+                "properties": {
+                  "limit": {
+                    "example": 50000,
+                    "type": "integer"
+                  },
+                  "received": {
+                    "example": 96,
+                    "type": "integer"
+                  },
+                  "resets_at": {
+                    "format": "date-time",
+                    "type": "string"
+                  },
+                  "sent": {
+                    "example": 8420,
+                    "type": "integer"
+                  },
+                  "used": {
+                    "example": 8420,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "used",
+                  "limit",
+                  "sent",
+                  "received",
+                  "resets_at"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "daily",
+              "monthly",
+              "credits",
+              "effective_remaining"
+            ],
+            "type": "object"
+          },
+          "object": {
+            "example": "usage",
+            "type": "string"
+          },
+          "rate_limit": {
+            "description": "Per API key; null for a dashboard session",
+            "properties": {
+              "duration": {
+                "example": "1000ms",
+                "type": "string"
+              },
+              "limit": {
+                "description": "Requests allowed per duration",
+                "example": 100,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "limit",
+              "duration"
+            ],
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "segments": {
+            "properties": {
+              "limit": {
+                "example": 50,
+                "type": "integer"
+              },
+              "used": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "used",
+              "limit"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "object",
+          "emails",
+          "contacts",
+          "segments",
+          "broadcasts",
+          "ai_credits",
+          "automation_runs",
+          "domains",
+          "rate_limit"
+        ],
         "type": "object"
       },
       "Webhook": {
@@ -3871,12 +4747,16 @@
                   "type": "integer"
                 },
                 "error": {
-                  "nullable": true,
-                  "type": "string"
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 },
                 "status_code": {
-                  "nullable": true,
-                  "type": "integer"
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
                 }
               },
               "type": "object"
@@ -3892,16 +4772,22 @@
           },
           "delivered_at": {
             "format": "date-time",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "duration_ms": {
-            "nullable": true,
-            "type": "integer"
+            "type": [
+              "integer",
+              "null"
+            ]
           },
           "error": {
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "event": {
             "example": "email.bounced",
@@ -3915,8 +4801,10 @@
           },
           "next_attempt_at": {
             "format": "date-time",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "object": {
             "example": "webhook_delivery",
@@ -3924,8 +4812,10 @@
           },
           "response": {
             "description": "First 500 characters of the last response body",
-            "nullable": true,
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "status": {
             "enum": [
@@ -3937,8 +4827,10 @@
             "type": "string"
           },
           "status_code": {
-            "nullable": true,
-            "type": "integer"
+            "type": [
+              "integer",
+              "null"
+            ]
           },
           "webhook_id": {
             "type": "string"
@@ -4008,6 +4900,71 @@
             "type": "string"
           }
         },
+        "type": "object"
+      },
+      "WebhookUpdated": {
+        "description": "The update response has no timestamps; fetch the webhook for those.",
+        "properties": {
+          "active": {
+            "example": true,
+            "type": "boolean"
+          },
+          "events": {
+            "example": [
+              "email.delivered",
+              "email.bounced"
+            ],
+            "items": {
+              "enum": [
+                "email.scheduled",
+                "email.sent",
+                "email.delivered",
+                "email.delivery_delayed",
+                "email.bounced",
+                "email.complained",
+                "email.opened",
+                "email.clicked",
+                "email.failed",
+                "email.suppressed",
+                "email.unsubscribed",
+                "email.received",
+                "domain.created",
+                "domain.updated",
+                "domain.deleted",
+                "contact.created",
+                "contact.updated",
+                "contact.deleted",
+                "contact.subscribed"
+              ],
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "format": {
+            "enum": [
+              "standard",
+              "discord",
+              "slack"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "example": "wh_abc123",
+            "type": "string"
+          },
+          "url": {
+            "example": "https://yourapp.com/webhooks/smtpfast",
+            "format": "uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "events",
+          "format",
+          "active"
+        ],
         "type": "object"
       }
     },
@@ -4110,7 +5067,11 @@
         "summary": "Get analytics",
         "tags": [
           "Analytics"
-        ]
+        ],
+        "x-sdk-group": [
+          "analytics"
+        ],
+        "x-sdk-method": "get"
       }
     },
     "/v1/api-keys": {
@@ -4165,7 +5126,11 @@
         "summary": "List API keys",
         "tags": [
           "API Keys"
-        ]
+        ],
+        "x-sdk-group": [
+          "apiKeys"
+        ],
+        "x-sdk-method": "list"
       },
       "post": {
         "description": "Generate a new API key. The full key value is returned only once in the response. Store it securely.",
@@ -4235,7 +5200,11 @@
         "summary": "Create API key",
         "tags": [
           "API Keys"
-        ]
+        ],
+        "x-sdk-group": [
+          "apiKeys"
+        ],
+        "x-sdk-method": "create"
       }
     },
     "/v1/api-keys/{id}": {
@@ -4314,7 +5283,11 @@
         "summary": "Revoke API key",
         "tags": [
           "API Keys"
-        ]
+        ],
+        "x-sdk-group": [
+          "apiKeys"
+        ],
+        "x-sdk-method": "revoke"
       },
       "patch": {
         "description": "Rename a key or change its scopes. The secret is unchanged; scope changes apply on the key's next request. Requires the apikey:manage scope when called with an API key.",
@@ -4445,7 +5418,11 @@
         "summary": "Update API key",
         "tags": [
           "API Keys"
-        ]
+        ],
+        "x-sdk-group": [
+          "apiKeys"
+        ],
+        "x-sdk-method": "update"
       }
     },
     "/v1/broadcasts": {
@@ -4535,7 +5512,11 @@
         "summary": "List broadcasts",
         "tags": [
           "Broadcasts"
-        ]
+        ],
+        "x-sdk-group": [
+          "broadcasts"
+        ],
+        "x-sdk-method": "list"
       },
       "post": {
         "description": "Create a broadcast campaign draft. Broadcasts can be edited while draft or scheduled, and must include an unsubscribe token before sending.",
@@ -4615,7 +5596,11 @@
         "summary": "Create a broadcast draft",
         "tags": [
           "Broadcasts"
-        ]
+        ],
+        "x-sdk-group": [
+          "broadcasts"
+        ],
+        "x-sdk-method": "create"
       }
     },
     "/v1/broadcasts/audience": {
@@ -4698,7 +5683,11 @@
         "summary": "Preview a broadcast audience",
         "tags": [
           "Broadcasts"
-        ]
+        ],
+        "x-sdk-group": [
+          "broadcasts"
+        ],
+        "x-sdk-method": "getAudience"
       }
     },
     "/v1/broadcasts/{id}": {
@@ -4791,7 +5780,11 @@
         "summary": "Delete a draft broadcast",
         "tags": [
           "Broadcasts"
-        ]
+        ],
+        "x-sdk-group": [
+          "broadcasts"
+        ],
+        "x-sdk-method": "delete"
       },
       "get": {
         "description": "Retrieve a broadcast with metrics and the latest recipient rows.",
@@ -4872,7 +5865,11 @@
         "summary": "Get broadcast details",
         "tags": [
           "Broadcasts"
-        ]
+        ],
+        "x-sdk-group": [
+          "broadcasts"
+        ],
+        "x-sdk-method": "get"
       },
       "patch": {
         "description": "Update broadcast content. Updating a scheduled broadcast cancels the previous schedule and returns it to draft.",
@@ -4973,7 +5970,11 @@
         "summary": "Update a draft or scheduled broadcast",
         "tags": [
           "Broadcasts"
-        ]
+        ],
+        "x-sdk-group": [
+          "broadcasts"
+        ],
+        "x-sdk-method": "update"
       }
     },
     "/v1/broadcasts/{id}/cancel": {
@@ -5066,7 +6067,11 @@
         "summary": "Cancel a scheduled broadcast",
         "tags": [
           "Broadcasts"
-        ]
+        ],
+        "x-sdk-group": [
+          "broadcasts"
+        ],
+        "x-sdk-method": "cancel"
       }
     },
     "/v1/broadcasts/{id}/clicked-links": {
@@ -5086,6 +6091,52 @@
         ],
         "responses": {
           "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "broadcast_id": {
+                      "type": "string"
+                    },
+                    "links": {
+                      "items": {
+                        "properties": {
+                          "clicks": {
+                            "example": 12,
+                            "type": "integer"
+                          },
+                          "unique_clicks": {
+                            "description": "Distinct recipients who clicked",
+                            "example": 9,
+                            "type": "integer"
+                          },
+                          "url": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "url",
+                          "clicks",
+                          "unique_clicks"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "total_clicks": {
+                      "example": 30,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "broadcast_id",
+                    "links",
+                    "total_clicks"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "The links clicked in this broadcast"
           },
           "404": {
@@ -5095,7 +6146,11 @@
         "summary": "List clicked links",
         "tags": [
           "Broadcasts"
-        ]
+        ],
+        "x-sdk-group": [
+          "broadcasts"
+        ],
+        "x-sdk-method": "listClickedLinks"
       }
     },
     "/v1/broadcasts/{id}/duplicate": {
@@ -5115,6 +6170,21 @@
         ],
         "responses": {
           "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "broadcast": {
+                      "$ref": "#/components/schemas/Broadcast"
+                    }
+                  },
+                  "required": [
+                    "broadcast"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "The new draft broadcast"
           },
           "404": {
@@ -5124,7 +6194,11 @@
         "summary": "Duplicate broadcast",
         "tags": [
           "Broadcasts"
-        ]
+        ],
+        "x-sdk-group": [
+          "broadcasts"
+        ],
+        "x-sdk-method": "duplicate"
       }
     },
     "/v1/broadcasts/{id}/recipients": {
@@ -5282,7 +6356,12 @@
         "summary": "List broadcast recipients",
         "tags": [
           "Broadcasts"
-        ]
+        ],
+        "x-sdk-group": [
+          "broadcasts",
+          "recipients"
+        ],
+        "x-sdk-method": "list"
       }
     },
     "/v1/broadcasts/{id}/send": {
@@ -5391,7 +6470,11 @@
         "summary": "Send or schedule a broadcast",
         "tags": [
           "Broadcasts"
-        ]
+        ],
+        "x-sdk-group": [
+          "broadcasts"
+        ],
+        "x-sdk-method": "send"
       }
     },
     "/v1/broadcasts/{id}/test": {
@@ -5514,7 +6597,11 @@
         "summary": "Send a test broadcast email",
         "tags": [
           "Broadcasts"
-        ]
+        ],
+        "x-sdk-group": [
+          "broadcasts"
+        ],
+        "x-sdk-method": "sendTest"
       }
     },
     "/v1/contact-properties": {
@@ -5523,13 +6610,35 @@
         "operationId": "listContactProperties",
         "responses": {
           "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/ContactProperty"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "The declared properties"
           }
         },
         "summary": "List contact properties",
         "tags": [
           "Contacts"
-        ]
+        ],
+        "x-sdk-group": [
+          "contactProperties"
+        ],
+        "x-sdk-method": "list"
       },
       "post": {
         "description": "Declare a custom field. Declaring is optional: contacts may carry undeclared properties, and those keep working. Declaring gives the field a default used when a contact has no value, and opts writes to it into type checking.",
@@ -5578,6 +6687,21 @@
         },
         "responses": {
           "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "contact_property": {
+                      "$ref": "#/components/schemas/ContactProperty"
+                    }
+                  },
+                  "required": [
+                    "contact_property"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "The declared property"
           },
           "400": {
@@ -5590,7 +6714,11 @@
         "summary": "Declare a contact property",
         "tags": [
           "Contacts"
-        ]
+        ],
+        "x-sdk-group": [
+          "contactProperties"
+        ],
+        "x-sdk-method": "create"
       }
     },
     "/v1/contact-properties/{id}": {
@@ -5610,6 +6738,13 @@
         ],
         "responses": {
           "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            },
             "description": "Deleted"
           },
           "404": {
@@ -5619,9 +6754,14 @@
         "summary": "Delete a contact property",
         "tags": [
           "Contacts"
-        ]
+        ],
+        "x-sdk-group": [
+          "contactProperties"
+        ],
+        "x-sdk-method": "delete"
       },
       "get": {
+        "description": "Return one custom contact property by id.",
         "operationId": "getContactProperty",
         "parameters": [
           {
@@ -5636,6 +6776,21 @@
         ],
         "responses": {
           "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "contact_property": {
+                      "$ref": "#/components/schemas/ContactProperty"
+                    }
+                  },
+                  "required": [
+                    "contact_property"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "The property"
           },
           "404": {
@@ -5645,7 +6800,11 @@
         "summary": "Get a contact property",
         "tags": [
           "Contacts"
-        ]
+        ],
+        "x-sdk-group": [
+          "contactProperties"
+        ],
+        "x-sdk-method": "get"
       },
       "patch": {
         "description": "Changes fallback_value only. Key and type are immutable: renaming would orphan the values already stored under the old key.",
@@ -5692,6 +6851,21 @@
         },
         "responses": {
           "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "contact_property": {
+                      "$ref": "#/components/schemas/ContactProperty"
+                    }
+                  },
+                  "required": [
+                    "contact_property"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "The updated property"
           },
           "400": {
@@ -5704,7 +6878,11 @@
         "summary": "Update a contact property default",
         "tags": [
           "Contacts"
-        ]
+        ],
+        "x-sdk-group": [
+          "contactProperties"
+        ],
+        "x-sdk-method": "update"
       }
     },
     "/v1/contacts": {
@@ -5810,7 +6988,11 @@
         "summary": "Delete contacts in bulk",
         "tags": [
           "Contacts"
-        ]
+        ],
+        "x-sdk-group": [
+          "contacts"
+        ],
+        "x-sdk-method": "deleteMany"
       },
       "get": {
         "description": "Return contacts for the current account. Optional query parameters q, status, and limit support filtering.",
@@ -5922,7 +7104,11 @@
         "summary": "List contacts",
         "tags": [
           "Contacts"
-        ]
+        ],
+        "x-sdk-group": [
+          "contacts"
+        ],
+        "x-sdk-method": "list"
       },
       "post": {
         "description": "Create a global contact for the current account. Supports firstName/lastName and first_name/last_name aliases for Resend compatibility.",
@@ -6012,7 +7198,11 @@
         "summary": "Create a contact",
         "tags": [
           "Contacts"
-        ]
+        ],
+        "x-sdk-group": [
+          "contacts"
+        ],
+        "x-sdk-method": "create"
       }
     },
     "/v1/contacts/export": {
@@ -6116,7 +7306,11 @@
         "summary": "Export contacts",
         "tags": [
           "Contacts"
-        ]
+        ],
+        "x-sdk-group": [
+          "contacts"
+        ],
+        "x-sdk-method": "export"
       }
     },
     "/v1/contacts/{id}": {
@@ -6199,7 +7393,11 @@
         "summary": "Delete a contact",
         "tags": [
           "Contacts"
-        ]
+        ],
+        "x-sdk-group": [
+          "contacts"
+        ],
+        "x-sdk-method": "delete"
       },
       "get": {
         "description": "Retrieve a contact by ID or URL-encoded email address.",
@@ -6280,7 +7478,11 @@
         "summary": "Retrieve a contact",
         "tags": [
           "Contacts"
-        ]
+        ],
+        "x-sdk-group": [
+          "contacts"
+        ],
+        "x-sdk-method": "get"
       },
       "patch": {
         "description": "Update name fields, subscription status, or custom properties. Email addresses cannot be changed.",
@@ -6381,7 +7583,11 @@
         "summary": "Update a contact",
         "tags": [
           "Contacts"
-        ]
+        ],
+        "x-sdk-group": [
+          "contacts"
+        ],
+        "x-sdk-method": "update"
       }
     },
     "/v1/contacts/{id}/segments": {
@@ -6465,7 +7671,12 @@
         "summary": "List a contact's segments",
         "tags": [
           "Contacts"
-        ]
+        ],
+        "x-sdk-group": [
+          "contacts",
+          "segments"
+        ],
+        "x-sdk-method": "list"
       }
     },
     "/v1/contacts/{id}/segments/{segment_id}": {
@@ -6558,7 +7769,12 @@
         "summary": "Remove a contact from a segment",
         "tags": [
           "Contacts"
-        ]
+        ],
+        "x-sdk-group": [
+          "contacts",
+          "segments"
+        ],
+        "x-sdk-method": "remove"
       },
       "post": {
         "description": "Resend-compatible. Adding a contact that is already in the segment is not an error. Requires the contact:write scope.",
@@ -6649,7 +7865,12 @@
         "summary": "Add a contact to a segment",
         "tags": [
           "Contacts"
-        ]
+        ],
+        "x-sdk-group": [
+          "contacts",
+          "segments"
+        ],
+        "x-sdk-method": "add"
       }
     },
     "/v1/domains": {
@@ -6662,7 +7883,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/Domain"
+                    "$ref": "#/components/schemas/DomainListItem"
                   },
                   "type": "array"
                 }
@@ -6704,7 +7925,11 @@
         "summary": "List domains",
         "tags": [
           "Domains"
-        ]
+        ],
+        "x-sdk-group": [
+          "domains"
+        ],
+        "x-sdk-method": "list"
       },
       "post": {
         "description": "Register a new sending domain. Returns the DNS records that must be configured before the domain can be verified.",
@@ -6804,7 +8029,11 @@
         "summary": "Add a domain",
         "tags": [
           "Domains"
-        ]
+        ],
+        "x-sdk-group": [
+          "domains"
+        ],
+        "x-sdk-method": "create"
       }
     },
     "/v1/domains/claim": {
@@ -6919,7 +8148,11 @@
         "summary": "Get the claim record for a domain",
         "tags": [
           "Domains"
-        ]
+        ],
+        "x-sdk-group": [
+          "domains"
+        ],
+        "x-sdk-method": "getClaimRecord"
       },
       "post": {
         "description": "Checks the claim TXT record and moves a never-verified domain from the account that holds it to the caller's team, with its verification reset and any mail the previous holder still had queued through it cancelled. POST /v1/domains answers 409 with code domain_claimable and the record when this applies. 422 claim_record_missing when the record is not visible, 503 dns_unavailable when the lookup itself failed. The previous holder is notified. Requires the domain:write scope; 20 checks per hour per team.",
@@ -7077,7 +8310,11 @@
         "summary": "Claim a domain held by another account",
         "tags": [
           "Domains"
-        ]
+        ],
+        "x-sdk-group": [
+          "domains"
+        ],
+        "x-sdk-method": "claim"
       }
     },
     "/v1/domains/{id}": {
@@ -7171,7 +8408,11 @@
         "summary": "Delete a domain",
         "tags": [
           "Domains"
-        ]
+        ],
+        "x-sdk-group": [
+          "domains"
+        ],
+        "x-sdk-method": "delete"
       },
       "get": {
         "description": "Retrieve details for a single domain including its current verification status and DNS records.",
@@ -7242,7 +8483,11 @@
         "summary": "Get domain details",
         "tags": [
           "Domains"
-        ]
+        ],
+        "x-sdk-group": [
+          "domains"
+        ],
+        "x-sdk-method": "get"
       },
       "patch": {
         "description": "Enable or disable inbound email for a verified domain (paid plans). Returns the MX record to publish and the receiving status: disabled, pending, active or failed. Requires the domain:write scope.",
@@ -7390,7 +8635,11 @@
         "tags": [
           "Domains",
           "Receiving"
-        ]
+        ],
+        "x-sdk-group": [
+          "domains"
+        ],
+        "x-sdk-method": "update"
       }
     },
     "/v1/domains/{id}/domain-connect/cloudflare": {
@@ -7484,7 +8733,11 @@
         "summary": "Set up sending DNS on Cloudflare in one click",
         "tags": [
           "Domains"
-        ]
+        ],
+        "x-sdk-group": [
+          "domains"
+        ],
+        "x-sdk-method": "connectCloudflare"
       }
     },
     "/v1/domains/{id}/domain-connect/cloudflare-inbound": {
@@ -7578,7 +8831,11 @@
         "summary": "Set up receiving DNS on Cloudflare in one click",
         "tags": [
           "Domains"
-        ]
+        ],
+        "x-sdk-group": [
+          "domains"
+        ],
+        "x-sdk-method": "connectCloudflareInbound"
       }
     },
     "/v1/domains/{id}/verify": {
@@ -7697,7 +8954,11 @@
         "summary": "Verify a domain",
         "tags": [
           "Domains"
-        ]
+        ],
+        "x-sdk-group": [
+          "domains"
+        ],
+        "x-sdk-method": "verify"
       }
     },
     "/v1/emails": {
@@ -7761,6 +9022,13 @@
         ],
         "responses": {
           "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailList"
+                }
+              }
+            },
             "description": "A page of emails"
           },
           "401": {
@@ -7807,7 +9075,11 @@
         "summary": "List sent emails",
         "tags": [
           "Emails"
-        ]
+        ],
+        "x-sdk-group": [
+          "emails"
+        ],
+        "x-sdk-method": "list"
       },
       "post": {
         "description": "Queue a single email for delivery. The email is validated, queued, and sent asynchronously via the configured sending provider. Recipients on domains reserved for documentation and tests (example.com, example.net, example.org, and anything under .test, .example, .invalid or .localhost) are refused with 400; for test sends use an address at simulator.amazonses.com, such as success@simulator.amazonses.com.",
@@ -7899,7 +9171,11 @@
         "summary": "Send an email",
         "tags": [
           "Emails"
-        ]
+        ],
+        "x-sdk-group": [
+          "emails"
+        ],
+        "x-sdk-method": "send"
       }
     },
     "/v1/emails/batch": {
@@ -8013,7 +9289,11 @@
         "summary": "Send a batch of emails",
         "tags": [
           "Emails"
-        ]
+        ],
+        "x-sdk-group": [
+          "emails"
+        ],
+        "x-sdk-method": "sendBatch"
       }
     },
     "/v1/emails/clicked-links": {
@@ -8114,7 +9394,11 @@
         "summary": "List clicked links",
         "tags": [
           "Emails"
-        ]
+        ],
+        "x-sdk-group": [
+          "emails"
+        ],
+        "x-sdk-method": "listClickedLinks"
       }
     },
     "/v1/emails/metrics": {
@@ -8327,7 +9611,11 @@
         "summary": "Retrieve email metrics",
         "tags": [
           "Emails"
-        ]
+        ],
+        "x-sdk-group": [
+          "emails"
+        ],
+        "x-sdk-method": "getMetrics"
       }
     },
     "/v1/emails/receiving": {
@@ -8487,7 +9775,12 @@
         "summary": "List received emails",
         "tags": [
           "Receiving"
-        ]
+        ],
+        "x-sdk-group": [
+          "emails",
+          "receiving"
+        ],
+        "x-sdk-method": "list"
       },
       "patch": {
         "description": "Set the read state of up to 100 received emails at once. Not in Resend. Ids that are not the team's are skipped. Requires the inbound:read scope.",
@@ -8595,7 +9888,12 @@
         "summary": "Mark received emails read or unread",
         "tags": [
           "Receiving"
-        ]
+        ],
+        "x-sdk-group": [
+          "emails",
+          "receiving"
+        ],
+        "x-sdk-method": "mark"
       }
     },
     "/v1/emails/receiving/{id}": {
@@ -8690,7 +9988,12 @@
         "summary": "Delete a received email",
         "tags": [
           "Receiving"
-        ]
+        ],
+        "x-sdk-group": [
+          "emails",
+          "receiving"
+        ],
+        "x-sdk-method": "delete"
       },
       "get": {
         "description": "One received email with text and HTML bodies, headers, attachment metadata and a 15-minute link to the raw .eml. A quarantined message (virus verdict not PASS) has no body, raw link or attachments.",
@@ -8771,7 +10074,12 @@
         "summary": "Get a received email",
         "tags": [
           "Receiving"
-        ]
+        ],
+        "x-sdk-group": [
+          "emails",
+          "receiving"
+        ],
+        "x-sdk-method": "get"
       },
       "patch": {
         "description": "Set the read state of one received email. Not in Resend. Requires the inbound:read scope.",
@@ -8895,7 +10203,12 @@
         "summary": "Mark a received email read or unread",
         "tags": [
           "Receiving"
-        ]
+        ],
+        "x-sdk-group": [
+          "emails",
+          "receiving"
+        ],
+        "x-sdk-method": "update"
       }
     },
     "/v1/emails/receiving/{id}/attachments": {
@@ -8990,7 +10303,13 @@
         "summary": "List attachments of a received email",
         "tags": [
           "Receiving"
-        ]
+        ],
+        "x-sdk-group": [
+          "emails",
+          "receiving",
+          "attachments"
+        ],
+        "x-sdk-method": "list"
       }
     },
     "/v1/emails/receiving/{id}/attachments/{attachment_id}": {
@@ -9082,7 +10401,13 @@
         "summary": "Get one attachment of a received email",
         "tags": [
           "Receiving"
-        ]
+        ],
+        "x-sdk-group": [
+          "emails",
+          "receiving",
+          "attachments"
+        ],
+        "x-sdk-method": "get"
       }
     },
     "/v1/emails/receiving/{id}/reply": {
@@ -9282,7 +10607,12 @@
         "summary": "Reply to a received email",
         "tags": [
           "Receiving"
-        ]
+        ],
+        "x-sdk-group": [
+          "emails",
+          "receiving"
+        ],
+        "x-sdk-method": "reply"
       }
     },
     "/v1/emails/{id}": {
@@ -9355,7 +10685,11 @@
         "summary": "Get email details",
         "tags": [
           "Emails"
-        ]
+        ],
+        "x-sdk-group": [
+          "emails"
+        ],
+        "x-sdk-method": "get"
       },
       "patch": {
         "description": "Change the send time of a scheduled email. Only scheduled_at can be changed; to change content, cancel and send again. Requires the email:send scope.",
@@ -9393,6 +10727,31 @@
         },
         "responses": {
           "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "object": {
+                      "example": "email",
+                      "type": "string"
+                    },
+                    "scheduled_at": {
+                      "format": "date-time",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "object",
+                    "id",
+                    "scheduled_at"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "Rescheduled"
           },
           "400": {
@@ -9462,7 +10821,11 @@
         "summary": "Reschedule a scheduled email",
         "tags": [
           "Emails"
-        ]
+        ],
+        "x-sdk-group": [
+          "emails"
+        ],
+        "x-sdk-method": "update"
       }
     },
     "/v1/emails/{id}/cancel": {
@@ -9482,6 +10845,26 @@
         ],
         "responses": {
           "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "object": {
+                      "example": "email",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "object",
+                    "id"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
             "description": "Canceled"
           },
           "401": {
@@ -9541,7 +10924,11 @@
         "summary": "Cancel a scheduled email",
         "tags": [
           "Emails"
-        ]
+        ],
+        "x-sdk-group": [
+          "emails"
+        ],
+        "x-sdk-method": "cancel"
       }
     },
     "/v1/emails/{id}/share": {
@@ -9658,7 +11045,11 @@
         "summary": "Create a share link for a sent email",
         "tags": [
           "Emails"
-        ]
+        ],
+        "x-sdk-group": [
+          "emails"
+        ],
+        "x-sdk-method": "share"
       }
     },
     "/v1/forms": {
@@ -9720,7 +11111,11 @@
         "summary": "List signup forms",
         "tags": [
           "Forms"
-        ]
+        ],
+        "x-sdk-group": [
+          "forms"
+        ],
+        "x-sdk-method": "list"
       },
       "post": {
         "description": "Create a new signup form, including its confirmation sender and welcome email if you send them. After creation, the embed snippet at /api/forms/{id}/submit (HTML) or /api/forms/{id}/embed.js (JavaScript widget) can be used on third-party sites. Request keys are snake_case; the older camelCase keys are still accepted. Requires the form:write scope.",
@@ -9800,7 +11195,11 @@
         "summary": "Create a signup form",
         "tags": [
           "Forms"
-        ]
+        ],
+        "x-sdk-group": [
+          "forms"
+        ],
+        "x-sdk-method": "create"
       }
     },
     "/v1/forms/{id}": {
@@ -9883,7 +11282,11 @@
         "summary": "Delete a signup form",
         "tags": [
           "Forms"
-        ]
+        ],
+        "x-sdk-group": [
+          "forms"
+        ],
+        "x-sdk-method": "delete"
       },
       "get": {
         "description": "Retrieve a signup form by ID.",
@@ -9964,7 +11367,11 @@
         "summary": "Retrieve a signup form",
         "tags": [
           "Forms"
-        ]
+        ],
+        "x-sdk-group": [
+          "forms"
+        ],
+        "x-sdk-method": "get"
       },
       "patch": {
         "description": "Update fields, styling, double opt-in behaviour, the confirmation and welcome emails, or active state on an existing form. Only the fields sent change. Request keys are snake_case; the older camelCase keys are still accepted. Requires the form:write scope.",
@@ -10065,7 +11472,11 @@
         "summary": "Update a signup form",
         "tags": [
           "Forms"
-        ]
+        ],
+        "x-sdk-group": [
+          "forms"
+        ],
+        "x-sdk-method": "update"
       }
     },
     "/v1/forms/{id}/pending": {
@@ -10178,7 +11589,12 @@
         "summary": "List pending signups",
         "tags": [
           "Forms"
-        ]
+        ],
+        "x-sdk-group": [
+          "forms",
+          "pending"
+        ],
+        "x-sdk-method": "list"
       }
     },
     "/v1/forms/{id}/pending/approve-all": {
@@ -10306,7 +11722,12 @@
         "summary": "Approve all pending signups",
         "tags": [
           "Forms"
-        ]
+        ],
+        "x-sdk-group": [
+          "forms",
+          "pending"
+        ],
+        "x-sdk-method": "approveAll"
       }
     },
     "/v1/forms/{id}/pending/{pendingId}": {
@@ -10407,7 +11828,12 @@
         "summary": "Remove a pending signup",
         "tags": [
           "Forms"
-        ]
+        ],
+        "x-sdk-group": [
+          "forms",
+          "pending"
+        ],
+        "x-sdk-method": "remove"
       }
     },
     "/v1/forms/{id}/pending/{pendingId}/approve": {
@@ -10531,7 +11957,12 @@
         "summary": "Approve a pending signup",
         "tags": [
           "Forms"
-        ]
+        ],
+        "x-sdk-group": [
+          "forms",
+          "pending"
+        ],
+        "x-sdk-method": "approve"
       }
     },
     "/v1/forms/{id}/welcome-preview": {
@@ -10657,7 +12088,11 @@
         "summary": "Preview a form's welcome email",
         "tags": [
           "Forms"
-        ]
+        ],
+        "x-sdk-group": [
+          "forms"
+        ],
+        "x-sdk-method": "previewWelcomeEmail"
       }
     },
     "/v1/inboxes": {
@@ -10677,7 +12112,7 @@
             }
           },
           {
-            "description": "The id of the last inboxe on the page; returns the next, older page",
+            "description": "The id of the last inbox on the page; returns the next, older page",
             "in": "query",
             "name": "after",
             "required": false,
@@ -10686,7 +12121,7 @@
             }
           },
           {
-            "description": "The id of the first inboxe on the page; returns the previous, newer page. Not with after.",
+            "description": "The id of the first inbox on the page; returns the previous, newer page. Not with after.",
             "in": "query",
             "name": "before",
             "required": false,
@@ -10775,7 +12210,11 @@
         "summary": "List inboxes",
         "tags": [
           "Inboxes"
-        ]
+        ],
+        "x-sdk-group": [
+          "inboxes"
+        ],
+        "x-sdk-method": "list"
       },
       "post": {
         "description": "Organise one address on your own domain as an inbox with threads, labels, folders and drafts. The domain must have receiving turned on and be able to send (mail from the inbox is sent from its address): verified for sending, or a receiving subdomain of a verified domain. SMTPfast never provisions addresses on a shared domain, so forwarding: true is refused and receiving_address is always null. Mail the address already received in the last 30 days is filed into threads. Requires the domain:write scope on a key created by a team owner or admin.",
@@ -10899,7 +12338,11 @@
         "summary": "Create an inbox",
         "tags": [
           "Inboxes"
-        ]
+        ],
+        "x-sdk-group": [
+          "inboxes"
+        ],
+        "x-sdk-method": "create"
       }
     },
     "/v1/inboxes/{inbox_id}": {
@@ -10994,7 +12437,11 @@
         "summary": "Delete an inbox",
         "tags": [
           "Inboxes"
-        ]
+        ],
+        "x-sdk-group": [
+          "inboxes"
+        ],
+        "x-sdk-method": "delete"
       },
       "get": {
         "description": "One inbox by id or by its email address. Requires the inbound:read scope.",
@@ -11075,7 +12522,11 @@
         "summary": "Retrieve an inbox",
         "tags": [
           "Inboxes"
-        ]
+        ],
+        "x-sdk-group": [
+          "inboxes"
+        ],
+        "x-sdk-method": "get"
       },
       "patch": {
         "description": "Change the internal name or the name recipients see. At least one of name or from_name. from_name: null clears it (not in Resend). Requires the domain:write scope on a key created by a team owner or admin.",
@@ -11198,7 +12649,11 @@
         "summary": "Update an inbox",
         "tags": [
           "Inboxes"
-        ]
+        ],
+        "x-sdk-group": [
+          "inboxes"
+        ],
+        "x-sdk-method": "update"
       }
     },
     "/v1/inboxes/{inbox_id}/drafts": {
@@ -11335,7 +12790,12 @@
         "summary": "List drafts",
         "tags": [
           "Inboxes"
-        ]
+        ],
+        "x-sdk-group": [
+          "inboxes",
+          "drafts"
+        ],
+        "x-sdk-method": "list"
       },
       "post": {
         "description": "Create a draft for a person to review and send. Nothing is sent, so it needs only the inbound:read scope: give an agent a key without email:send and every message it writes waits here for approval. Omit thread_id for a new conversation; send thread_id and reply_to_email_id together for a reply (recipients are not copied, set to before sending). At least one of to, cc, bcc, subject, text or html must be non-empty; 50 recipients at most; subject up to 900 characters (Resend allows 2000; a longer subject could never be sent here). Returns 201 for a new draft, or 200 when an unsent reply draft for that message already exists, updated with the fields sent.",
@@ -11533,7 +12993,12 @@
         "summary": "Create a draft",
         "tags": [
           "Inboxes"
-        ]
+        ],
+        "x-sdk-group": [
+          "inboxes",
+          "drafts"
+        ],
+        "x-sdk-method": "create"
       }
     },
     "/v1/inboxes/{inbox_id}/drafts/{draft_id}": {
@@ -11637,7 +13102,12 @@
         "summary": "Delete a draft",
         "tags": [
           "Inboxes"
-        ]
+        ],
+        "x-sdk-group": [
+          "inboxes",
+          "drafts"
+        ],
+        "x-sdk-method": "delete"
       },
       "get": {
         "description": "One draft, sent or not. Requires the inbound:read scope.",
@@ -11727,7 +13197,12 @@
         "summary": "Retrieve a draft",
         "tags": [
           "Inboxes"
-        ]
+        ],
+        "x-sdk-group": [
+          "inboxes",
+          "drafts"
+        ],
+        "x-sdk-method": "get"
       },
       "patch": {
         "description": "Omitted fields stay as they are; null clears one. The result must keep at least one non-empty field and at most 50 recipients. A sent draft, or one being sent, returns 409. Not in Resend: pass revision (from the draft object) to make the edit land only on that version; if the draft changed since, nothing is written and the answer is 409 with code draft_changed and the current revision. Requires the inbound:read scope.",
@@ -11921,7 +13396,12 @@
         "summary": "Update a draft",
         "tags": [
           "Inboxes"
-        ]
+        ],
+        "x-sdk-group": [
+          "inboxes",
+          "drafts"
+        ],
+        "x-sdk-method": "update"
       }
     },
     "/v1/inboxes/{inbox_id}/drafts/{draft_id}/send": {
@@ -12073,7 +13553,12 @@
         "summary": "Send a draft",
         "tags": [
           "Inboxes"
-        ]
+        ],
+        "x-sdk-group": [
+          "inboxes",
+          "drafts"
+        ],
+        "x-sdk-method": "send"
       }
     },
     "/v1/inboxes/{inbox_id}/labels": {
@@ -12168,7 +13653,12 @@
         "summary": "List labels",
         "tags": [
           "Inboxes"
-        ]
+        ],
+        "x-sdk-group": [
+          "inboxes",
+          "labels"
+        ],
+        "x-sdk-method": "list"
       },
       "post": {
         "description": "A named, colored tag on one inbox. Names are unique per inbox, ignoring case; an inbox holds up to 100 labels. color defaults to mauve. Organising mail needs only the inbound:read scope.",
@@ -12301,7 +13791,12 @@
         "summary": "Create a label",
         "tags": [
           "Inboxes"
-        ]
+        ],
+        "x-sdk-group": [
+          "inboxes",
+          "labels"
+        ],
+        "x-sdk-method": "create"
       }
     },
     "/v1/inboxes/{inbox_id}/labels/{label_id}": {
@@ -12405,7 +13900,12 @@
         "summary": "Delete a label",
         "tags": [
           "Inboxes"
-        ]
+        ],
+        "x-sdk-group": [
+          "inboxes",
+          "labels"
+        ],
+        "x-sdk-method": "delete"
       },
       "get": {
         "description": "One label of the inbox, in the same shape as the list items. 404 when the label belongs to another inbox. Not in Resend. Requires the inbound:read scope.",
@@ -12495,7 +13995,12 @@
         "summary": "Retrieve a label",
         "tags": [
           "Inboxes"
-        ]
+        ],
+        "x-sdk-group": [
+          "inboxes",
+          "labels"
+        ],
+        "x-sdk-method": "get"
       },
       "patch": {
         "description": "Rename or recolor a label. At least one of name or color. Requires the inbound:read scope.",
@@ -12633,7 +14138,12 @@
         "summary": "Update a label",
         "tags": [
           "Inboxes"
-        ]
+        ],
+        "x-sdk-group": [
+          "inboxes",
+          "labels"
+        ],
+        "x-sdk-method": "update"
       }
     },
     "/v1/inboxes/{inbox_id}/threads": {
@@ -12809,7 +14319,12 @@
         "summary": "List threads",
         "tags": [
           "Inboxes"
-        ]
+        ],
+        "x-sdk-group": [
+          "inboxes",
+          "threads"
+        ],
+        "x-sdk-method": "list"
       }
     },
     "/v1/inboxes/{inbox_id}/threads/{thread_id}": {
@@ -12913,7 +14428,12 @@
         "summary": "Delete a thread",
         "tags": [
           "Inboxes"
-        ]
+        ],
+        "x-sdk-group": [
+          "inboxes",
+          "threads"
+        ],
+        "x-sdk-method": "delete"
       },
       "get": {
         "description": "The thread summary; list its messages with GET .../threads/{thread_id}/emails. Requires the inbound:read scope.",
@@ -13003,7 +14523,12 @@
         "summary": "Retrieve a thread",
         "tags": [
           "Inboxes"
-        ]
+        ],
+        "x-sdk-group": [
+          "inboxes",
+          "threads"
+        ],
+        "x-sdk-method": "get"
       },
       "patch": {
         "description": "Mark every message read or unread (the same read state the mailbox and GET /v1/emails/receiving show), move the thread to inbox, archive, spam or trash (sent is assigned automatically), apply a label, or remove one with remove_label_id (not in Resend). At least one of read, folder, label_id or remove_label_id. Requires the inbound:read scope; moving to trash is a delete and needs the inbound:delete scope on a key created by a team owner or admin.",
@@ -13135,7 +14660,12 @@
         "summary": "Update a thread",
         "tags": [
           "Inboxes"
-        ]
+        ],
+        "x-sdk-group": [
+          "inboxes",
+          "threads"
+        ],
+        "x-sdk-method": "update"
       }
     },
     "/v1/inboxes/{inbox_id}/threads/{thread_id}/emails": {
@@ -13291,7 +14821,13 @@
         "summary": "List thread emails",
         "tags": [
           "Inboxes"
-        ]
+        ],
+        "x-sdk-group": [
+          "inboxes",
+          "threads",
+          "emails"
+        ],
+        "x-sdk-method": "list"
       }
     },
     "/v1/inboxes/{inbox_id}/threads/{thread_id}/emails/{email_id}": {
@@ -13392,7 +14928,13 @@
         "summary": "Retrieve a thread email",
         "tags": [
           "Inboxes"
-        ]
+        ],
+        "x-sdk-group": [
+          "inboxes",
+          "threads",
+          "emails"
+        ],
+        "x-sdk-method": "get"
       }
     },
     "/v1/inboxes/{inbox_id}/threads/{thread_id}/emails/{email_id}/forward": {
@@ -13596,7 +15138,13 @@
         "summary": "Forward a thread email",
         "tags": [
           "Inboxes"
-        ]
+        ],
+        "x-sdk-group": [
+          "inboxes",
+          "threads",
+          "emails"
+        ],
+        "x-sdk-method": "forward"
       }
     },
     "/v1/inboxes/{inbox_id}/threads/{thread_id}/emails/{email_id}/reply": {
@@ -13784,7 +15332,13 @@
         "summary": "Reply to a thread email",
         "tags": [
           "Inboxes"
-        ]
+        ],
+        "x-sdk-group": [
+          "inboxes",
+          "threads",
+          "emails"
+        ],
+        "x-sdk-method": "reply"
       }
     },
     "/v1/logs": {
@@ -13976,7 +15530,11 @@
         "summary": "List email events",
         "tags": [
           "Logs"
-        ]
+        ],
+        "x-sdk-group": [
+          "logs"
+        ],
+        "x-sdk-method": "list"
       }
     },
     "/v1/me": {
@@ -14043,13 +15601,17 @@
                       "type": "object"
                     },
                     "team_id": {
-                      "nullable": true,
-                      "type": "string"
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "team_sending_status": {
                       "example": "active",
-                      "nullable": true,
-                      "type": "string"
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "user_id": {
                       "description": "The user who created the key. Matches user_id on GET /v1/team/members.",
@@ -14106,7 +15668,11 @@
         "summary": "What this API key can do",
         "tags": [
           "Account"
-        ]
+        ],
+        "x-sdk-group": [
+          "account"
+        ],
+        "x-sdk-method": "me"
       }
     },
     "/v1/segments": {
@@ -14168,7 +15734,11 @@
         "summary": "List segments",
         "tags": [
           "Contacts"
-        ]
+        ],
+        "x-sdk-group": [
+          "segments"
+        ],
+        "x-sdk-method": "list"
       },
       "post": {
         "description": "Create a manual segment for organizing contacts and targeting broadcasts.",
@@ -14258,11 +15828,16 @@
         "summary": "Create a segment",
         "tags": [
           "Contacts"
-        ]
+        ],
+        "x-sdk-group": [
+          "segments"
+        ],
+        "x-sdk-method": "create"
       }
     },
     "/v1/segments/{id}": {
       "delete": {
+        "description": "Delete a segment. Its contacts stay; only their membership in this segment goes.",
         "operationId": "deleteSegment",
         "parameters": [
           {
@@ -14280,8 +15855,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
-                  "type": "object"
+                  "$ref": "#/components/schemas/DeletedObject"
                 }
               }
             },
@@ -14341,9 +15915,14 @@
         "summary": "Delete a segment",
         "tags": [
           "Contacts"
-        ]
+        ],
+        "x-sdk-group": [
+          "segments"
+        ],
+        "x-sdk-method": "delete"
       },
       "get": {
+        "description": "Return one segment by id, with the number of contacts in it.",
         "operationId": "getSegment",
         "parameters": [
           {
@@ -14421,9 +16000,14 @@
         "summary": "Retrieve a segment",
         "tags": [
           "Contacts"
-        ]
+        ],
+        "x-sdk-group": [
+          "segments"
+        ],
+        "x-sdk-method": "get"
       },
       "patch": {
+        "description": "Change the name, description or color of a segment. Only the fields sent change.",
         "operationId": "updateSegment",
         "parameters": [
           {
@@ -14440,7 +16024,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateSegmentRequest"
+                "$ref": "#/components/schemas/UpdateSegmentRequest"
               }
             }
           },
@@ -14531,7 +16115,11 @@
         "summary": "Update a segment",
         "tags": [
           "Contacts"
-        ]
+        ],
+        "x-sdk-group": [
+          "segments"
+        ],
+        "x-sdk-method": "update"
       }
     },
     "/v1/segments/{id}/contacts": {
@@ -14635,7 +16223,12 @@
         "summary": "List contacts in a segment",
         "tags": [
           "Contacts"
-        ]
+        ],
+        "x-sdk-group": [
+          "segments",
+          "contacts"
+        ],
+        "x-sdk-method": "list"
       }
     },
     "/v1/suppressions": {
@@ -14734,7 +16327,11 @@
         "summary": "List suppressions",
         "tags": [
           "Suppressions"
-        ]
+        ],
+        "x-sdk-group": [
+          "suppressions"
+        ],
+        "x-sdk-method": "list"
       },
       "post": {
         "description": "Manually suppress an address so future sends to it are blocked.",
@@ -14814,7 +16411,11 @@
         "summary": "Create a manual suppression",
         "tags": [
           "Suppressions"
-        ]
+        ],
+        "x-sdk-group": [
+          "suppressions"
+        ],
+        "x-sdk-method": "create"
       }
     },
     "/v1/suppressions/batch/add": {
@@ -14911,7 +16512,11 @@
         "summary": "Suppress addresses in bulk",
         "tags": [
           "Suppressions"
-        ]
+        ],
+        "x-sdk-group": [
+          "suppressions"
+        ],
+        "x-sdk-method": "addBatch"
       }
     },
     "/v1/suppressions/batch/remove": {
@@ -15013,7 +16618,11 @@
         "summary": "Remove suppressions in bulk",
         "tags": [
           "Suppressions"
-        ]
+        ],
+        "x-sdk-group": [
+          "suppressions"
+        ],
+        "x-sdk-method": "removeBatch"
       }
     },
     "/v1/suppressions/{id}": {
@@ -15096,7 +16705,11 @@
         "summary": "Delete a suppression",
         "tags": [
           "Suppressions"
-        ]
+        ],
+        "x-sdk-group": [
+          "suppressions"
+        ],
+        "x-sdk-method": "delete"
       },
       "get": {
         "description": "Retrieve a suppression by ID or URL-encoded email address.",
@@ -15177,7 +16790,11 @@
         "summary": "Retrieve a suppression",
         "tags": [
           "Suppressions"
-        ]
+        ],
+        "x-sdk-group": [
+          "suppressions"
+        ],
+        "x-sdk-method": "get"
       }
     },
     "/v1/team/invites": {
@@ -15261,7 +16878,12 @@
         "summary": "List pending invitations",
         "tags": [
           "Team"
-        ]
+        ],
+        "x-sdk-group": [
+          "team",
+          "invites"
+        ],
+        "x-sdk-method": "list"
       },
       "post": {
         "description": "Emails an invitation link that is valid for 7 days. The person signs in with the invited address to accept. Inviting the same address again sends a fresh link. Needs a paid plan and a free seat. Limited to 20 invitations an hour per inviter and 3 an hour per address. Owner or admin only; requires the team:manage scope.",
@@ -15368,7 +16990,12 @@
         "summary": "Invite someone to the team",
         "tags": [
           "Team"
-        ]
+        ],
+        "x-sdk-group": [
+          "team",
+          "invites"
+        ],
+        "x-sdk-method": "create"
       }
     },
     "/v1/team/invites/{id}": {
@@ -15452,7 +17079,12 @@
         "summary": "Revoke an invitation",
         "tags": [
           "Team"
-        ]
+        ],
+        "x-sdk-group": [
+          "team",
+          "invites"
+        ],
+        "x-sdk-method": "revoke"
       },
       "get": {
         "description": "One invitation, in the same shape as the list items. 404 once it is accepted, expired or revoked, or when it belongs to another team. Owner or admin only; requires the team:read scope.",
@@ -15533,7 +17165,12 @@
         "summary": "Retrieve a pending invitation",
         "tags": [
           "Team"
-        ]
+        ],
+        "x-sdk-group": [
+          "team",
+          "invites"
+        ],
+        "x-sdk-method": "get"
       }
     },
     "/v1/team/members": {
@@ -15617,7 +17254,12 @@
         "summary": "List team members",
         "tags": [
           "Team"
-        ]
+        ],
+        "x-sdk-group": [
+          "team",
+          "members"
+        ],
+        "x-sdk-method": "list"
       }
     },
     "/v1/team/members/{id}": {
@@ -15711,7 +17353,12 @@
         "summary": "Remove a member",
         "tags": [
           "Team"
-        ]
+        ],
+        "x-sdk-group": [
+          "team",
+          "members"
+        ],
+        "x-sdk-method": "remove"
       },
       "patch": {
         "description": "Send role, can_manage_billing, or both. Owners and admins can change roles under the same rules as the Members page (an admin cannot touch an owner, a team keeps at least one owner). Only an owner can change billing access. The member gets an email when their role changes. Requires the team:manage scope.",
@@ -15826,7 +17473,12 @@
         "summary": "Change a member's role or billing access",
         "tags": [
           "Team"
-        ]
+        ],
+        "x-sdk-group": [
+          "team",
+          "members"
+        ],
+        "x-sdk-method": "update"
       }
     },
     "/v1/templates": {
@@ -15949,7 +17601,11 @@
         "summary": "List templates",
         "tags": [
           "Templates"
-        ]
+        ],
+        "x-sdk-group": [
+          "templates"
+        ],
+        "x-sdk-method": "list"
       },
       "post": {
         "description": "Create a template as a draft. Publish it with POST /v1/templates/{id}/publish before sending with it. Same body as Resend's create template; markdown, preview_text and category are SMTPfast additions. Requires the email:send scope.",
@@ -16068,7 +17724,11 @@
         "summary": "Create a template",
         "tags": [
           "Templates"
-        ]
+        ],
+        "x-sdk-group": [
+          "templates"
+        ],
+        "x-sdk-method": "create"
       }
     },
     "/v1/templates/{id}": {
@@ -16151,7 +17811,11 @@
         "summary": "Delete a template",
         "tags": [
           "Templates"
-        ]
+        ],
+        "x-sdk-group": [
+          "templates"
+        ],
+        "x-sdk-method": "delete"
       },
       "get": {
         "description": "Get one template by id or alias. The content fields are the current draft; has_unpublished_versions says whether it differs from the published version that sends use. Requires the email:read scope.",
@@ -16232,7 +17896,11 @@
         "summary": "Get a template",
         "tags": [
           "Templates"
-        ]
+        ],
+        "x-sdk-group": [
+          "templates"
+        ],
+        "x-sdk-method": "get"
       },
       "patch": {
         "description": "Change the draft. Only the fields you send change. Sends keep using the published version until you publish again. Pass expected_updated_at to refuse the change if someone else edited the template since you loaded it. Requires the email:send scope.",
@@ -16346,7 +18014,11 @@
         "summary": "Update a template",
         "tags": [
           "Templates"
-        ]
+        ],
+        "x-sdk-group": [
+          "templates"
+        ],
+        "x-sdk-method": "update"
       }
     },
     "/v1/templates/{id}/duplicate": {
@@ -16439,7 +18111,11 @@
         "summary": "Duplicate a template",
         "tags": [
           "Templates"
-        ]
+        ],
+        "x-sdk-group": [
+          "templates"
+        ],
+        "x-sdk-method": "duplicate"
       }
     },
     "/v1/templates/{id}/publish": {
@@ -16559,7 +18235,11 @@
         "summary": "Publish a template",
         "tags": [
           "Templates"
-        ]
+        ],
+        "x-sdk-group": [
+          "templates"
+        ],
+        "x-sdk-method": "publish"
       }
     },
     "/v1/usage": {
@@ -16568,6 +18248,13 @@
         "operationId": "getUsage",
         "responses": {
           "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Usage"
+                }
+              }
+            },
             "description": "Usage and limits for the account"
           },
           "401": {
@@ -16604,7 +18291,11 @@
         "summary": "Usage against the plan",
         "tags": [
           "Account"
-        ]
+        ],
+        "x-sdk-group": [
+          "account"
+        ],
+        "x-sdk-method": "usage"
       }
     },
     "/v1/webhooks": {
@@ -16659,7 +18350,11 @@
         "summary": "List webhooks",
         "tags": [
           "Webhooks"
-        ]
+        ],
+        "x-sdk-group": [
+          "webhooks"
+        ],
+        "x-sdk-method": "list"
       },
       "post": {
         "description": "Register a new webhook endpoint. SMTPfast will POST event payloads to this URL when the specified events occur.",
@@ -16675,7 +18370,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -16729,7 +18424,11 @@
         "summary": "Create webhook",
         "tags": [
           "Webhooks"
-        ]
+        ],
+        "x-sdk-group": [
+          "webhooks"
+        ],
+        "x-sdk-method": "create"
       }
     },
     "/v1/webhooks/{id}": {
@@ -16749,6 +18448,13 @@
         ],
         "responses": {
           "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Success"
+                }
+              }
+            },
             "description": "Deleted"
           },
           "404": {
@@ -16758,7 +18464,11 @@
         "summary": "Delete webhook",
         "tags": [
           "Webhooks"
-        ]
+        ],
+        "x-sdk-group": [
+          "webhooks"
+        ],
+        "x-sdk-method": "delete"
       },
       "get": {
         "description": "Retrieve a single webhook endpoint by ID.",
@@ -16776,6 +18486,13 @@
         ],
         "responses": {
           "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Webhook"
+                }
+              }
+            },
             "description": "The webhook"
           },
           "404": {
@@ -16785,7 +18502,11 @@
         "summary": "Get webhook",
         "tags": [
           "Webhooks"
-        ]
+        ],
+        "x-sdk-group": [
+          "webhooks"
+        ],
+        "x-sdk-method": "get"
       },
       "patch": {
         "description": "Same as PUT: a partial update that leaves out any field you omit. Accepted because Resend uses PATCH for this, so ported code works unchanged.",
@@ -16813,6 +18534,13 @@
         },
         "responses": {
           "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookUpdated"
+                }
+              }
+            },
             "description": "The updated webhook"
           },
           "404": {
@@ -16822,7 +18550,11 @@
         "summary": "Update webhook",
         "tags": [
           "Webhooks"
-        ]
+        ],
+        "x-sdk-group": [
+          "webhooks"
+        ],
+        "x-sdk-method": "update"
       },
       "put": {
         "description": "Update the URL, events, or active status of an existing webhook endpoint.",
@@ -16853,7 +18585,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Webhook"
+                  "$ref": "#/components/schemas/WebhookUpdated"
                 }
               }
             },
@@ -16913,7 +18645,11 @@
         "summary": "Update webhook",
         "tags": [
           "Webhooks"
-        ]
+        ],
+        "x-sdk-group": [
+          "webhooks"
+        ],
+        "x-sdk-method": "replace"
       }
     },
     "/v1/webhooks/{id}/deliveries": {
@@ -17055,7 +18791,12 @@
         "summary": "List webhook deliveries",
         "tags": [
           "Webhooks"
-        ]
+        ],
+        "x-sdk-group": [
+          "webhooks",
+          "deliveries"
+        ],
+        "x-sdk-method": "list"
       }
     },
     "/v1/webhooks/{id}/deliveries/{delivery_id}": {
@@ -17160,7 +18901,12 @@
         "summary": "Get a webhook delivery",
         "tags": [
           "Webhooks"
-        ]
+        ],
+        "x-sdk-group": [
+          "webhooks",
+          "deliveries"
+        ],
+        "x-sdk-method": "get"
       }
     },
     "/v1/webhooks/{id}/deliveries/{delivery_id}/retry": {
@@ -17273,7 +19019,12 @@
         "summary": "Retry a webhook delivery",
         "tags": [
           "Webhooks"
-        ]
+        ],
+        "x-sdk-group": [
+          "webhooks",
+          "deliveries"
+        ],
+        "x-sdk-method": "retry"
       }
     },
     "/v1/webhooks/{id}/events": {
@@ -17413,7 +19164,12 @@
         "summary": "List webhook events",
         "tags": [
           "Webhooks"
-        ]
+        ],
+        "x-sdk-group": [
+          "webhooks",
+          "events"
+        ],
+        "x-sdk-method": "list"
       }
     },
     "/v1/webhooks/{id}/events/{event_id}": {
@@ -17505,7 +19261,12 @@
         "summary": "Retrieve a webhook event",
         "tags": [
           "Webhooks"
-        ]
+        ],
+        "x-sdk-group": [
+          "webhooks",
+          "events"
+        ],
+        "x-sdk-method": "get"
       }
     },
     "/v1/webhooks/{id}/events/{event_id}/attempts": {
@@ -17642,7 +19403,13 @@
         "summary": "List the attempts of a webhook event",
         "tags": [
           "Webhooks"
-        ]
+        ],
+        "x-sdk-group": [
+          "webhooks",
+          "events",
+          "attempts"
+        ],
+        "x-sdk-method": "list"
       }
     },
     "/v1/webhooks/{id}/events/{event_id}/replay": {
@@ -17759,7 +19526,12 @@
         "summary": "Replay a webhook event",
         "tags": [
           "Webhooks"
-        ]
+        ],
+        "x-sdk-group": [
+          "webhooks",
+          "events"
+        ],
+        "x-sdk-method": "replay"
       }
     },
     "/v1/webhooks/{id}/signing-secret/rotate": {
@@ -17854,7 +19626,11 @@
         "summary": "Rotate a webhook signing secret",
         "tags": [
           "Webhooks"
-        ]
+        ],
+        "x-sdk-group": [
+          "webhooks"
+        ],
+        "x-sdk-method": "rotateSigningSecret"
       }
     },
     "/v1/webhooks/{id}/test": {
@@ -17886,8 +19662,10 @@
                     },
                     "status": {
                       "description": "HTTP status code returned by the webhook endpoint, null when it did not answer",
-                      "nullable": true,
-                      "type": "integer"
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
                     },
                     "success": {
                       "description": "Whether the test payload was delivered successfully",
@@ -17944,7 +19722,11 @@
         "summary": "Test webhook",
         "tags": [
           "Webhooks"
-        ]
+        ],
+        "x-sdk-group": [
+          "webhooks"
+        ],
+        "x-sdk-method": "test"
       }
     }
   },

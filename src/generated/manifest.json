@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "0c1cb593b9926d0e3b457fa17e3c2ae31a690edd3ebc543dd63c81ffb56379fd",
+  "specHash": "5ce9aaa46b1c5ebd735e75bbcc67e42cd126d81159eb4cd6466b5806ac2b69fb",
   "operationCount": 137,
   "groups": [
     {
@@ -382,6 +382,7 @@
             "in": "body",
             "type": "object",
             "required": false,
+            "description": "Details of the audience, such as the segment_id",
             "example": "{\"segment_id\":\"clx_segment123\"}"
           },
           {
@@ -814,6 +815,7 @@
             "in": "body",
             "type": "object",
             "required": false,
+            "description": "Details of the audience, such as the segment_id",
             "example": "{\"segment_id\":\"clx_segment123\"}"
           },
           {
@@ -999,6 +1001,7 @@
       "group": "contact-properties",
       "command": "get",
       "summary": "Get a contact property",
+      "description": "Return one custom contact property by id.",
       "tags": [
         "Contacts"
       ],
@@ -3643,7 +3646,7 @@
           "in": "query",
           "type": "string",
           "required": false,
-          "description": "The id of the last inboxe on the page; returns the next, older page"
+          "description": "The id of the last inbox on the page; returns the next, older page"
         },
         {
           "name": "before",
@@ -3651,7 +3654,7 @@
           "in": "query",
           "type": "string",
           "required": false,
-          "description": "The id of the first inboxe on the page; returns the previous, newer page. Not with after."
+          "description": "The id of the first inbox on the page; returns the previous, newer page. Not with after."
         },
         {
           "name": "limit",
@@ -4768,6 +4771,7 @@
       "group": "segments",
       "command": "delete",
       "summary": "Delete a segment",
+      "description": "Delete a segment. Its contacts stay; only their membership in this segment goes.",
       "tags": [
         "Contacts"
       ],
@@ -4792,6 +4796,7 @@
       "group": "segments",
       "command": "get",
       "summary": "Retrieve a segment",
+      "description": "Return one segment by id, with the number of contacts in it.",
       "tags": [
         "Contacts"
       ],
@@ -4832,6 +4837,7 @@
       "group": "segments",
       "command": "update",
       "summary": "Update a segment",
+      "description": "Change the name, description or color of a segment. Only the fields sent change.",
       "tags": [
         "Contacts"
       ],
@@ -4875,7 +4881,7 @@
             "flag": "name",
             "in": "body",
             "type": "string",
-            "required": true,
+            "required": false,
             "example": "Customers"
           }
         ]
@@ -5654,7 +5660,8 @@
             "in": "body",
             "type": "string",
             "required": false,
-            "description": "The HTML body. Variables are written {{{KEY}}}, optionally with an inline fallback: {{{KEY|default}}}."
+            "description": "The HTML body. Variables are written {{{KEY}}}, optionally with an inline fallback: {{{KEY|default}}}.",
+            "nullable": true
           },
           {
             "name": "markdown",
@@ -5670,7 +5677,7 @@
             "flag": "name",
             "in": "body",
             "type": "string",
-            "required": true,
+            "required": false,
             "example": "order-confirmation"
           },
           {
@@ -5717,7 +5724,8 @@
             "in": "body",
             "type": "array",
             "required": false,
-            "items": "object"
+            "items": "object",
+            "nullable": true
           }
         ]
       }
