@@ -90,7 +90,7 @@ describe("domains verify", () => {
   test("--wait resolves a name and polls until verified", async () => {
     let verifyCalls = 0;
     server = await startMockServer((req, res) => {
-      if (req.method === "GET" && req.path === "/v1/domains") return sendJson(res, 200, [{ id: "dom_1", domain: "acme.test", status: "pending" }]);
+      if (req.method === "GET" && req.path === "/v1/domains") return sendJson(res, 200, { object: "list", has_more: false, data: [{ id: "dom_1", domain: "acme.test", status: "pending" }] });
       if (req.method === "GET" && req.path === "/v1/domains/dom_1")
         return sendJson(res, 200, { id: "dom_1", domain: "acme.test", dns_records: [{ type: "TXT", name: "_dmarc.acme.test", value: "v=DMARC1" }] });
       if (req.method === "POST" && req.path === "/v1/domains/dom_1/verify") {
