@@ -1503,17 +1503,17 @@
         "type": "object"
       },
       "DomainListItem": {
-        "description": "A domain as the list returns it. The field names are camelCase here, unlike the rest of the API.",
+        "description": "A domain as the list returns it. GET /v1/domains/{id} has the DNS records and verification detail.",
         "properties": {
-          "createdAt": {
+          "created_at": {
             "format": "date-time",
             "type": "string"
           },
-          "dkimStatus": {
+          "dkim_status": {
             "example": "verified",
             "type": "string"
           },
-          "dmarcStatus": {
+          "dmarc_status": {
             "example": "pending",
             "type": "string"
           },
@@ -1525,15 +1525,15 @@
             "example": "dom_xyz789",
             "type": "string"
           },
-          "receivingEnabled": {
+          "receiving_enabled": {
             "type": "boolean"
           },
-          "receivingStatus": {
+          "receiving_status": {
             "description": "disabled, pending, active or failed",
             "example": "disabled",
             "type": "string"
           },
-          "spfStatus": {
+          "spf_status": {
             "example": "verified",
             "type": "string"
           },
@@ -1542,7 +1542,7 @@
             "example": "verified",
             "type": "string"
           },
-          "verifiedAt": {
+          "verified_at": {
             "format": "date-time",
             "type": [
               "string",
@@ -1554,13 +1554,13 @@
           "id",
           "domain",
           "status",
-          "dkimStatus",
-          "spfStatus",
-          "dmarcStatus",
-          "verifiedAt",
-          "createdAt",
-          "receivingEnabled",
-          "receivingStatus"
+          "dkim_status",
+          "spf_status",
+          "dmarc_status",
+          "verified_at",
+          "created_at",
+          "receiving_enabled",
+          "receiving_status"
         ],
         "type": "object"
       },
@@ -1709,6 +1709,10 @@
             "example": 50,
             "type": "integer"
           },
+          "object": {
+            "example": "list",
+            "type": "string"
+          },
           "page": {
             "description": "Absent when paging with after or before",
             "example": 1,
@@ -1721,6 +1725,7 @@
           }
         },
         "required": [
+          "object",
           "data",
           "limit",
           "total",
@@ -2640,6 +2645,14 @@
             },
             "type": "array"
           },
+          "has_more": {
+            "example": false,
+            "type": "boolean"
+          },
+          "object": {
+            "example": "list",
+            "type": "string"
+          },
           "page": {
             "example": 1,
             "type": "integer"
@@ -2664,6 +2677,8 @@
           }
         },
         "required": [
+          "object",
+          "has_more",
           "data",
           "total",
           "undeliverable_total",
@@ -2922,6 +2937,11 @@
             },
             "type": "array"
           },
+          "has_more": {
+            "description": "Always false: every segment is in one page",
+            "example": false,
+            "type": "boolean"
+          },
           "object": {
             "example": "list",
             "type": "string"
@@ -2941,6 +2961,7 @@
         },
         "required": [
           "object",
+          "has_more",
           "data",
           "total",
           "segment_limit"
@@ -5083,10 +5104,28 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/ApiKey"
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/ApiKey"
+                      },
+                      "type": "array"
+                    },
+                    "has_more": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "object": {
+                      "example": "list",
+                      "type": "string"
+                    }
                   },
-                  "type": "array"
+                  "required": [
+                    "object",
+                    "has_more",
+                    "data"
+                  ],
+                  "type": "object"
                 }
               }
             },
@@ -6619,9 +6658,19 @@
                         "$ref": "#/components/schemas/ContactProperty"
                       },
                       "type": "array"
+                    },
+                    "has_more": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "object": {
+                      "example": "list",
+                      "type": "string"
                     }
                   },
                   "required": [
+                    "object",
+                    "has_more",
                     "data"
                   ],
                   "type": "object"
@@ -7153,6 +7202,16 @@
               }
             },
             "description": "Invalid or missing API key"
+          },
+          "402": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Plan limit reached - upgrade the plan to add more"
           },
           "403": {
             "content": {
@@ -7882,10 +7941,28 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/DomainListItem"
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/DomainListItem"
+                      },
+                      "type": "array"
+                    },
+                    "has_more": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "object": {
+                      "example": "list",
+                      "type": "string"
+                    }
                   },
-                  "type": "array"
+                  "required": [
+                    "object",
+                    "has_more",
+                    "data"
+                  ],
+                  "type": "object"
                 }
               }
             },
@@ -7983,7 +8060,7 @@
                 }
               }
             },
-            "description": "Error"
+            "description": "Plan limit reached - upgrade the plan to add more"
           },
           "403": {
             "content": {
@@ -8234,7 +8311,7 @@
                 }
               }
             },
-            "description": "Error"
+            "description": "Plan limit reached - upgrade the plan to add more"
           },
           "403": {
             "content": {
@@ -8568,7 +8645,7 @@
                 }
               }
             },
-            "description": "Error"
+            "description": "Plan limit reached - upgrade the plan to add more"
           },
           "403": {
             "content": {
@@ -10531,7 +10608,7 @@
                 }
               }
             },
-            "description": "Error"
+            "description": "Plan limit reached - upgrade the plan to add more"
           },
           "403": {
             "content": {
@@ -13588,6 +13665,10 @@
                       },
                       "type": "array"
                     },
+                    "has_more": {
+                      "example": false,
+                      "type": "boolean"
+                    },
                     "object": {
                       "example": "list",
                       "type": "string"
@@ -15783,6 +15864,16 @@
               }
             },
             "description": "Invalid or missing API key"
+          },
+          "402": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Plan limit reached - upgrade the plan to add more"
           },
           "403": {
             "content": {
@@ -18307,10 +18398,28 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Webhook"
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/Webhook"
+                      },
+                      "type": "array"
+                    },
+                    "has_more": {
+                      "example": false,
+                      "type": "boolean"
+                    },
+                    "object": {
+                      "example": "list",
+                      "type": "string"
+                    }
                   },
-                  "type": "array"
+                  "required": [
+                    "object",
+                    "has_more",
+                    "data"
+                  ],
+                  "type": "object"
                 }
               }
             },
@@ -18399,6 +18508,26 @@
               }
             },
             "description": "Invalid or missing API key"
+          },
+          "402": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Plan limit reached - upgrade the plan to add more"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
           },
           "429": {
             "content": {
