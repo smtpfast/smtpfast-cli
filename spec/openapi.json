@@ -1630,6 +1630,7 @@
             "type": "string"
           },
           "html": {
+            "description": "The stored body. For an API send the {{unsubscribe_url}} placeholder is filled in when the email goes out, so it appears here unreplaced; broadcast and form emails are stored with the real link.",
             "type": [
               "string",
               "null"
@@ -1664,6 +1665,31 @@
           "subject": {
             "example": "Welcome!",
             "type": "string"
+          },
+          "tags": {
+            "description": "The tags given at send time, as name/value pairs. Empty when none were given.",
+            "example": [
+              {
+                "name": "campaign",
+                "value": "welcome"
+              }
+            ],
+            "items": {
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name",
+                "value"
+              ],
+              "type": "object"
+            },
+            "type": "array"
           },
           "text": {
             "type": [

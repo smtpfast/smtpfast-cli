@@ -1,2 +1,2 @@
 // Written by scripts/sync-version.ts from package.json. Do not edit.
-export const VERSION = "0.7.1";
+export const VERSION = "0.7.2";
