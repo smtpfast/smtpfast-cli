@@ -897,6 +897,15 @@
             "example": "hard_bounce",
             "type": "string"
           },
+          "scope": {
+            "description": "all: every send to the address is blocked. marketing: only marketing email is blocked, and email labelled transactional still goes out. A recipient's own unsubscribe is marketing. Hard bounces, complaints and unsubscribes recorded before marketing-only unsubscribes existed are all. A manual suppression is all unless it was created with scope marketing.",
+            "enum": [
+              "all",
+              "marketing"
+            ],
+            "example": "all",
+            "type": "string"
+          },
           "source": {
             "example": "ses",
             "type": "string"
@@ -906,6 +915,7 @@
           "id",
           "reason",
           "source",
+          "scope",
           "created_at"
         ],
         "type": "object"
@@ -1248,6 +1258,15 @@
             "default": "manual",
             "enum": [
               "manual"
+            ],
+            "type": "string"
+          },
+          "scope": {
+            "default": "all",
+            "description": "all blocks every send to the address. marketing blocks marketing email only, like a recipient's own unsubscribe. An address already on the list keeps its suppression, except that scope all turns a marketing-only one into a manual suppression of every send.",
+            "enum": [
+              "all",
+              "marketing"
             ],
             "type": "string"
           }
@@ -1619,6 +1638,15 @@
       },
       "Email": {
         "properties": {
+          "category": {
+            "description": "Decides which suppressions apply and whether the List-Unsubscribe header went out. marketing unless the email was labelled transactional; broadcasts, signup form emails and emails sent before categories existed are marketing.",
+            "enum": [
+              "transactional",
+              "marketing"
+            ],
+            "example": "transactional",
+            "type": "string"
+          },
           "created_at": {
             "example": "2026-04-05T12:00:00Z",
             "format": "date-time",
@@ -1715,6 +1743,7 @@
           "subject",
           "status",
           "source",
+          "category",
           "created_at"
         ],
         "type": "object"
@@ -1767,6 +1796,14 @@
               "string",
               "null"
             ]
+          },
+          "category": {
+            "enum": [
+              "transactional",
+              "marketing"
+            ],
+            "example": "marketing",
+            "type": "string"
           },
           "clicked_at": {
             "format": "date-time",
@@ -1845,6 +1882,7 @@
           "subject",
           "status",
           "source",
+          "category",
           "created_at",
           "sent_at",
           "delivered_at",
@@ -3089,6 +3127,16 @@
               }
             ]
           },
+          "category": {
+            "default": "marketing",
+            "description": "Defaults to marketing. Label receipts, password resets and other transactional mail transactional so a marketing opt-out does not block them; unlabelled mail is treated as marketing. Over SMTP, set the X-SMTPfast-Category header instead; it is removed before sending. An email whose html or text (for a template, the rendered body) contains an unsubscribe placeholder is always marketing. A marketing email carries the one-click List-Unsubscribe header and is not sent to anyone who unsubscribed. A transactional email has no List-Unsubscribe header and still goes to addresses whose suppression has scope marketing (a recipient's own unsubscribe, or a manual suppression created with scope marketing), but not to addresses with scope all: hard bounces, complaints, and manual suppressions, which block everything by default. Transactional means mail the recipient needs because of an action or account; labelling promotions transactional is not allowed. Any other value is refused with 400.",
+            "enum": [
+              "transactional",
+              "marketing"
+            ],
+            "example": "transactional",
+            "type": "string"
+          },
           "cc": {
             "description": "Cc recipients",
             "oneOf": [
@@ -3122,7 +3170,7 @@
             "type": "object"
           },
           "html": {
-            "description": "HTML body of the email. Include `{{unsubscribe_url}}` (or the Resend-compatible `{{{RESEND_UNSUBSCRIBE_URL}}}`) anywhere in the body and SMTPfast substitutes the per-recipient unsubscribe link at send time. The same URL is set on the RFC 8058 `List-Unsubscribe` header automatically.",
+            "description": "HTML body of the email. Include `{{unsubscribe_url}}` (or the Resend-compatible `{{{RESEND_UNSUBSCRIBE_URL}}}`) anywhere in the body and SMTPfast substitutes the per-recipient unsubscribe link at send time. An email with the placeholder is always marketing, and a marketing email gets the same URL on the RFC 8058 `List-Unsubscribe` header.",
             "example": "<h1>Hello!</h1><p><a href=\"{{unsubscribe_url}}\">Unsubscribe</a></p>",
             "type": "string"
           },
@@ -3592,6 +3640,15 @@
               "null"
             ]
           },
+          "scope": {
+            "description": "all: every send to the address is blocked. marketing: only marketing email is blocked, and email labelled transactional still goes out. A recipient's own unsubscribe is marketing. Hard bounces, complaints and unsubscribes recorded before marketing-only unsubscribes existed are all. A manual suppression is all unless it was created with scope marketing.",
+            "enum": [
+              "all",
+              "marketing"
+            ],
+            "example": "all",
+            "type": "string"
+          },
           "source": {
             "example": "ses",
             "type": "string"
@@ -3606,6 +3663,7 @@
           "email",
           "reason",
           "source",
+          "scope",
           "created_at"
         ],
         "type": "object"
@@ -16350,7 +16408,7 @@
     },
     "/v1/suppressions": {
       "get": {
-        "description": "Return suppressed addresses for the current account. Suppressed recipients are blocked before sending.",
+        "description": "Return suppressed addresses for the current account. Suppressed recipients are blocked before sending. A suppression with scope marketing blocks marketing email only; scope all blocks every send.",
         "operationId": "listSuppressions",
         "parameters": [
           {
@@ -16451,7 +16509,7 @@
         "x-sdk-method": "list"
       },
       "post": {
-        "description": "Manually suppress an address so future sends to it are blocked.",
+        "description": "Manually suppress an address so future sends to it are blocked: every send by default, or marketing email only with scope marketing.",
         "operationId": "createSuppression",
         "requestBody": {
           "content": {
@@ -16537,7 +16595,7 @@
     },
     "/v1/suppressions/batch/add": {
       "post": {
-        "description": "Resend-compatible: add 1 to 100 addresses as manual suppressions. An address already suppressed keeps its record. Requires the contact:write scope.",
+        "description": "Resend-compatible: add 1 to 100 addresses as manual suppressions of every send (scope all). An address already suppressed keeps its record, except that a marketing-only one becomes a manual suppression of every send. Requires the contact:write scope.",
         "operationId": "addSuppressionsBatch",
         "requestBody": {
           "content": {

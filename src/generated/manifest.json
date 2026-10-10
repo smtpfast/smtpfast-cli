@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "7051c5d6fa753a4ae28d5940b797a95f487d62aa593e68e93c8532849bbb76a1",
+  "specHash": "2e815650eeb84d5a627ef5ab8401184198e14c913f51fa9668dc99717a6ac8cf",
   "operationCount": 137,
   "groups": [
     {
@@ -2122,6 +2122,20 @@
             "description": "Bcc recipients"
           },
           {
+            "name": "category",
+            "flag": "category",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Defaults to marketing. Label receipts, password resets and other transactional mail transactional so a marketing opt-out does not block them; unlabelled mail is treated as marketing. Over SMTP, set the X-SMTPfast-Category header instead; it is removed before sending. An email whose html or text (for a template, the rendered body) contains an unsubscribe placeholder is always marketing. A marketing email carries the one-click List-Unsubscribe header and is not sent to anyone who unsubscribed. A transactional email has no List-Unsubscribe header and still goes to addresses whose suppression has scope marketing (a recipient's own unsubscribe, or a manual suppression created with scope marketing), but not to addresses with scope all: hard bounces, complaints, and manual suppressions, which block everything by default. Transactional means mail the recipient needs because of an action or account; labelling promotions transactional is not allowed. Any other value is refused with 400.",
+            "enum": [
+              "transactional",
+              "marketing"
+            ],
+            "default": "marketing",
+            "example": "transactional"
+          },
+          {
             "name": "cc",
             "flag": "cc",
             "in": "body",
@@ -2154,7 +2168,7 @@
             "in": "body",
             "type": "string",
             "required": false,
-            "description": "HTML body of the email. Include `{{unsubscribe_url}}` (or the Resend-compatible `{{{RESEND_UNSUBSCRIBE_URL}}}`) anywhere in the body and SMTPfast substitutes the per-recipient unsubscribe link at send time. The same URL is set on the RFC 8058 `List-Unsubscribe` header automatically.",
+            "description": "HTML body of the email. Include `{{unsubscribe_url}}` (or the Resend-compatible `{{{RESEND_UNSUBSCRIBE_URL}}}`) anywhere in the body and SMTPfast substitutes the per-recipient unsubscribe link at send time. An email with the placeholder is always marketing, and a marketing email gets the same URL on the RFC 8058 `List-Unsubscribe` header.",
             "example": "<h1>Hello!</h1><p><a href=\"{{unsubscribe_url}}\">Unsubscribe</a></p>"
           },
           {
@@ -4894,7 +4908,7 @@
       "group": "suppressions",
       "command": "add-batch",
       "summary": "Suppress addresses in bulk",
-      "description": "Resend-compatible: add 1 to 100 addresses as manual suppressions. An address already suppressed keeps its record. Requires the contact:write scope.",
+      "description": "Resend-compatible: add 1 to 100 addresses as manual suppressions of every send (scope all). An address already suppressed keeps its record, except that a marketing-only one becomes a manual suppression of every send. Requires the contact:write scope.",
       "tags": [
         "Suppressions"
       ],
@@ -4924,7 +4938,7 @@
       "group": "suppressions",
       "command": "create",
       "summary": "Create a manual suppression",
-      "description": "Manually suppress an address so future sends to it are blocked.",
+      "description": "Manually suppress an address so future sends to it are blocked: every send by default, or marketing email only with scope marketing.",
       "tags": [
         "Suppressions"
       ],
@@ -4963,6 +4977,19 @@
               "manual"
             ],
             "default": "manual"
+          },
+          {
+            "name": "scope",
+            "flag": "scope",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "all blocks every send to the address. marketing blocks marketing email only, like a recipient's own unsubscribe. An address already on the list keeps its suppression, except that scope all turns a marketing-only one into a manual suppression of every send.",
+            "enum": [
+              "all",
+              "marketing"
+            ],
+            "default": "all"
           }
         ]
       }
@@ -5024,7 +5051,7 @@
       "group": "suppressions",
       "command": "list",
       "summary": "List suppressions",
-      "description": "Return suppressed addresses for the current account. Suppressed recipients are blocked before sending.",
+      "description": "Return suppressed addresses for the current account. Suppressed recipients are blocked before sending. A suppression with scope marketing blocks marketing email only; scope all blocks every send.",
       "tags": [
         "Suppressions"
       ],
