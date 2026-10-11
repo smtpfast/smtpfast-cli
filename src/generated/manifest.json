@@ -2,8 +2,8 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "05a556aba9deacd43dbe2eff839e778958742b60864e1d73f417017f798d82af",
-  "operationCount": 137,
+  "specHash": "2fd12a2855973af616ec0bd6b853dc112f35d87cf676ce10663e2c559bef2d6a",
+  "operationCount": 142,
   "groups": [
     {
       "name": "account",
@@ -31,7 +31,7 @@
     },
     {
       "name": "domains",
-      "description": "Manage and verify sending domains"
+      "description": "Manage and verify sending domains, and the custom link domains under them"
     },
     {
       "name": "emails",
@@ -44,6 +44,10 @@
     {
       "name": "inboxes",
       "description": "Addresses on your own domains organised as mailboxes: threads, labels, folders and drafts"
+    },
+    {
+      "name": "link-domains",
+      "description": "Manage and verify sending domains, and the custom link domains under them"
     },
     {
       "name": "logs",
@@ -4294,6 +4298,128 @@
           }
         ]
       }
+    },
+    {
+      "operationId": "createLinkDomain",
+      "method": "POST",
+      "path": "/v1/link-domains",
+      "group": "link-domains",
+      "command": "create",
+      "summary": "Add a link domain",
+      "description": "Add a custom hostname for tracking and unsubscribe links, such as links.example.com. It must be a subdomain of one of your verified sending domains, one per sending domain. Publish the CNAME record from dns_records; the link domain turns active once Cloudflare sees it and issues a certificate, usually within minutes. 422 when the hostname is not under a verified sending domain, 409 when that domain already has one, 503 with code link_domains_unavailable when the feature is off. Not in Resend. Requires the domain:write scope and an owner or admin; 5 per hour per team.",
+      "tags": [
+        "Domains"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "hostname",
+            "flag": "hostname",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "description": "A subdomain of one of your verified sending domains. One link domain per sending domain.",
+            "example": "links.example.com"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "deleteLinkDomain",
+      "method": "DELETE",
+      "path": "/v1/link-domains/{id}",
+      "group": "link-domains",
+      "command": "delete",
+      "summary": "Delete a link domain",
+      "description": "Mail stops using the link domain at once and the hostname is removed from Cloudflare. Links in mail already sent through it stop working once the hostname is gone. Not in Resend. Requires the domain:write scope and an owner or admin.",
+      "tags": [
+        "Domains"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The link domain ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "getLinkDomain",
+      "method": "GET",
+      "path": "/v1/link-domains/{id}",
+      "group": "link-domains",
+      "command": "get",
+      "summary": "Get a link domain",
+      "description": "One link domain with the DNS records to publish: the CNAME pointing at SMTPfast, and any TXT ownership record Cloudflare offers. Shows the state from the last check; refresh asks Cloudflare again. Not in Resend. Requires the domain:read scope.",
+      "tags": [
+        "Domains"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The link domain ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listLinkDomains",
+      "method": "GET",
+      "path": "/v1/link-domains",
+      "group": "link-domains",
+      "command": "list",
+      "summary": "List link domains",
+      "description": "The team's custom link domains with their status and DNS records. available says whether the feature is on. Not in Resend. Requires the domain:read scope.",
+      "tags": [
+        "Domains"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "refreshLinkDomain",
+      "method": "POST",
+      "path": "/v1/link-domains/{id}/refresh",
+      "group": "link-domains",
+      "command": "refresh",
+      "summary": "Refresh a link domain's status",
+      "description": "Ask Cloudflare for the current state now, instead of waiting for the automatic check (every few minutes while pending, daily once active). Also restarts automatic checks for a failed link domain. Not in Resend. Requires the domain:write scope; 30 per 10 minutes per team.",
+      "tags": [
+        "Domains"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The link domain ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
     },
     {
       "operationId": "listLogs",

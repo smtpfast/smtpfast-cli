@@ -2,6 +2,18 @@
 
 All notable changes to the smtpfast CLI. The spec sync workflow adds an entry for each release it publishes.
 
+## [0.10.0] - 2026-10-11
+
+Updated from the live API spec.
+
+### New commands
+
+- `smtpfast link-domains create` (POST /v1/link-domains): Add a link domain
+- `smtpfast link-domains delete` (DELETE /v1/link-domains/{id}): Delete a link domain
+- `smtpfast link-domains get` (GET /v1/link-domains/{id}): Get a link domain
+- `smtpfast link-domains list` (GET /v1/link-domains): List link domains
+- `smtpfast link-domains refresh` (POST /v1/link-domains/{id}/refresh): Refresh a link domain's status
+
 ## [0.9.0] - 2026-10-11
 
 Updated from the live API spec.
