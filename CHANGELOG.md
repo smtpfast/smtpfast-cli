@@ -2,6 +2,18 @@
 
 All notable changes to the smtpfast CLI. The spec sync workflow adds an entry for each release it publishes.
 
+## [0.9.0] - 2026-10-11
+
+Updated from the live API spec.
+
+### Changed commands
+
+- `smtpfast broadcasts create`: new flags --send-over-minutes
+- `smtpfast broadcasts send`: new flags --send-over-minutes
+- `smtpfast broadcasts update`: new flags --send-over-minutes
+- `smtpfast contacts create`: new flags --contacts; now optional: --email
+- `smtpfast contacts list`: new flags --page
+
 ## [0.8.0] - 2026-10-10
 
 Updated from the live API spec.

@@ -523,6 +523,11 @@
               "null"
             ]
           },
+          "send_over_minutes": {
+            "description": "Minutes the send is spread over from its start (scheduled_at, else queued_at); 0 means all at once",
+            "example": 0,
+            "type": "integer"
+          },
           "sent_at": {
             "format": "date-time",
             "type": [
@@ -578,6 +583,49 @@
         ],
         "type": "object"
       },
+      "BroadcastDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Broadcast"
+          },
+          {
+            "properties": {
+              "links": {
+                "items": {
+                  "properties": {
+                    "clicks": {
+                      "example": 42,
+                      "type": "integer"
+                    },
+                    "url": {
+                      "example": "https://example.com/pricing",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "url",
+                    "clicks"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "recipients": {
+                "items": {
+                  "$ref": "#/components/schemas/BroadcastRecipientDetail"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "recipients",
+              "links"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "A broadcast with its latest 250 recipients and the links clicked in it."
+      },
       "BroadcastList": {
         "properties": {
           "data": {
@@ -585,6 +633,11 @@
               "$ref": "#/components/schemas/Broadcast"
             },
             "type": "array"
+          },
+          "filtered_total": {
+            "description": "Broadcasts matching the status filter",
+            "example": 1,
+            "type": "integer"
           },
           "has_more": {
             "example": false,
@@ -594,11 +647,24 @@
             "example": "list",
             "type": "string"
           },
+          "page": {
+            "example": 1,
+            "type": "integer"
+          },
+          "page_size": {
+            "example": 50,
+            "type": "integer"
+          },
           "status_counts": {
             "additionalProperties": {
               "type": "integer"
             },
             "type": "object"
+          },
+          "total": {
+            "description": "Every broadcast of the team",
+            "example": 1,
+            "type": "integer"
           }
         },
         "required": [
@@ -646,6 +712,11 @@
             "example": 0,
             "type": "integer"
           },
+          "handed_off": {
+            "description": "Recipients whose email the provider accepted, whatever happened next. Shows how far a send spread over send_over_minutes has got.",
+            "example": 1238,
+            "type": "integer"
+          },
           "open_rate": {
             "example": 59.4,
             "type": "number"
@@ -685,6 +756,183 @@
         },
         "type": "object"
       },
+      "BroadcastRecipientDetail": {
+        "properties": {
+          "bounced_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "clicked_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "complained_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "delivered_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "email": {
+            "example": "ada@example.com",
+            "type": "string"
+          },
+          "email_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "error_message": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "events": {
+            "items": {
+              "properties": {
+                "created_at": {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "metadata": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": {
+                  "example": "delivered",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "type",
+                "created_at"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "failed_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "first_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "example": "clx_recipient123",
+            "type": "string"
+          },
+          "last_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "opened_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "queued_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sent_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "skip_reason": {
+            "description": "Why the contact was left out: unsubscribed, suppressed or invalid",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "example": "delivered",
+            "type": "string"
+          },
+          "unsubscribed_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "status",
+          "events"
+        ],
+        "type": "object"
+      },
+      "BroadcastSendResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Broadcast"
+          },
+          {
+            "properties": {
+              "batch_id": {
+                "example": "batch_abc123",
+                "type": "string"
+              },
+              "recipients": {
+                "description": "Contacts the send will reach",
+                "example": 1240,
+                "type": "integer"
+              },
+              "skipped": {
+                "description": "Contacts left out: unsubscribed, suppressed or invalid",
+                "example": 18,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "object",
+              "recipients",
+              "skipped",
+              "batch_id"
+            ],
+            "type": "object"
+          }
+        ]
+      },
       "Contact": {
         "allOf": [
           {
@@ -717,6 +965,30 @@
             "type": "object"
           }
         ]
+      },
+      "ContactBatchCreated": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ContactSummary"
+            },
+            "type": "array"
+          },
+          "has_more": {
+            "example": false,
+            "type": "boolean"
+          },
+          "object": {
+            "example": "list",
+            "type": "string"
+          }
+        },
+        "required": [
+          "object",
+          "has_more",
+          "data"
+        ],
+        "type": "object"
       },
       "ContactCreated": {
         "properties": {
@@ -757,20 +1029,20 @@
         ],
         "type": "object"
       },
-      "ContactList": {
+      "ContactExport": {
         "properties": {
           "data": {
             "items": {
-              "$ref": "#/components/schemas/ContactSummary"
+              "$ref": "#/components/schemas/ContactListItem"
             },
             "type": "array"
           },
-          "disposable": {
-            "description": "Subscribed contacts on throwaway-mailbox domains",
-            "example": 3,
-            "type": "integer"
+          "exported_at": {
+            "format": "date-time",
+            "type": "string"
           },
           "has_more": {
+            "description": "True when more than 10,000 contacts matched and the export stopped there",
             "example": false,
             "type": "boolean"
           },
@@ -782,9 +1054,124 @@
         "required": [
           "object",
           "has_more",
+          "data",
+          "exported_at"
+        ],
+        "type": "object"
+      },
+      "ContactList": {
+        "properties": {
+          "contact_limit": {
+            "description": "The plan's contact limit, with any override for the account",
+            "example": 25000,
+            "type": "integer"
+          },
+          "contact_limit_base": {
+            "description": "The plan's contact limit without overrides",
+            "example": 25000,
+            "type": "integer"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ContactListItem"
+            },
+            "type": "array"
+          },
+          "disposable": {
+            "description": "Subscribed contacts on throwaway-mailbox domains",
+            "example": 3,
+            "type": "integer"
+          },
+          "filtered_total": {
+            "description": "Contacts matching the filters",
+            "example": 1240,
+            "type": "integer"
+          },
+          "has_more": {
+            "example": false,
+            "type": "boolean"
+          },
+          "new_30d": {
+            "description": "Subscribed contacts added in the last 30 days",
+            "example": 77,
+            "type": "integer"
+          },
+          "new_7d": {
+            "description": "Subscribed contacts added in the last 7 days",
+            "example": 18,
+            "type": "integer"
+          },
+          "object": {
+            "example": "list",
+            "type": "string"
+          },
+          "page": {
+            "example": 1,
+            "type": "integer"
+          },
+          "page_size": {
+            "example": 50,
+            "type": "integer"
+          },
+          "subscribed": {
+            "example": 1198,
+            "type": "integer"
+          },
+          "tier": {
+            "example": "pro",
+            "type": "string"
+          },
+          "total": {
+            "description": "Every contact of the team",
+            "example": 1240,
+            "type": "integer"
+          },
+          "unsubscribed": {
+            "example": 42,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "object",
+          "has_more",
           "data"
         ],
         "type": "object"
+      },
+      "ContactListItem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ContactSummary"
+          },
+          {
+            "properties": {
+              "properties": {
+                "additionalProperties": true,
+                "example": {
+                  "company": "Acme"
+                },
+                "type": "object"
+              },
+              "suppression": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ContactSuppression"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "properties",
+              "segments",
+              "suppression"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "A contact as lists return it: the summary fields plus properties, segments and the suppression."
       },
       "ContactProperty": {
         "properties": {
@@ -859,12 +1246,36 @@
             ]
           },
           "segments": {
+            "description": "The manual segments the contact is in. Lists and GET /v1/contacts/{id} return it.",
             "items": {
-              "$ref": "#/components/schemas/SegmentSummary"
+              "properties": {
+                "color": {
+                  "example": "#10b981",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "id": {
+                  "example": "seg_product",
+                  "type": "string"
+                },
+                "name": {
+                  "example": "Product updates",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "color"
+              ],
+              "type": "object"
             },
             "type": "array"
           },
           "suppressed": {
+            "description": "The address is on the suppression list",
             "example": false,
             "type": "boolean"
           },
@@ -995,6 +1406,17 @@
             "example": "clx_segment123",
             "type": "string"
           },
+          "send_over_minutes": {
+            "default": 0,
+            "description": "Not in Resend. Spread the send evenly over this many minutes from the send time (or scheduled_at): recipient i of N goes out at start + i * window / N. 0 sends to everyone at once. 15 to 4320 (72 hours). Useful on a new sending domain or during the first week's warm-up, where each hour of the window must fit the hourly cap; the daily cap still counts the whole send. null clears it.",
+            "example": 240,
+            "maximum": 4320,
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
           "subject": {
             "example": "New features for {{contact.first_name|there}}",
             "type": "string"
@@ -1019,6 +1441,31 @@
             "type": "boolean"
           }
         },
+        "type": "object"
+      },
+      "CreateContactBatchRequest": {
+        "description": "Create or update up to 500 contacts, matched by email. Fields sent replace the stored ones; fields left out stay. segment_ids only adds memberships.",
+        "properties": {
+          "contacts": {
+            "items": {
+              "$ref": "#/components/schemas/CreateContactRequest"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "type": "array"
+          },
+          "segment_ids": {
+            "description": "Manual segments to add every contact to, for contacts that do not name their own",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "type": "array"
+          }
+        },
+        "required": [
+          "contacts"
+        ],
         "type": "object"
       },
       "CreateContactRequest": {
@@ -1453,8 +1900,76 @@
       },
       "DnsRecord": {
         "properties": {
+          "actualValue": {
+            "deprecated": true,
+            "description": "Same as actual_value, for older clients",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "actual_value": {
+            "description": "GET /v1/domains/{id} only: what DNS answers now, several values joined with \" | \"",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "category": {
+            "enum": [
+              "verification",
+              "sending",
+              "receiving"
+            ],
+            "type": "string"
+          },
+          "liveCheck": {
+            "deprecated": true,
+            "description": "Same as live_check, for older clients",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "live_check": {
+            "description": "GET /v1/domains/{id} only: how the live value compares with the expected one. Null for the inbound MX record.",
+            "enum": [
+              "match",
+              "mismatch",
+              "missing",
+              "needs_include",
+              "multiple_spf_records",
+              "invalid_spf",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "name": {
-            "example": "smtp1._domainkey.yourapp.com",
+            "example": "abc123._domainkey.yourapp.com",
+            "type": "string"
+          },
+          "priority": {
+            "description": "Set for MX records",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "purpose": {
+            "description": "DKIM authentication, SPF authorization, DMARC policy, MAIL FROM bounce delivery, MAIL FROM SPF or Inbound mail",
+            "example": "DKIM authentication",
+            "type": "string"
+          },
+          "status": {
+            "description": "The verification status that covers this record",
+            "example": "pending",
+            "type": "string"
+          },
+          "ttl": {
+            "example": "Auto",
             "type": "string"
           },
           "type": {
@@ -1467,14 +1982,32 @@
             "type": "string"
           },
           "value": {
-            "example": "smtp1.dkim.smtpfa.st",
+            "example": "abc123.dkim.amazonses.com",
             "type": "string"
           }
         },
+        "required": [
+          "type",
+          "name",
+          "value"
+        ],
         "type": "object"
       },
       "Domain": {
+        "description": "POST /v1/domains returns id, domain, status, dns_records and created_at. GET /v1/domains/{id} adds the verification detail, a live DNS check of each record and the receiving settings.",
         "properties": {
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "dkim_status": {
+            "example": "verified",
+            "type": "string"
+          },
+          "dmarc_status": {
+            "example": "pending",
+            "type": "string"
+          },
           "dns_records": {
             "items": {
               "$ref": "#/components/schemas/DnsRecord"
@@ -1485,39 +2018,181 @@
             "example": "yourapp.com",
             "type": "string"
           },
+          "events": {
+            "description": "The verification steps and when each was done",
+            "items": {
+              "properties": {
+                "at": {
+                  "format": "date-time",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "done": {
+                  "type": "boolean"
+                },
+                "key": {
+                  "example": "dns_live",
+                  "type": "string"
+                },
+                "label": {
+                  "example": "DNS records live",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
           "id": {
             "example": "dom_xyz789",
             "type": "string"
           },
-          "receivingEnabled": {
-            "description": "Whether inbound email is turned on for the domain (list responses).",
-            "type": "boolean"
+          "last_checked_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
           },
-          "receivingStatus": {
-            "description": "Inbound status (list responses).",
-            "enum": [
-              "disabled",
-              "pending",
-              "active",
-              "failed"
-            ],
+          "mail_from_domain": {
+            "example": "bounce.yourapp.com",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "mail_from_status": {
+            "example": "verified",
+            "type": "string"
+          },
+          "next_auto_check_at": {
+            "description": "Null once the domain is verified",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "provider": {
+            "description": "The DNS provider found from the NS records",
+            "properties": {
+              "badge": {
+                "type": "string"
+              },
+              "id": {
+                "example": "cloudflare",
+                "type": "string"
+              },
+              "name": {
+                "example": "Cloudflare",
+                "type": "string"
+              },
+              "zone": {
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "receiving": {
+            "description": "Inbound email for the domain",
+            "properties": {
+              "available": {
+                "description": "The team's plan includes inbound email",
+                "type": "boolean"
+              },
+              "checked_at": {
+                "format": "date-time",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "eligible": {
+                "description": "The domain can turn receiving on",
+                "type": "boolean"
+              },
+              "enabled": {
+                "type": "boolean"
+              },
+              "mx_record": {
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "priority": {
+                    "example": 10,
+                    "type": "integer"
+                  },
+                  "type": {
+                    "example": "MX",
+                    "type": "string"
+                  },
+                  "value": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "status": {
+                "enum": [
+                  "disabled",
+                  "pending",
+                  "active",
+                  "failed"
+                ],
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "region": {
+            "example": "us-east-1",
+            "type": "string"
+          },
+          "spf_status": {
+            "example": "verified",
             "type": "string"
           },
           "status": {
+            "description": "GET /v1/domains/{id} answers pending for a verified domain whose required records are no longer live.",
             "enum": [
               "pending",
+              "verifying",
               "verified",
               "failed"
             ],
             "example": "pending",
             "type": "string"
+          },
+          "verification_message": {
+            "type": "string"
+          },
+          "verification_phase": {
+            "enum": [
+              "verified",
+              "dns_missing",
+              "waiting_on_ses",
+              "mail_from_pending",
+              "failed"
+            ],
+            "type": "string"
+          },
+          "verified_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
           "id",
           "domain",
           "status",
-          "dns_records"
+          "dns_records",
+          "created_at"
         ],
         "type": "object"
       },
@@ -1638,6 +2313,28 @@
       },
       "Email": {
         "properties": {
+          "bcc": {
+            "example": [],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "body_cleared_at": {
+            "description": "When the retention window removed html and text. Null while the body is kept, so null html and text with a timestamp here means the content is no longer stored.",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "bounced_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "category": {
             "description": "Decides which suppressions apply and whether the List-Unsubscribe header went out. marketing unless the email was labelled transactional; broadcasts, signup form emails and emails sent before categories existed are marketing.",
             "enum": [
@@ -1647,10 +2344,68 @@
             "example": "transactional",
             "type": "string"
           },
+          "cc": {
+            "example": [],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "clicked_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "created_at": {
             "example": "2026-04-05T12:00:00Z",
             "format": "date-time",
             "type": "string"
+          },
+          "delivered_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "error_message": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "events": {
+            "description": "Every event of the email, oldest first.",
+            "items": {
+              "properties": {
+                "metadata": {
+                  "additionalProperties": true,
+                  "description": "Event details such as the bounce type or the clicked URL",
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                },
+                "timestamp": {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                "type": {
+                  "description": "queued, scheduled, sending, retrying, sent, delivered, delivery_delayed, bounced, complained, opened, clicked, failed, suppressed or unsubscribed",
+                  "example": "delivered",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "type",
+                "metadata",
+                "timestamp"
+              ],
+              "type": "object"
+            },
+            "type": "array"
           },
           "from": {
             "description": "As sent, so it can include a display name: Name <hello@yourapp.com>",
@@ -1658,7 +2413,7 @@
             "type": "string"
           },
           "html": {
-            "description": "The stored body. For an API send the {{unsubscribe_url}} placeholder is filled in when the email goes out, so it appears here unreplaced; broadcast and form emails are stored with the real link.",
+            "description": "The stored body. For an API send the {{unsubscribe_url}} placeholder is filled in when the email goes out, so it appears here unreplaced; broadcast and form emails are stored with the real link. Null when there was no HTML body or the retention window removed it.",
             "type": [
               "string",
               "null"
@@ -1667,6 +2422,46 @@
           "id": {
             "example": "email_abc123",
             "type": "string"
+          },
+          "last_event": {
+            "description": "The type of the newest event, or the status when the email has no events yet. Resend-compatible.",
+            "example": "delivered",
+            "type": "string"
+          },
+          "message_id": {
+            "description": "The RFC 5322 Message-ID on your sending domain, the one a recipient's server and bounce reports quote. Null until the email is sent.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "opened_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reply_to": {
+            "description": "The Reply-To address the email was sent with, or null.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sent_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ses_message_id": {
+            "description": "The Amazon SES message id. Kept for older integrations; correlate with message_id.",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "source": {
             "description": "api, smtp, dashboard, broadcast or broadcast_test",
@@ -1720,6 +2515,7 @@
             "type": "array"
           },
           "text": {
+            "description": "The stored plain-text body, null when there was none or the retention window removed it.",
             "type": [
               "string",
               "null"
@@ -1730,21 +2526,46 @@
               "user@example.com"
             ],
             "items": {
-              "format": "email",
               "type": "string"
             },
             "type": "array"
+          },
+          "unsubscribed_at": {
+            "description": "When the recipient unsubscribed through this email. status keeps its delivery value.",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
           "id",
           "from",
           "to",
+          "cc",
+          "bcc",
           "subject",
-          "status",
+          "html",
+          "text",
+          "created_at",
+          "last_event",
+          "body_cleared_at",
           "source",
           "category",
-          "created_at"
+          "status",
+          "reply_to",
+          "tags",
+          "message_id",
+          "ses_message_id",
+          "sent_at",
+          "delivered_at",
+          "opened_at",
+          "clicked_at",
+          "bounced_at",
+          "unsubscribed_at",
+          "error_message",
+          "events"
         ],
         "type": "object"
       },
@@ -2892,12 +3713,27 @@
               "null"
             ]
           },
+          "inbox_id": {
+            "description": "The inbox this copy was filed into, when its address has one. Not in Resend.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "message_id": {
             "type": "string"
           },
           "object": {
             "example": "email",
             "type": "string"
+          },
+          "read_at": {
+            "description": "When the message was marked read. Not in Resend.",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "received_for": {
             "items": {
@@ -2932,6 +3768,13 @@
           },
           "subject": {
             "type": "string"
+          },
+          "thread_id": {
+            "description": "The inbox thread this copy was filed into. Not in Resend.",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "to": {
             "items": {
@@ -2992,6 +3835,64 @@
             "type": "object"
           }
         ]
+      },
+      "SegmentContactList": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ContactListItem"
+            },
+            "type": "array"
+          },
+          "has_more": {
+            "example": false,
+            "type": "boolean"
+          },
+          "object": {
+            "example": "list",
+            "type": "string"
+          },
+          "page": {
+            "example": 1,
+            "type": "integer"
+          },
+          "page_size": {
+            "example": 50,
+            "type": "integer"
+          },
+          "segment": {
+            "properties": {
+              "id": {
+                "example": "seg_product",
+                "type": "string"
+              },
+              "name": {
+                "example": "Product updates",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "type": "object"
+          },
+          "total": {
+            "description": "Contacts in the segment",
+            "example": 128,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "object",
+          "has_more",
+          "data",
+          "segment",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "type": "object"
       },
       "SegmentList": {
         "properties": {
@@ -3288,6 +4189,19 @@
         },
         "required": [
           "to"
+        ],
+        "type": "object"
+      },
+      "SendEmailResponse": {
+        "description": "The id of the accepted email, as Resend returns it. Fetch the email with GET /v1/emails/{id}.",
+        "properties": {
+          "id": {
+            "example": "email_abc123",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
         ],
         "type": "object"
       },
@@ -3710,19 +4624,49 @@
       },
       "SuppressionList": {
         "properties": {
+          "complaints": {
+            "example": 19,
+            "type": "integer"
+          },
           "data": {
             "items": {
               "$ref": "#/components/schemas/Suppression"
             },
             "type": "array"
           },
+          "filtered_total": {
+            "description": "Suppressions matching q and reason",
+            "example": 412,
+            "type": "integer"
+          },
+          "hard_bounces": {
+            "example": 388,
+            "type": "integer"
+          },
           "has_more": {
             "example": false,
             "type": "boolean"
           },
+          "manual": {
+            "example": 5,
+            "type": "integer"
+          },
           "object": {
             "example": "list",
             "type": "string"
+          },
+          "page": {
+            "example": 1,
+            "type": "integer"
+          },
+          "page_size": {
+            "example": 50,
+            "type": "integer"
+          },
+          "total": {
+            "description": "Every suppression of the team",
+            "example": 412,
+            "type": "integer"
           }
         },
         "required": [
@@ -5351,11 +6295,20 @@
               "application/json": {
                 "schema": {
                   "properties": {
+                    "message": {
+                      "description": "\"Connected app disconnected\" for a connected app's key",
+                      "example": "API key revoked",
+                      "type": "string"
+                    },
                     "success": {
                       "example": true,
                       "type": "boolean"
                     }
                   },
+                  "required": [
+                    "success",
+                    "message"
+                  ],
                   "type": "object"
                 }
               }
@@ -5928,7 +6881,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Broadcast"
+                  "$ref": "#/components/schemas/BroadcastDetail"
                 }
               }
             },
@@ -6489,7 +7442,7 @@
     },
     "/v1/broadcasts/{id}/send": {
       "post": {
-        "description": "Snapshot eligible subscribed contacts, create one queued email per recipient, and send now or schedule within 30 days.",
+        "description": "Snapshot eligible subscribed contacts, create one queued email per recipient, and send now or schedule within 30 days. With send_over_minutes the recipients go out evenly spread over that window instead of all at once; a canceled broadcast stops the sends that have not gone out yet.",
         "operationId": "sendBroadcast",
         "parameters": [
           {
@@ -6510,6 +7463,13 @@
                   "scheduled_at": {
                     "format": "date-time",
                     "type": "string"
+                  },
+                  "send_over_minutes": {
+                    "description": "Not in Resend. Spread the send evenly over this many minutes from the send time (or scheduled_at): recipient i of N goes out at start + i * window / N. 0 sends to everyone at once. 15 to 4320 (72 hours). Useful on a new sending domain or during the first week's warm-up, where each hour of the window must fit the hourly cap; the daily cap still counts the whole send. Left out, the broadcast's saved send_over_minutes applies; given, it is saved on the broadcast. The window must end within 30 days.",
+                    "example": 240,
+                    "maximum": 4320,
+                    "minimum": 0,
+                    "type": "integer"
                   }
                 },
                 "type": "object"
@@ -6523,7 +7483,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Broadcast"
+                  "$ref": "#/components/schemas/BroadcastSendResult"
                 }
               }
             },
@@ -6640,7 +7600,27 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Email"
+                  "properties": {
+                    "id": {
+                      "description": "The test email, in GET /v1/emails/{id}",
+                      "example": "email_abc123",
+                      "type": "string"
+                    },
+                    "object": {
+                      "example": "email",
+                      "type": "string"
+                    },
+                    "status": {
+                      "example": "queued",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "object",
+                    "id",
+                    "status"
+                  ],
+                  "type": "object"
                 }
               }
             },
@@ -7180,6 +8160,16 @@
               "minimum": 1,
               "type": "integer"
             }
+          },
+          {
+            "description": "Page number, starting at 1",
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -7244,13 +8234,20 @@
         "x-sdk-method": "list"
       },
       "post": {
-        "description": "Create a global contact for the current account. Supports firstName/lastName and first_name/last_name aliases for Resend compatibility.",
+        "description": "Create one contact, or send { contacts: [...] } to create or update up to 500 at once. The single form returns 409 when the email already exists; the bulk form matches existing contacts by email and updates them. Supports firstName/lastName and first_name/last_name aliases for Resend compatibility.",
         "operationId": "createContact",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateContactRequest"
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/CreateContactRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CreateContactBatchRequest"
+                  }
+                ]
               }
             }
           },
@@ -7261,11 +8258,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ContactCreated"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ContactCreated"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ContactBatchCreated"
+                    }
+                  ]
                 }
               }
             },
-            "description": "Contact created"
+            "description": "Contact created. The bulk form returns the created and updated contacts as a list."
           },
           "400": {
             "content": {
@@ -7394,7 +8398,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ContactList"
+                  "$ref": "#/components/schemas/ContactExport"
                 }
               },
               "text/csv": {
@@ -9272,11 +10276,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Email"
+                  "$ref": "#/components/schemas/SendEmailResponse"
                 }
               }
             },
-            "description": "Email queued successfully"
+            "description": "Email accepted. A repeat with the same Idempotency-Key and body returns the same id."
           },
           "400": {
             "content": {
@@ -9655,9 +10659,11 @@
                 "schema": {
                   "properties": {
                     "data": {
-                      "description": "One row per combination of the requested dimensions. Absent when no dimensions are requested.",
+                      "description": "One row per combination of the requested dimensions, with the requested metrics. Absent when no dimensions are requested.",
                       "items": {
-                        "additionalProperties": true,
+                        "additionalProperties": {
+                          "type": "number"
+                        },
                         "example": {
                           "delivered": 169,
                           "domain_id": "dom_1",
@@ -9666,12 +10672,62 @@
                           "period": "2026-07-01",
                           "sent": 172
                         },
+                        "properties": {
+                          "broadcast_id": {
+                            "description": "With the broadcast dimension",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "broadcast_name": {
+                            "description": "With the broadcast dimension",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "domain_id": {
+                            "description": "With the domain dimension",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "domain_name": {
+                            "description": "With the domain dimension",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "email_id": {
+                            "description": "With the email dimension",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "period": {
+                            "description": "With the period dimension",
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
                         "type": "object"
                       },
                       "type": "array"
                     },
                     "dimensions": {
                       "items": {
+                        "enum": [
+                          "period",
+                          "domain",
+                          "email",
+                          "broadcast"
+                        ],
                         "type": "string"
                       },
                       "type": "array"
@@ -9681,9 +10737,20 @@
                       "type": "string"
                     },
                     "granularity": {
+                      "enum": [
+                        "hourly",
+                        "daily",
+                        "weekly",
+                        "monthly"
+                      ],
                       "type": "string"
                     },
                     "metrics": {
+                      "example": [
+                        "sent",
+                        "delivered",
+                        "open_rate"
+                      ],
                       "items": {
                         "type": "string"
                       },
@@ -9698,12 +10765,14 @@
                       "type": "string"
                     },
                     "timezone": {
+                      "example": "UTC",
                       "type": "string"
                     },
                     "totals": {
                       "additionalProperties": {
                         "type": "number"
                       },
+                      "description": "One value per requested metric: counts are integers, rates percentages with one decimal.",
                       "example": {
                         "delivered": 1180,
                         "open_rate": 50,
@@ -9712,6 +10781,16 @@
                       "type": "object"
                     }
                   },
+                  "required": [
+                    "object",
+                    "start_date",
+                    "end_date",
+                    "timezone",
+                    "metrics",
+                    "dimensions",
+                    "granularity",
+                    "totals"
+                  ],
                   "type": "object"
                 }
               }
@@ -16338,7 +17417,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ContactList"
+                  "$ref": "#/components/schemas/SegmentContactList"
                 }
               }
             },

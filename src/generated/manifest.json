@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "2e815650eeb84d5a627ef5ab8401184198e14c913f51fa9668dc99717a6ac8cf",
+  "specHash": "05a556aba9deacd43dbe2eff839e778958742b60864e1d73f417017f798d82af",
   "operationCount": 137,
   "groups": [
     {
@@ -443,6 +443,17 @@
             "example": "clx_segment123"
           },
           {
+            "name": "send_over_minutes",
+            "flag": "send-over-minutes",
+            "in": "body",
+            "type": "integer",
+            "required": false,
+            "description": "Not in Resend. Spread the send evenly over this many minutes from the send time (or scheduled_at): recipient i of N goes out at start + i * window / N. 0 sends to everyone at once. 15 to 4320 (72 hours). Useful on a new sending domain or during the first week's warm-up, where each hour of the window must fit the hourly cap; the daily cap still counts the whole send. null clears it.",
+            "default": 0,
+            "example": "240",
+            "nullable": true
+          },
+          {
             "name": "subject",
             "flag": "subject",
             "in": "body",
@@ -699,7 +710,7 @@
       "group": "broadcasts",
       "command": "send",
       "summary": "Send or schedule a broadcast",
-      "description": "Snapshot eligible subscribed contacts, create one queued email per recipient, and send now or schedule within 30 days.",
+      "description": "Snapshot eligible subscribed contacts, create one queued email per recipient, and send now or schedule within 30 days. With send_over_minutes the recipients go out evenly spread over that window instead of all at once; a canceled broadcast stops the sends that have not gone out yet.",
       "tags": [
         "Broadcasts"
       ],
@@ -726,6 +737,15 @@
             "in": "body",
             "type": "string",
             "required": false
+          },
+          {
+            "name": "send_over_minutes",
+            "flag": "send-over-minutes",
+            "in": "body",
+            "type": "integer",
+            "required": false,
+            "description": "Not in Resend. Spread the send evenly over this many minutes from the send time (or scheduled_at): recipient i of N goes out at start + i * window / N. 0 sends to everyone at once. 15 to 4320 (72 hours). Useful on a new sending domain or during the first week's warm-up, where each hour of the window must fit the hourly cap; the daily cap still counts the whole send. Left out, the broadcast's saved send_over_minutes applies; given, it is saved on the broadcast. The window must end within 30 days.",
+            "example": "240"
           }
         ]
       }
@@ -874,6 +894,17 @@
             "required": false,
             "description": "Required when audience is segment",
             "example": "clx_segment123"
+          },
+          {
+            "name": "send_over_minutes",
+            "flag": "send-over-minutes",
+            "in": "body",
+            "type": "integer",
+            "required": false,
+            "description": "Not in Resend. Spread the send evenly over this many minutes from the send time (or scheduled_at): recipient i of N goes out at start + i * window / N. 0 sends to everyone at once. 15 to 4320 (72 hours). Useful on a new sending domain or during the first week's warm-up, where each hour of the window must fit the hourly cap; the daily cap still counts the whole send. null clears it.",
+            "default": 0,
+            "example": "240",
+            "nullable": true
           },
           {
             "name": "subject",
@@ -1115,7 +1146,7 @@
       "group": "contacts",
       "command": "create",
       "summary": "Create a contact",
-      "description": "Create a global contact for the current account. Supports firstName/lastName and first_name/last_name aliases for Resend compatibility.",
+      "description": "Create one contact, or send { contacts: [...] } to create or update up to 500 at once. The single form returns 409 when the email already exists; the bulk form matches existing contacts by email and updates them. Supports firstName/lastName and first_name/last_name aliases for Resend compatibility.",
       "tags": [
         "Contacts"
       ],
@@ -1128,11 +1159,19 @@
         "type": "object",
         "fields": [
           {
+            "name": "contacts",
+            "flag": "contacts",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "object"
+          },
+          {
             "name": "email",
             "flag": "email",
             "in": "body",
             "type": "string",
-            "required": true,
+            "required": false,
             "description": "The contact email address",
             "example": "steve@example.com"
           },
@@ -1381,6 +1420,15 @@
           "required": false,
           "description": "Number of contacts to return",
           "default": 50
+        },
+        {
+          "name": "page",
+          "flag": "page",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "Page number, starting at 1",
+          "default": 1
         },
         {
           "name": "q",
