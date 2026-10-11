@@ -318,7 +318,7 @@ function buildBody(r: Resolver, op: JsonObject): BodySpec | null {
   const contentType =
     types.find((t) => t === "application/json") ?? types.find((t) => t.endsWith("+json")) ?? types[0] ?? "application/json";
   const media = isObj(content[contentType]) ? (content[contentType] as JsonObject) : {};
-  const schema = r.flatten(media.schema);
+  const schema = objectForms(r, r.flatten(media.schema));
   const required = new Set(Array.isArray(schema.required) ? schema.required.filter((x): x is string => typeof x === "string") : []);
   let type: BodySpec["type"] = "unknown";
   const declared = Array.isArray(schema.type) ? schema.type : [schema.type];
@@ -336,6 +336,26 @@ function buildBody(r: Resolver, op: JsonObject): BodySpec | null {
   }
   fields.sort(byName);
   return { required: rb.required === true, contentType, type, fields };
+}
+
+/**
+ * A body that is one of several objects (one contact, or { contacts: [...] })
+ * becomes one object with every form's fields. A field is required only when
+ * every form requires it, so --data can still send any form.
+ */
+function objectForms(r: Resolver, schema: JsonObject): JsonObject {
+  if (schema.type !== undefined || isObj(schema.properties)) return schema;
+  const variants = Array.isArray(schema.oneOf) ? schema.oneOf : Array.isArray(schema.anyOf) ? schema.anyOf : undefined;
+  if (!variants) return schema;
+  const forms = variants.map((v) => r.flatten(v)).filter((v) => isObj(v.properties));
+  if (forms.length === 0) return schema;
+  const properties: JsonObject = {};
+  for (const form of forms) {
+    for (const [name, prop] of Object.entries(form.properties as JsonObject)) if (!(name in properties)) properties[name] = prop;
+  }
+  const requiredBy = (form: JsonObject) => (Array.isArray(form.required) ? form.required : []);
+  const required = requiredBy(forms[0]!).filter((name) => forms.every((form) => requiredBy(form).includes(name)));
+  return { type: "object", properties, required };
 }
 
 function collectParams(r: Resolver, pathItem: JsonObject, op: JsonObject): JsonObject[] {

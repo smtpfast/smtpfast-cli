@@ -199,6 +199,38 @@ describe("spec edge cases", () => {
     expect(params.map((p) => p.flag)).toEqual(["query-no-debug", "no_json", "query-color", "update_check", "update-mode"]);
   });
 
+  test("a body that is one of several objects keeps every form's fields", () => {
+    const { manifest: m } = buildManifest(
+      base(
+        {
+          "/v1/things": {
+            post: {
+              operationId: "createThing",
+              summary: "x",
+              requestBody: {
+                required: true,
+                content: { "application/json": { schema: { oneOf: [{ $ref: "#/components/schemas/One" }, { $ref: "#/components/schemas/Many" }] } } },
+              },
+            },
+          },
+        },
+        {
+          schemas: {
+            One: { type: "object", required: ["name"], properties: { name: { type: "string" }, tags: { type: "array", items: { type: "string" } } } },
+            Many: { type: "object", required: ["things"], properties: { things: { type: "array", items: { $ref: "#/components/schemas/One" } } } },
+          },
+        },
+      ),
+    );
+    const body = m.operations[0]!.body!;
+    expect(body.type).toBe("object");
+    expect(body.fields.map((f) => [f.name, f.required])).toEqual([
+      ["name", false],
+      ["tags", false],
+      ["things", false],
+    ]);
+  });
+
   test("readOnly properties are not flags", () => {
     const { manifest: m } = buildManifest(
       base({
