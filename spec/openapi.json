@@ -3523,6 +3523,15 @@
             "description": "The CNAME is required. A TXT record Cloudflare offers is optional: it lets the hostname activate before the CNAME is live.",
             "type": "boolean"
           },
+          "status": {
+            "description": "pending while the link domain is not active. Once it is active the CNAME is verified (keep it: certificate renewals need it) and a TXT record is not_needed, so you can remove it.",
+            "enum": [
+              "pending",
+              "verified",
+              "not_needed"
+            ],
+            "type": "string"
+          },
           "ttl": {
             "example": "Auto",
             "type": "string"
@@ -3546,7 +3555,8 @@
           "value",
           "ttl",
           "purpose",
-          "required"
+          "required",
+          "status"
         ],
         "type": "object"
       },
@@ -3561,6 +3571,7 @@
               "link_domain_exists",
               "link_domains_unavailable",
               "link_domains_at_capacity",
+              "plan_upgrade_required",
               "cloudflare_error"
             ],
             "type": "string"
@@ -3591,6 +3602,10 @@
             "example": false,
             "type": "boolean"
           },
+          "included_in_plan": {
+            "description": "Whether the team's plan includes custom link domains (every paid plan). When false, creating one answers 403 and mail uses smtpfa.st links, also through a link domain added earlier.",
+            "type": "boolean"
+          },
           "object": {
             "example": "list",
             "type": "string"
@@ -3600,7 +3615,8 @@
           "object",
           "has_more",
           "data",
-          "available"
+          "available",
+          "included_in_plan"
         ],
         "type": "object"
       },
@@ -16811,7 +16827,7 @@
     },
     "/v1/link-domains": {
       "get": {
-        "description": "The team's custom link domains with their status and DNS records. available says whether the feature is on. Not in Resend. Requires the domain:read scope.",
+        "description": "The team's custom link domains with their status and DNS records. available says whether the feature is on, included_in_plan whether the team's plan has it. Not in Resend. Requires the domain:read scope.",
         "operationId": "listLinkDomains",
         "responses": {
           "200": {
@@ -16875,7 +16891,7 @@
         "x-sdk-method": "list"
       },
       "post": {
-        "description": "Add a custom hostname for tracking and unsubscribe links, such as links.example.com. It must be a subdomain of one of your verified sending domains, one per sending domain. Publish the CNAME record from dns_records; the link domain turns active once Cloudflare sees it and issues a certificate, usually within minutes. 422 when the hostname is not under a verified sending domain, 409 when that domain already has one, 503 with code link_domains_unavailable when the feature is off. Not in Resend. Requires the domain:write scope and an owner or admin; 5 per hour per team.",
+        "description": "Add a custom hostname for tracking and unsubscribe links, such as links.example.com. It must be a subdomain of one of your verified sending domains, one per sending domain. Publish the CNAME record from dns_records; the link domain turns active once Cloudflare sees it and issues a certificate, usually within minutes. Paid plans only: 403 with code plan_upgrade_required on the free plan. 422 when the hostname is not under a verified sending domain, 409 when that domain already has one, 503 with code link_domains_unavailable when the feature is off. Not in Resend. Requires the domain:write scope and an owner or admin; 5 per hour per team.",
         "operationId": "createLinkDomain",
         "requestBody": {
           "content": {
@@ -16922,7 +16938,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/LinkDomainError"
                 }
               }
             },

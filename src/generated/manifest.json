@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "2fd12a2855973af616ec0bd6b853dc112f35d87cf676ce10663e2c559bef2d6a",
+  "specHash": "358cbe45a8f2f4014213f2512838d83b7de43c6f0c9685222bbda09676e67ce4",
   "operationCount": 142,
   "groups": [
     {
@@ -4306,7 +4306,7 @@
       "group": "link-domains",
       "command": "create",
       "summary": "Add a link domain",
-      "description": "Add a custom hostname for tracking and unsubscribe links, such as links.example.com. It must be a subdomain of one of your verified sending domains, one per sending domain. Publish the CNAME record from dns_records; the link domain turns active once Cloudflare sees it and issues a certificate, usually within minutes. 422 when the hostname is not under a verified sending domain, 409 when that domain already has one, 503 with code link_domains_unavailable when the feature is off. Not in Resend. Requires the domain:write scope and an owner or admin; 5 per hour per team.",
+      "description": "Add a custom hostname for tracking and unsubscribe links, such as links.example.com. It must be a subdomain of one of your verified sending domains, one per sending domain. Publish the CNAME record from dns_records; the link domain turns active once Cloudflare sees it and issues a certificate, usually within minutes. Paid plans only: 403 with code plan_upgrade_required on the free plan. 422 when the hostname is not under a verified sending domain, 409 when that domain already has one, 503 with code link_domains_unavailable when the feature is off. Not in Resend. Requires the domain:write scope and an owner or admin; 5 per hour per team.",
       "tags": [
         "Domains"
       ],
@@ -4387,7 +4387,7 @@
       "group": "link-domains",
       "command": "list",
       "summary": "List link domains",
-      "description": "The team's custom link domains with their status and DNS records. available says whether the feature is on. Not in Resend. Requires the domain:read scope.",
+      "description": "The team's custom link domains with their status and DNS records. available says whether the feature is on, included_in_plan whether the team's plan has it. Not in Resend. Requires the domain:read scope.",
       "tags": [
         "Domains"
       ],
