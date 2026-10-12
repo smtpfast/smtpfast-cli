@@ -2,6 +2,14 @@
 
 All notable changes to the smtpfast CLI. The spec sync workflow adds an entry for each release it publishes.
 
+## [0.11.0] - 2026-10-12
+
+Updated from the live API spec.
+
+### Changed commands
+
+- `smtpfast emails send`: new flags --track-clicks, --track-opens
+
 ## [0.10.1] - 2026-10-11
 
 Updated from the live API spec.

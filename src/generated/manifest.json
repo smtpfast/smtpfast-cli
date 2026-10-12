@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "358cbe45a8f2f4014213f2512838d83b7de43c6f0c9685222bbda09676e67ce4",
+  "specHash": "d715f3bc362d4f33d6e8675002ef846f139083cf579fb184eda1c80152a89437",
   "operationCount": 142,
   "groups": [
     {
@@ -2286,6 +2286,24 @@
             "items": "string",
             "description": "One recipient address, or a list of them",
             "example": "user@example.com"
+          },
+          {
+            "name": "track_clicks",
+            "flag": "track-clicks",
+            "in": "body",
+            "type": "boolean",
+            "required": false,
+            "description": "Not in Resend, which sets tracking per domain. Rewrite this email's links through the click tracker (true) or send them exactly as written (false). Left out, the account's tracking settings apply, including the setting for transactional email. Over SMTP, set the X-SMTPfast-Track-Clicks header to true or false instead; it is removed before sending. To keep one link out of tracking, such as a password reset link with a token, add data-smtpfast-track=\"off\" to its <a> tag; the attribute is removed before sending. null is the same as leaving it out; any other value that is not true or false is refused with 400.",
+            "example": "false"
+          },
+          {
+            "name": "track_opens",
+            "flag": "track-opens",
+            "in": "body",
+            "type": "boolean",
+            "required": false,
+            "description": "Not in Resend. Add the open-tracking pixel to this email (true) or not (false). Left out, the account's tracking settings apply. Over SMTP, set the X-SMTPfast-Track-Opens header to true or false instead; it is removed before sending. null is the same as leaving it out; any other value that is not true or false is refused with 400.",
+            "example": "false"
           }
         ]
       }
