@@ -2,6 +2,19 @@
 
 All notable changes to the smtpfast CLI. The spec sync workflow adds an entry for each release it publishes.
 
+## [0.12.0] - 2026-10-15
+
+Updated from the live API spec.
+
+### New commands
+
+- `smtpfast broadcasts archive` (POST /v1/broadcasts/{id}/archive): Archive a broadcast
+- `smtpfast broadcasts unarchive` (POST /v1/broadcasts/{id}/unarchive): Unarchive a broadcast
+
+### Changed commands
+
+- `smtpfast broadcasts list`: new flags --archived
+
 ## [0.11.0] - 2026-10-12
 
 Updated from the live API spec.

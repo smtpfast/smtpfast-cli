@@ -2,8 +2,8 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "d715f3bc362d4f33d6e8675002ef846f139083cf579fb184eda1c80152a89437",
-  "operationCount": 142,
+  "specHash": "fd47548fe69a9ec2e4484076886acbf55cf37a6ac4d8306df202f859ff24ed7a",
+  "operationCount": 144,
   "groups": [
     {
       "name": "account",
@@ -273,6 +273,31 @@
           }
         ]
       }
+    },
+    {
+      "operationId": "archiveBroadcast",
+      "method": "POST",
+      "path": "/v1/broadcasts/{id}/archive",
+      "group": "broadcasts",
+      "command": "archive",
+      "summary": "Archive a broadcast",
+      "description": "Hide a sent, canceled or failed broadcast from the default list. The broadcast, its recipients and its stats stay available, and the list shows it with archived=true. Archiving an archived broadcast changes nothing.",
+      "tags": [
+        "Broadcasts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The broadcast ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
     },
     {
       "operationId": "getBroadcastAudience",
@@ -590,6 +615,20 @@
       "pathParams": [],
       "queryParams": [
         {
+          "name": "archived",
+          "flag": "archived",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "false leaves archived broadcasts out, true lists only archived ones, all lists both",
+          "enum": [
+            "false",
+            "true",
+            "all"
+          ],
+          "default": "false"
+        },
+        {
           "name": "q",
           "flag": "q",
           "in": "query",
@@ -792,6 +831,31 @@
           }
         ]
       }
+    },
+    {
+      "operationId": "unarchiveBroadcast",
+      "method": "POST",
+      "path": "/v1/broadcasts/{id}/unarchive",
+      "group": "broadcasts",
+      "command": "unarchive",
+      "summary": "Unarchive a broadcast",
+      "description": "Return an archived broadcast to the default list. Unarchiving a broadcast that is not archived changes nothing.",
+      "tags": [
+        "Broadcasts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The broadcast ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
     },
     {
       "operationId": "updateBroadcast",
@@ -1440,7 +1504,7 @@
           "in": "query",
           "type": "string",
           "required": false,
-          "description": "Search by email, first name, or last name"
+          "description": "Search by email, first name, or last name. Several email addresses separated by commas, spaces or new lines are matched exactly, up to 100."
         },
         {
           "name": "segment_id",
@@ -2293,7 +2357,7 @@
             "in": "body",
             "type": "boolean",
             "required": false,
-            "description": "Not in Resend, which sets tracking per domain. Rewrite this email's links through the click tracker (true) or send them exactly as written (false). Left out, the account's tracking settings apply, including the setting for transactional email. Over SMTP, set the X-SMTPfast-Track-Clicks header to true or false instead; it is removed before sending. To keep one link out of tracking, such as a password reset link with a token, add data-smtpfast-track=\"off\" to its <a> tag; the attribute is removed before sending. null is the same as leaving it out; any other value that is not true or false is refused with 400.",
+            "description": "Not in Resend, which sets tracking per domain. Rewrite this email's links through the click tracker (true) or send them exactly as written (false). Left out, the account's tracking settings apply, including the setting for transactional email, except that a contact-form relay (every recipient on the From domain or a parent or subdomain of it, Reply-To on an unrelated domain, not sent from an inbox) gets no click tracking. Over SMTP, set the X-SMTPfast-Track-Clicks header to true or false instead; it is removed before sending. To keep one link out of tracking, such as a password reset link with a token, add data-smtpfast-track=\"off\" to its <a> tag; the attribute is removed before sending. null is the same as leaving it out; any other value that is not true or false is refused with 400.",
             "example": "false"
           },
           {

@@ -411,6 +411,14 @@
       },
       "Broadcast": {
         "properties": {
+          "archived_at": {
+            "description": "When the broadcast was archived. Archived broadcasts are left out of the list unless archived=true or archived=all.",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "audience": {
             "example": "all_contacts",
             "type": "string"
@@ -628,6 +636,11 @@
       },
       "BroadcastList": {
         "properties": {
+          "archived_total": {
+            "description": "Archived broadcasts of the team",
+            "example": 0,
+            "type": "integer"
+          },
           "data": {
             "items": {
               "$ref": "#/components/schemas/Broadcast"
@@ -635,7 +648,7 @@
             "type": "array"
           },
           "filtered_total": {
-            "description": "Broadcasts matching the status filter",
+            "description": "Broadcasts matching the status, search and archived filters",
             "example": 1,
             "type": "integer"
           },
@@ -659,10 +672,11 @@
             "additionalProperties": {
               "type": "integer"
             },
+            "description": "Broadcasts that are not archived, per status",
             "type": "object"
           },
           "total": {
-            "description": "Every broadcast of the team",
+            "description": "Every broadcast of the team that is not archived",
             "example": 1,
             "type": "integer"
           }
@@ -4427,7 +4441,7 @@
             ]
           },
           "track_clicks": {
-            "description": "Not in Resend, which sets tracking per domain. Rewrite this email's links through the click tracker (true) or send them exactly as written (false). Left out, the account's tracking settings apply, including the setting for transactional email. Over SMTP, set the X-SMTPfast-Track-Clicks header to true or false instead; it is removed before sending. To keep one link out of tracking, such as a password reset link with a token, add data-smtpfast-track=\"off\" to its <a> tag; the attribute is removed before sending. null is the same as leaving it out; any other value that is not true or false is refused with 400.",
+            "description": "Not in Resend, which sets tracking per domain. Rewrite this email's links through the click tracker (true) or send them exactly as written (false). Left out, the account's tracking settings apply, including the setting for transactional email, except that a contact-form relay (every recipient on the From domain or a parent or subdomain of it, Reply-To on an unrelated domain, not sent from an inbox) gets no click tracking. Over SMTP, set the X-SMTPfast-Track-Clicks header to true or false instead; it is removed before sending. To keep one link out of tracking, such as a password reset link with a token, add data-smtpfast-track=\"off\" to its <a> tag; the attribute is removed before sending. null is the same as leaving it out; any other value that is not true or false is refused with 400.",
             "example": false,
             "type": "boolean"
           },
@@ -6781,6 +6795,20 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "description": "false leaves archived broadcasts out, true lists only archived ones, all lists both",
+            "in": "query",
+            "name": "archived",
+            "schema": {
+              "default": "false",
+              "enum": [
+                "false",
+                "true",
+                "all"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -7301,6 +7329,104 @@
           "broadcasts"
         ],
         "x-sdk-method": "update"
+      }
+    },
+    "/v1/broadcasts/{id}/archive": {
+      "post": {
+        "description": "Hide a sent, canceled or failed broadcast from the default list. The broadcast, its recipients and its stats stay available, and the list shows it with archived=true. Archiving an archived broadcast changes nothing.",
+        "operationId": "archiveBroadcast",
+        "parameters": [
+          {
+            "description": "The broadcast ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Broadcast"
+                }
+              }
+            },
+            "description": "Broadcast archived"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad request - check your payload"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Archive a broadcast",
+        "tags": [
+          "Broadcasts"
+        ],
+        "x-sdk-group": [
+          "broadcasts",
+          "archive"
+        ],
+        "x-sdk-method": "archive"
       }
     },
     "/v1/broadcasts/{id}/cancel": {
@@ -7957,6 +8083,94 @@
         "x-sdk-method": "sendTest"
       }
     },
+    "/v1/broadcasts/{id}/unarchive": {
+      "post": {
+        "description": "Return an archived broadcast to the default list. Unarchiving a broadcast that is not archived changes nothing.",
+        "operationId": "unarchiveBroadcast",
+        "parameters": [
+          {
+            "description": "The broadcast ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Broadcast"
+                }
+              }
+            },
+            "description": "Broadcast unarchived"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Unarchive a broadcast",
+        "tags": [
+          "Broadcasts"
+        ],
+        "x-sdk-group": [
+          "broadcasts",
+          "unarchive"
+        ],
+        "x-sdk-method": "unarchive"
+      }
+    },
     "/v1/contact-properties": {
       "get": {
         "description": "The custom fields this team has declared, with their types and defaults.",
@@ -8362,7 +8576,7 @@
         "operationId": "listContacts",
         "parameters": [
           {
-            "description": "Search by email, first name, or last name",
+            "description": "Search by email, first name, or last name. Several email addresses separated by commas, spaces or new lines are matched exactly, up to 100.",
             "in": "query",
             "name": "q",
             "schema": {
