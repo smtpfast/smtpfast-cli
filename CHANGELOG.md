@@ -2,6 +2,15 @@
 
 All notable changes to the smtpfast CLI. The spec sync workflow adds an entry for each release it publishes.
 
+## [0.13.0] - 2026-10-18
+
+Updated from the live API spec.
+
+### New commands
+
+- `smtpfast link-domains get-connect` (GET /v1/link-domains/{id}/domain-connect): Check one-click DNS setup for a link domain
+- `smtpfast link-domains start-connect` (POST /v1/link-domains/{id}/domain-connect): Set up a link domain's DNS in one click
+
 ## [0.12.0] - 2026-10-15
 
 Updated from the live API spec.

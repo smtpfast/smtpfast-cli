@@ -2,8 +2,8 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "fd47548fe69a9ec2e4484076886acbf55cf37a6ac4d8306df202f859ff24ed7a",
-  "operationCount": 144,
+  "specHash": "e09a1799fa19a09c98f73dbab9aa3597da107595571b6599f4332a552b51cfc4",
+  "operationCount": 146,
   "groups": [
     {
       "name": "account",
@@ -4463,6 +4463,31 @@
       "body": null
     },
     {
+      "operationId": "getLinkDomainDomainConnect",
+      "method": "GET",
+      "path": "/v1/link-domains/{id}/domain-connect",
+      "group": "link-domains",
+      "command": "get-connect",
+      "summary": "Check one-click DNS setup for a link domain",
+      "description": "Whether the link domain's DNS provider can add its CNAME record through Domain Connect, the open standard behind one-click DNS setup. Not in Resend. Requires the domain:read scope; 30 checks per 10 minutes per team.",
+      "tags": [
+        "Domains"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The link domain ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
       "operationId": "listLinkDomains",
       "method": "GET",
       "path": "/v1/link-domains",
@@ -4486,6 +4511,31 @@
       "command": "refresh",
       "summary": "Refresh a link domain's status",
       "description": "Ask Cloudflare for the current state now, instead of waiting for the automatic check (every few minutes while pending, daily once active). Also restarts automatic checks for a failed link domain. Not in Resend. Requires the domain:write scope; 30 per 10 minutes per team.",
+      "tags": [
+        "Domains"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The link domain ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "startLinkDomainDomainConnect",
+      "method": "POST",
+      "path": "/v1/link-domains/{id}/domain-connect",
+      "group": "link-domains",
+      "command": "start-connect",
+      "summary": "Set up a link domain's DNS in one click",
+      "description": "Returns a signed Domain Connect link. The domain owner opens it, approves the CNAME record at the DNS provider, and the link domain turns active once Cloudflare sees the record. 409 with the reason when the provider cannot apply it, or the link domain is not pending (refresh a failed one first). Not in Resend. Requires the domain:write scope; 30 per 10 minutes per team.",
       "tags": [
         "Domains"
       ],

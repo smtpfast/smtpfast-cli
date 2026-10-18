@@ -3502,6 +3502,52 @@
         ],
         "type": "object"
       },
+      "LinkDomainConnectCheck": {
+        "properties": {
+          "available": {
+            "description": "Whether the DNS provider can add the CNAME record in one click through Domain Connect.",
+            "type": "boolean"
+          },
+          "provider": {
+            "description": "The DNS provider, when discovery found one.",
+            "example": "Cloudflare",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reason": {
+            "description": "Why one-click setup is not available, when it is not.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "available",
+          "provider",
+          "reason"
+        ],
+        "type": "object"
+      },
+      "LinkDomainConnectLink": {
+        "properties": {
+          "provider": {
+            "example": "Cloudflare",
+            "type": "string"
+          },
+          "url": {
+            "description": "The signed link to open. The DNS provider shows the CNAME record and asks the domain owner to approve it.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url",
+          "provider"
+        ],
+        "type": "object"
+      },
       "LinkDomainDeleted": {
         "properties": {
           "deleted": {
@@ -17409,6 +17455,190 @@
           "linkDomains"
         ],
         "x-sdk-method": "get"
+      }
+    },
+    "/v1/link-domains/{id}/domain-connect": {
+      "get": {
+        "description": "Whether the link domain's DNS provider can add its CNAME record through Domain Connect, the open standard behind one-click DNS setup. Not in Resend. Requires the domain:read scope; 30 checks per 10 minutes per team.",
+        "operationId": "getLinkDomainDomainConnect",
+        "parameters": [
+          {
+            "description": "The link domain ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkDomainConnectCheck"
+                }
+              }
+            },
+            "description": "Whether one-click setup is available"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Check one-click DNS setup for a link domain",
+        "tags": [
+          "Domains"
+        ],
+        "x-sdk-group": [
+          "linkDomains",
+          "domainConnect"
+        ],
+        "x-sdk-method": "get"
+      },
+      "post": {
+        "description": "Returns a signed Domain Connect link. The domain owner opens it, approves the CNAME record at the DNS provider, and the link domain turns active once Cloudflare sees the record. 409 with the reason when the provider cannot apply it, or the link domain is not pending (refresh a failed one first). Not in Resend. Requires the domain:write scope; 30 per 10 minutes per team.",
+        "operationId": "startLinkDomainDomainConnect",
+        "parameters": [
+          {
+            "description": "The link domain ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkDomainConnectLink"
+                }
+              }
+            },
+            "description": "The link to open"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Conflict - the resource already exists or changed meanwhile"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Set up a link domain's DNS in one click",
+        "tags": [
+          "Domains"
+        ],
+        "x-sdk-group": [
+          "linkDomains",
+          "domainConnect"
+        ],
+        "x-sdk-method": "start"
       }
     },
     "/v1/link-domains/{id}/refresh": {
