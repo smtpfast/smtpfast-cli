@@ -531,6 +531,13 @@
               "null"
             ]
           },
+          "segment_id": {
+            "description": "The segment the broadcast goes to when audience is segment, otherwise null",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "send_over_minutes": {
             "description": "Minutes the send is spread over from its start (scheduled_at, else queued_at); 0 means all at once",
             "example": 0,
@@ -2094,6 +2101,11 @@
             "example": "verified",
             "type": "string"
           },
+          "name": {
+            "description": "Same as domain. Resend calls this field name.",
+            "example": "yourapp.com",
+            "type": "string"
+          },
           "next_auto_check_at": {
             "description": "Null once the domain is verified",
             "format": "date-time",
@@ -2244,6 +2256,11 @@
           },
           "id": {
             "example": "dom_xyz789",
+            "type": "string"
+          },
+          "name": {
+            "description": "Same as domain. Resend calls this field name.",
+            "example": "yourapp.com",
             "type": "string"
           },
           "receiving_enabled": {
