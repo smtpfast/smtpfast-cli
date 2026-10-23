@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "9221a5659abd1d7414d05a6dd7cc20b493956279a78efe0c8456c2a544d12298",
+  "specHash": "7910e28e59c23b528126cbc40d4e0db39034939d1cb21229c9ea09a4779c14a5",
   "operationCount": 146,
   "groups": [
     {
@@ -2109,7 +2109,7 @@
       "group": "emails",
       "command": "metrics",
       "summary": "Retrieve email metrics",
-      "description": "Resend-compatible counts and rates over a date range, for transactional and broadcast email together. Leave dimensions out for one totals row; add period, domain, email or broadcast (email and broadcast cannot be combined) to break the numbers down. Each lifecycle timestamp counts in its own period. Sends where every recipient is the SES mailbox simulator are left out. Rates are percentages with one decimal. Open and click metrics need tracking on. Requires the email:read scope.",
+      "description": "Resend-compatible counts and rates over a date range, for transactional and broadcast email together. Leave dimensions out for one totals row; add period, domain, email or broadcast (email and broadcast cannot be combined) to break the numbers down. Each lifecycle timestamp counts in its own period. Sends where every recipient is the SES mailbox simulator are left out. Rates are percentages with one decimal. Open and click metrics need tracking on. Add include=providers for a breakdown by mailbox provider (Gmail, Outlook, iCloud, Yahoo, Proton, other). Requires the email:read scope.",
       "tags": [
         "Emails"
       ],
@@ -2168,6 +2168,17 @@
             "daily",
             "weekly",
             "monthly"
+          ]
+        },
+        {
+          "name": "include",
+          "flag": "include",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "providers adds a providers array: sent email by the recipient's mailbox provider over the range and the id filters, each email counted once by its first To address, by the time it was created and its current status. Not part of Resend's API.",
+          "enum": [
+            "providers"
           ]
         },
         {

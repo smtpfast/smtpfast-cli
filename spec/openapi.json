@@ -3757,6 +3757,107 @@
         },
         "type": "object"
       },
+      "MailboxProviderMetrics": {
+        "description": "Sent email to one mailbox provider. Each email counts once, by the domain of its first To address; a domain outside the consumer domains is classified by its MX hosts, so Google Workspace counts as gmail and Microsoft 365 as outlook. Rates are percentages with two decimals, null when there is nothing to rate yet.",
+        "properties": {
+          "bounce_rate": {
+            "description": "bounced / (delivered + bounced).",
+            "example": 1.12,
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "bounced": {
+            "example": 9,
+            "type": "integer"
+          },
+          "complained": {
+            "example": 1,
+            "type": "integer"
+          },
+          "complaint_rate": {
+            "description": "complained / delivered.",
+            "example": 0.13,
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "delivered": {
+            "description": "Accepted by the receiving server, complained included.",
+            "example": 798,
+            "type": "integer"
+          },
+          "delivery_rate": {
+            "description": "delivered / (delivered + bounced): over emails with a delivery or bounce report.",
+            "example": 98.88,
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "name": {
+            "example": "Gmail",
+            "type": "string"
+          },
+          "open_rate": {
+            "description": "opened / tracked_delivered. Apple Mail Privacy Protection loads the open pixel before anyone reads the email, so the icloud rate reads high.",
+            "example": 50.89,
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "opened": {
+            "description": "Of tracked_delivered, opened at least once.",
+            "example": 402,
+            "type": "integer"
+          },
+          "provider": {
+            "enum": [
+              "gmail",
+              "outlook",
+              "icloud",
+              "yahoo",
+              "proton",
+              "other"
+            ],
+            "type": "string"
+          },
+          "sent": {
+            "description": "Handed to SES: sent, delivered, opened, clicked, bounced or complained.",
+            "example": 812,
+            "type": "integer"
+          },
+          "share": {
+            "description": "Percent of all sent email in the breakdown.",
+            "example": 67.44,
+            "type": "number"
+          },
+          "tracked_delivered": {
+            "description": "Delivered with open tracking on: the open rate's denominator.",
+            "example": 790,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "provider",
+          "name",
+          "sent",
+          "share",
+          "delivered",
+          "bounced",
+          "complained",
+          "tracked_delivered",
+          "opened",
+          "delivery_rate",
+          "open_rate",
+          "bounce_rate",
+          "complaint_rate"
+        ],
+        "type": "object"
+      },
       "PendingSignup": {
         "properties": {
           "confirmation_email": {
@@ -7486,8 +7587,7 @@
           "Broadcasts"
         ],
         "x-sdk-group": [
-          "broadcasts",
-          "archive"
+          "broadcasts"
         ],
         "x-sdk-method": "archive"
       }
@@ -8228,8 +8328,7 @@
           "Broadcasts"
         ],
         "x-sdk-group": [
-          "broadcasts",
-          "unarchive"
+          "broadcasts"
         ],
         "x-sdk-method": "unarchive"
       }
@@ -11095,7 +11194,7 @@
     },
     "/v1/emails/metrics": {
       "get": {
-        "description": "Resend-compatible counts and rates over a date range, for transactional and broadcast email together. Leave dimensions out for one totals row; add period, domain, email or broadcast (email and broadcast cannot be combined) to break the numbers down. Each lifecycle timestamp counts in its own period. Sends where every recipient is the SES mailbox simulator are left out. Rates are percentages with one decimal. Open and click metrics need tracking on. Requires the email:read scope.",
+        "description": "Resend-compatible counts and rates over a date range, for transactional and broadcast email together. Leave dimensions out for one totals row; add period, domain, email or broadcast (email and broadcast cannot be combined) to break the numbers down. Each lifecycle timestamp counts in its own period. Sends where every recipient is the SES mailbox simulator are left out. Rates are percentages with one decimal. Open and click metrics need tracking on. Add include=providers for a breakdown by mailbox provider (Gmail, Outlook, iCloud, Yahoo, Proton, other). Requires the email:read scope.",
         "operationId": "getEmailMetrics",
         "parameters": [
           {
@@ -11175,6 +11274,17 @@
             "in": "query",
             "name": "broadcast_id",
             "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "providers adds a providers array: sent email by the recipient's mailbox provider over the range and the id filters, each email counted once by its first To address, by the time it was created and its current status. Not part of Resend's API.",
+            "in": "query",
+            "name": "include",
+            "schema": {
+              "enum": [
+                "providers"
+              ],
               "type": "string"
             }
           }
@@ -11286,6 +11396,13 @@
                     "object": {
                       "example": "metrics",
                       "type": "string"
+                    },
+                    "providers": {
+                      "description": "With include=providers: one row per mailbox provider with at least one sent email, most sent first. A recipient domain not classified yet counts as other for that request (up to 50 new domains are looked up per request).",
+                      "items": {
+                        "$ref": "#/components/schemas/MailboxProviderMetrics"
+                      },
+                      "type": "array"
                     },
                     "start_date": {
                       "format": "date-time",
@@ -17556,10 +17673,9 @@
           "Domains"
         ],
         "x-sdk-group": [
-          "linkDomains",
-          "domainConnect"
+          "linkDomains"
         ],
-        "x-sdk-method": "get"
+        "x-sdk-method": "getDomainConnect"
       },
       "post": {
         "description": "Returns a signed Domain Connect link. The domain owner opens it, approves the CNAME record at the DNS provider, and the link domain turns active once Cloudflare sees the record. 409 with the reason when the provider cannot apply it, or the link domain is not pending (refresh a failed one first). Not in Resend. Requires the domain:write scope; 30 per 10 minutes per team.",
@@ -17652,10 +17768,9 @@
           "Domains"
         ],
         "x-sdk-group": [
-          "linkDomains",
-          "domainConnect"
+          "linkDomains"
         ],
-        "x-sdk-method": "start"
+        "x-sdk-method": "startDomainConnect"
       }
     },
     "/v1/link-domains/{id}/refresh": {
