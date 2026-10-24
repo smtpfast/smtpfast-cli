@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "7910e28e59c23b528126cbc40d4e0db39034939d1cb21229c9ea09a4779c14a5",
+  "specHash": "b4ef42d03395867f0ce46bc8a8789ecc3d90dd78ec926a559bcb76f2dfaedf39",
   "operationCount": 146,
   "groups": [
     {
@@ -1281,7 +1281,7 @@
             "in": "body",
             "type": "object",
             "required": false,
-            "example": "{\"company\":\"Acme\",\"plan\":\"pro\"}"
+            "example": "{\"company\":\"Acme\",\"plan\":\"growth\"}"
           },
           {
             "name": "segment_ids",
@@ -2305,7 +2305,7 @@
             "type": "array",
             "required": false,
             "items": "string",
-            "description": "Reply-To address or addresses"
+            "description": "Reply-To address or addresses, up to 50. Every address goes in the Reply-To header."
           },
           {
             "name": "scheduled_at",

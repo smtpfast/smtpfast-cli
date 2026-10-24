@@ -116,7 +116,7 @@
                 "type": "integer"
               },
               "limit": {
-                "example": 50000,
+                "example": 100000,
                 "type": "integer"
               },
               "period": {
@@ -128,7 +128,8 @@
                 "type": "integer"
               },
               "tier": {
-                "example": "pro",
+                "description": "The plan: free, starter, growth or scale.",
+                "example": "growth",
                 "type": "string"
               }
             },
@@ -1084,12 +1085,12 @@
         "properties": {
           "contact_limit": {
             "description": "The plan's contact limit, with any override for the account",
-            "example": 25000,
+            "example": 50000,
             "type": "integer"
           },
           "contact_limit_base": {
             "description": "The plan's contact limit without overrides",
-            "example": 25000,
+            "example": 50000,
             "type": "integer"
           },
           "data": {
@@ -1139,7 +1140,8 @@
             "type": "integer"
           },
           "tier": {
-            "example": "pro",
+            "description": "The plan: free, starter, growth or scale.",
+            "example": "growth",
             "type": "string"
           },
           "total": {
@@ -1532,7 +1534,7 @@
             },
             "example": {
               "company": "Acme",
-              "plan": "pro"
+              "plan": "growth"
             },
             "type": "object"
           },
@@ -2487,7 +2489,7 @@
             ]
           },
           "reply_to": {
-            "description": "The Reply-To address the email was sent with, or null.",
+            "description": "The Reply-To address the email was sent with, or the first one when it had several, or null.",
             "type": [
               "string",
               "null"
@@ -4334,6 +4336,7 @@
             "type": "integer"
           },
           "tier": {
+            "description": "The plan: free, starter, growth or scale.",
             "example": "starter",
             "type": "string"
           },
@@ -4494,7 +4497,7 @@
             "type": "string"
           },
           "reply_to": {
-            "description": "Reply-To address or addresses",
+            "description": "Reply-To address or addresses, up to 50. Every address goes in the Reply-To header.",
             "oneOf": [
               {
                 "format": "email",
@@ -4505,6 +4508,7 @@
                   "format": "email",
                   "type": "string"
                 },
+                "maxItems": 50,
                 "type": "array"
               }
             ]
@@ -5945,7 +5949,7 @@
           "contacts": {
             "properties": {
               "limit": {
-                "example": 25000,
+                "example": 50000,
                 "type": "integer"
               },
               "used": {
@@ -6032,14 +6036,14 @@
               },
               "effective_remaining": {
                 "description": "What can still be sent before a send is refused: the monthly allowance left plus credits",
-                "example": 41580,
+                "example": 91580,
                 "type": "integer"
               },
               "monthly": {
                 "description": "This month. Received mail does not count, so used equals sent.",
                 "properties": {
                   "limit": {
-                    "example": 50000,
+                    "example": 100000,
                     "type": "integer"
                   },
                   "received": {
@@ -18093,7 +18097,8 @@
                           "type": "string"
                         },
                         "tier": {
-                          "example": "pro",
+                          "description": "The plan: free, starter, growth or scale.",
+                          "example": "growth",
                           "type": "string"
                         }
                       },
