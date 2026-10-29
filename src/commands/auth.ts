@@ -1,5 +1,5 @@
 import { renderTable } from "../output.js";
-import { configPath, validateProfileName, writeConfig } from "../config.js";
+import { configPath, type Settings, validateProfileName, writeConfig } from "../config.js";
 import type { Context } from "../context.js";
 import { bool, one } from "../args.js";
 import { ApiError, CliError, EXIT_API, EXIT_INTERRUPTED, UsageError } from "../errors.js";
@@ -152,6 +152,19 @@ async function deviceLogin(session: Session, baseUrl: string, scopes: string[] |
   }
 }
 
+/** Save a key to the profile in use, and make that profile current when there is none. Returns whether it is current. */
+export function storeKey(session: Session, settings: Settings, key: string): boolean {
+  const config = session.config();
+  const profile = config.profiles[settings.profile] ?? {};
+  profile.api_key = key;
+  if (session.globals.baseUrl) profile.base_url = settings.baseUrl;
+  config.profiles[settings.profile] = profile;
+  const madeCurrent = !config.current || !config.profiles[config.current] || config.current === settings.profile;
+  if (madeCurrent) config.current = settings.profile;
+  writeConfig(session.configDir, config);
+  return madeCurrent;
+}
+
 export const loginCommand: HandCommand = {
   name: "login",
   summary: "Log in through the browser, or store an API key",
@@ -194,14 +207,7 @@ export const loginCommand: HandCommand = {
       throw err;
     }
 
-    const config = session.config();
-    const profile = config.profiles[settings.profile] ?? {};
-    profile.api_key = key;
-    if (session.globals.baseUrl) profile.base_url = settings.baseUrl;
-    config.profiles[settings.profile] = profile;
-    const madeCurrent = !config.current || !config.profiles[config.current] || config.current === settings.profile;
-    if (madeCurrent) config.current = settings.profile;
-    writeConfig(session.configDir, config);
+    const madeCurrent = storeKey(session, settings, key);
 
     const out = session.out;
     const account = (me.account ?? {}) as Record<string, unknown>;

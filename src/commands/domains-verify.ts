@@ -2,7 +2,7 @@ import { bool, one } from "../args.js";
 import { CliError, UsageError } from "../errors.js";
 import type { ApiClient } from "../http.js";
 import { type Colors, findList, renderTable } from "../output.js";
-import { InterruptError } from "../session.js";
+import { InterruptError, type Session } from "../session.js";
 import { pathSegment } from "../request.js";
 import { formatDuration, parseDuration } from "../util.js";
 import type { HandCommand } from "./types.js";
@@ -57,8 +57,70 @@ export function describeVerification(result: Row, c: Colors, fallbackName: strin
   return lines;
 }
 
-function isVerified(result: Row): boolean {
+export function isVerified(result: Row): boolean {
   return typeof result.status === "string" && result.status.toLowerCase() === "verified";
+}
+
+export async function verifyOnce(client: ApiClient, id: string, signal?: AbortSignal): Promise<Row> {
+  const res = await client.request({ method: "POST", path: `/v1/domains/${pathSegment(id, "id-or-name")}/verify`, signal });
+  return (res.data && typeof res.data === "object" ? res.data : {}) as Row;
+}
+
+/**
+ * Check, then check again at each interval until the domain is verified.
+ * Returns the last verify response; throws a CliError at the timeout. Progress
+ * goes to stdout on a terminal and to stderr when stdout carries JSON.
+ */
+export async function waitForVerification(
+  session: Session,
+  client: ApiClient,
+  domain: { id: string; name: string },
+  opts: { timeoutMs: number; intervalMs: number; signal: AbortSignal; showRecords: boolean },
+): Promise<Row> {
+  const { out } = session;
+  const { signal, timeoutMs, intervalMs } = opts;
+  const progress = (text: string) => (out.json || out.quiet ? out.err(text) : out.out(text));
+  const colors = out.json || out.quiet ? out.ce : out.c;
+  const started = session.ctx.now();
+  let result = await verifyOnce(client, domain.id, signal);
+  let lastBlock = "";
+  let shownRecords = !opts.showRecords;
+  for (;;) {
+    const block = describeVerification(result, colors, domain.name).join("\n");
+    if (block !== lastBlock) {
+      progress(block);
+      lastBlock = block;
+    }
+    if (isVerified(result)) return result;
+    if (!shownRecords && !out.json && !out.quiet) {
+      shownRecords = true;
+      try {
+        const res = await client.request({ method: "GET", path: `/v1/domains/${pathSegment(domain.id, "id-or-name")}`, signal });
+        const records = (res.data as Row | null)?.dns_records;
+        if (Array.isArray(records) && records.length > 0) {
+          out.out(`\n${out.c.bold("DNS records for this domain:")}`);
+          out.out(renderTable(records as Row[], out.width, out.c, ["type", "name", "value"]));
+          out.out("");
+        }
+      } catch (err) {
+        if (signal.aborted) throw err;
+      }
+    }
+    const elapsed = session.ctx.now() - started;
+    if (elapsed + intervalMs > timeoutMs) {
+      const status = typeof result.status === "string" ? result.status : "not verified";
+      const name = typeof result.domain === "string" ? result.domain : domain.name;
+      throw new CliError(
+        `Timed out after ${formatDuration(timeoutMs)}: ${name} is still ${status}`,
+        1,
+        "DNS changes can take a while to spread. Run the command again later.",
+      );
+    }
+    progress(colors.dim(`Checking again in ${formatDuration(intervalMs)}. Press Ctrl-C to stop.`));
+    await session.ctx.sleep(intervalMs, signal);
+    if (signal.aborted) throw new InterruptError();
+    result = await verifyOnce(client, domain.id, signal);
+  }
 }
 
 export const domainsVerifyCommand: HandCommand = {
@@ -90,64 +152,17 @@ export const domainsVerifyCommand: HandCommand = {
     try {
       const client = session.client();
       const domain = await resolveDomain(client, input, signal);
-      const verify = async () => {
-        const res = await client.request({ method: "POST", path: `/v1/domains/${pathSegment(domain.id, "id-or-name")}/verify`, signal });
-        return (res.data && typeof res.data === "object" ? res.data : {}) as Row;
-      };
 
-      let result = await verify();
       if (!wait) {
+        const result = await verifyOnce(client, domain.id, signal);
         if (out.json || out.quiet) out.result(result);
         else out.out(describeVerification(result, out.c, domain.name).join("\n"));
         return 0;
       }
-
-      // Progress goes to stdout on a terminal and to stderr when stdout carries JSON.
-      const progress = (text: string) => (out.json || out.quiet ? out.err(text) : out.out(text));
-      const colors = out.json || out.quiet ? out.ce : out.c;
-      const started = session.ctx.now();
-      let lastBlock = "";
-      let shownRecords = false;
-      for (;;) {
-        const block = describeVerification(result, colors, domain.name).join("\n");
-        if (block !== lastBlock) {
-          progress(block);
-          lastBlock = block;
-        }
-        if (isVerified(result)) {
-          if (out.json || out.quiet) out.result(result);
-          else out.out(out.c.green(`${domain.name} is verified.`));
-          return 0;
-        }
-        if (!shownRecords && !out.json && !out.quiet) {
-          shownRecords = true;
-          try {
-            const res = await client.request({ method: "GET", path: `/v1/domains/${pathSegment(domain.id, "id-or-name")}`, signal });
-            const records = (res.data as Row | null)?.dns_records;
-            if (Array.isArray(records) && records.length > 0) {
-              out.out(`\n${out.c.bold("DNS records for this domain:")}`);
-              out.out(renderTable(records as Row[], out.width, out.c, ["type", "name", "value"]));
-              out.out("");
-            }
-          } catch (err) {
-            if (signal.aborted) throw err;
-          }
-        }
-        const elapsed = session.ctx.now() - started;
-        if (elapsed + intervalMs > timeoutMs) {
-          const status = typeof result.status === "string" ? result.status : "not verified";
-          const name = typeof result.domain === "string" ? result.domain : domain.name;
-          throw new CliError(
-            `Timed out after ${formatDuration(timeoutMs)}: ${name} is still ${status}`,
-            1,
-            "DNS changes can take a while to spread. Run the command again later.",
-          );
-        }
-        progress(colors.dim(`Checking again in ${formatDuration(intervalMs)}. Press Ctrl-C to stop.`));
-        await session.ctx.sleep(intervalMs, signal);
-        if (signal.aborted) throw new InterruptError();
-        result = await verify();
-      }
+      const result = await waitForVerification(session, client, domain, { timeoutMs, intervalMs, signal, showRecords: true });
+      if (out.json || out.quiet) out.result(result);
+      else out.out(out.c.green(`${domain.name} is verified.`));
+      return 0;
     } finally {
       dispose();
     }
