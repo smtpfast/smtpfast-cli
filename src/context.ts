@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { homedir } from "node:os";
+import { homedir, hostname } from "node:os";
 import { sleep } from "./util.js";
 
 /** The part of fetch the CLI uses. Narrower than typeof fetch so test doubles fit. */
@@ -33,6 +33,10 @@ export interface Context {
   spawnRefresh(args: { configDir: string; url: string }): void;
   /** Run a handler on Ctrl-C. Returns a function that removes it. */
   onInterrupt(handler: () => void): () => void;
+  /** This machine's name, for naming the key smtpfast login creates. */
+  hostname(): string;
+  /** Try to open a URL in the default browser. False when there is no way to. */
+  openUrl(url: string): boolean;
 }
 
 /** How to run this same CLI again: node + script, bun + script, or a compiled binary on its own. */
@@ -54,6 +58,27 @@ function spawnDetachedRefresh({ configDir, url }: { configDir: string; url: stri
   child.unref();
 }
 
+/**
+ * Open a URL without a shell, so nothing in it is interpreted. On Linux only
+ * with a display: xdg-open over SSH can start a text browser in this terminal.
+ */
+function openInBrowser(url: string): boolean {
+  let command: string;
+  let args: string[];
+  if (process.platform === "darwin") [command, args] = ["open", [url]];
+  else if (process.platform === "win32") [command, args] = ["rundll32", ["url.dll,FileProtocolHandler", url]];
+  else if (process.env.DISPLAY || process.env.WAYLAND_DISPLAY) [command, args] = ["xdg-open", [url]];
+  else return false;
+  try {
+    const child = spawn(command, args, { detached: true, stdio: "ignore", windowsHide: true });
+    child.on("error", () => {});
+    child.unref();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function defaultContext(): Context {
   return {
     env: process.env,
@@ -71,5 +96,7 @@ export function defaultContext(): Context {
       process.on("SIGINT", handler);
       return () => process.off("SIGINT", handler);
     },
+    hostname,
+    openUrl: openInBrowser,
   };
 }

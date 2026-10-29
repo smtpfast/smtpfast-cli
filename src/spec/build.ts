@@ -453,6 +453,7 @@ function buildOperation(r: Resolver, path: string, method: HttpMethod, pathItem:
   spec.tags = tags;
   if (op.deprecated === true) spec.deprecated = true;
   if (idempotencyKey) spec.idempotencyKey = true;
+  if (Array.isArray(op.security) && op.security.length === 0) spec.noAuth = true;
   spec.pathParams = pathParams;
   spec.queryParams = queryParams;
   spec.headerParams = headerParams;

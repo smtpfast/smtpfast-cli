@@ -45,7 +45,7 @@ smtpfast send --from hello@yourapp.com --to you@example.com --subject "Hello" --
 smtpfast emails get <id>
 ```
 
-`login` asks for an API key without showing it, checks it with `GET /v1/me`, and saves it. `send` prints the new email's id. `emails get` shows its status.
+`login` shows a code and opens the approval page in your browser. A team owner or admin approves it there and picks the team, and the CLI gets an API key of its own, named after the machine. `send` prints the new email's id. `emails get` shows its status.
 
 ## Authentication and profiles
 
@@ -54,6 +54,10 @@ The CLI looks for an API key in this order:
 1. The `--api-key` flag
 2. The `SMTPFAST_API_KEY` environment variable
 3. The current profile in `~/.config/smtpfast/config.json`
+
+`smtpfast login` without a key logs in through the browser: it prints a code and a link, opens the link, and waits until the code is approved or denied. The new key is a normal API key called `CLI on <hostname> (<date>)`; it is listed under API keys in the dashboard, where you can revoke it. Ask for fewer scopes with `--scopes email:send,email:read,domain:read`, and use `--no-browser` on a machine without one (the link works from any device). The code expires after ten minutes.
+
+To store a key you already have, pass `--api-key`, pipe it on stdin, or run `smtpfast login --paste` to paste it without showing it. With an empty stdin, as in an agent's shell, login uses the browser flow and prints the link for a person to open.
 
 `smtpfast login` writes the key to a profile. The file is readable only by you (mode 600), and a new config directory gets mode 700. If `config.json` is a symbolic link, the CLI refuses to write the key. Keep keys for several accounts or environments in named profiles:
 
@@ -208,7 +212,7 @@ The script asks the CLI for candidates each time, so new commands complete witho
 | Command | What it does |
 | --- | --- |
 | `smtpfast send` | Send an email |
-| `smtpfast login` | Store an API key |
+| `smtpfast login` | Log in through the browser, or store an API key |
 | `smtpfast logout` | Remove the stored API key |
 | `smtpfast whoami` | Show the team, plan and scopes of the API key in use |
 | `smtpfast profiles <list\|use\|remove> [name]` | List, switch and remove stored profiles |
