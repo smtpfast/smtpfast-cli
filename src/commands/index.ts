@@ -3,12 +3,17 @@ import { loginCommand, logoutCommand, profilesCommand, whoamiCommand } from "./a
 import { catalog } from "./catalog.js";
 import { completionCommand } from "./completion.js";
 import { domainsVerifyCommand } from "./domains-verify.js";
+import { initCommand } from "./init.js";
 import { commandsCommand, versionCommand } from "./info.js";
 import { logsTailCommand } from "./logs-tail.js";
 import { sendCommand } from "./send.js";
+import { activateCommand, signupCommand } from "./signup.js";
 
 catalog.top.push(
   sendCommand,
+  initCommand,
+  signupCommand,
+  activateCommand,
   loginCommand,
   logoutCommand,
   whoamiCommand,

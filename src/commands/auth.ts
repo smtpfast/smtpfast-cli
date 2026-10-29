@@ -1,5 +1,5 @@
 import { renderTable } from "../output.js";
-import { configPath, validateProfileName, writeConfig } from "../config.js";
+import { configPath, type Settings, validateProfileName, writeConfig } from "../config.js";
 import type { Context } from "../context.js";
 import { bool, one } from "../args.js";
 import { ApiError, CliError, EXIT_API, EXIT_INTERRUPTED, UsageError } from "../errors.js";
@@ -152,6 +152,43 @@ async function deviceLogin(session: Session, baseUrl: string, scopes: string[] |
   }
 }
 
+/**
+ * Save a key to the profile in use, and make that profile current when there
+ * is none. The file is read again first, since a login or signup waits a
+ * while and another run may have written it since. With keepExisting, a
+ * profile that holds a key by then is left alone and the key goes to the
+ * first free "<profile>-signup" profile, with the same base URL. Reading,
+ * choosing and writing happen in one synchronous step.
+ */
+export function storeKey(
+  session: Session,
+  settings: Settings,
+  key: string,
+  extra: { email?: string; keepExisting?: boolean } = {},
+): { profile: string; current: boolean } {
+  const config = session.reloadConfig();
+  let name = settings.profile;
+  if (extra.keepExisting && config.profiles[name]?.api_key) {
+    // Profile names stop at 64 characters, numbered suffix included.
+    const base = `${settings.profile.slice(0, 54)}-signup`;
+    for (let n = 1; ; n++) {
+      name = n === 1 ? base : `${base}-${n}`;
+      if (!config.profiles[name]) break;
+    }
+  }
+  const moved = name !== settings.profile;
+  const profile = moved ? {} : (config.profiles[name] ?? {});
+  profile.api_key = key;
+  // A moved key keeps the URL it was made with, whatever the old profile says by now.
+  if (session.globals.baseUrl || moved) profile.base_url = settings.baseUrl;
+  if (extra.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(extra.email)) profile.email = extra.email;
+  config.profiles[name] = profile;
+  const current = !config.current || !config.profiles[config.current] || config.current === name;
+  if (current) config.current = name;
+  writeConfig(session.configDir, config);
+  return { profile: name, current };
+}
+
 export const loginCommand: HandCommand = {
   name: "login",
   summary: "Log in through the browser, or store an API key",
@@ -194,18 +231,13 @@ export const loginCommand: HandCommand = {
       throw err;
     }
 
-    const config = session.config();
-    const profile = config.profiles[settings.profile] ?? {};
-    profile.api_key = key;
-    if (session.globals.baseUrl) profile.base_url = settings.baseUrl;
-    config.profiles[settings.profile] = profile;
-    const madeCurrent = !config.current || !config.profiles[config.current] || config.current === settings.profile;
-    if (madeCurrent) config.current = settings.profile;
-    writeConfig(session.configDir, config);
+    const madeCurrent = storeKey(session, settings, key).current;
 
     const out = session.out;
     const account = (me.account ?? {}) as Record<string, unknown>;
     if (out.json) {
+      // Set by init, which prints the one JSON summary itself.
+      if (parsed.values["from-init"] === true) return 0;
       out.jsonOut({ profile: settings.profile, current: madeCurrent, config: configPath(session.configDir), team_id: me.team_id ?? null, plan: account.tier ?? null, scopes: me.scopes ?? [] });
       return 0;
     }

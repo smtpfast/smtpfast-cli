@@ -5,6 +5,7 @@ Send email, manage domains, contacts and webhooks, and call every API endpoint f
 
 - [Install](#install)
 - [Quick start](#quick-start)
+- [Sign up from the terminal](#sign-up-from-the-terminal)
 - [Authentication and profiles](#authentication-and-profiles)
 - [Examples](#examples)
 - [How commands map to the API](#how-commands-map-to-the-api)
@@ -40,12 +41,40 @@ On Windows, download `smtpfast-windows-x64.exe`. Each release has a `SHA256SUMS`
 ## Quick start
 
 ```sh
+npx smtpfast init
+```
+
+`init` does the setup the dashboard would: it logs you in or signs you up, activates a new account, adds a domain, sets its DNS records through Domain Connect when your DNS host supports it (or prints them), waits until the domain is verified and offers a test email to your own address. Each step is skipped when it is already done, so you can run it again.
+
+With an account and a verified domain:
+
+```sh
 smtpfast login
 smtpfast send --from hello@yourapp.com --to you@example.com --subject "Hello" --text "It works"
 smtpfast emails get <id>
 ```
 
 `login` shows a code and opens the approval page in your browser. A team owner or admin approves it there and picks the team, and the CLI gets an API key of its own, named after the machine. `send` prints the new email's id. `emails get` shows its status.
+
+## Sign up from the terminal
+
+```sh
+smtpfast signup                       # asks for your address, then the code from the email
+smtpfast activate                     # pay for a plan, request the free plan, or use an invite code
+smtpfast init --domain mail.example.com
+```
+
+`signup` emails an 8-digit code; entering it creates the account and saves its first API key in the profile, as `login` does. A new account is pending until it is activated, as on the website. Until then the key only works for `smtpfast activate`. `activate --plan growth` opens Stripe Checkout and waits for the payment, `activate --free-trial "what you will send"` asks for the free plan (a person reviews it and emails you), and `activate --invite <code>` uses an invite code. The account has no password; to use the dashboard later, set one with Forgot password on the login page.
+
+For an agent, without prompts:
+
+```sh
+smtpfast signup --email you@example.com --send-only --json     # prints signup_id
+smtpfast signup --signup-id <id> --code 4831-0927 --plan growth
+smtpfast init --domain mail.example.com --test-email --json
+```
+
+`signup --email` also reads the code from stdin. `init` asks nothing without a terminal: pass `--domain`, and `--test-email` for the test email. It goes to the address `signup` saved in the profile, or to `--to`. `--no-domain-connect` prints the DNS records instead of opening the Domain Connect link, `--no-wait` checks the domain once, and `--timeout 30m` waits longer.
 
 ## Authentication and profiles
 
@@ -212,6 +241,9 @@ The script asks the CLI for candidates each time, so new commands complete witho
 | Command | What it does |
 | --- | --- |
 | `smtpfast send` | Send an email |
+| `smtpfast init` | Set up sending from the terminal: account, domain, DNS, verification and a test email |
+| `smtpfast signup` | Create an SMTPfast account from the terminal |
+| `smtpfast activate` | Activate a new account: pay for a plan, request the free plan, or use an invite code |
 | `smtpfast login` | Log in through the browser, or store an API key |
 | `smtpfast logout` | Remove the stored API key |
 | `smtpfast whoami` | Show the team, plan and scopes of the API key in use |
