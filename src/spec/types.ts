@@ -39,6 +39,8 @@ export interface OperationSpec {
   deprecated?: boolean;
   /** True when the spec declares an Idempotency-Key header for this operation. */
   idempotencyKey?: boolean;
+  /** True when the spec says the operation takes no API key (an empty security list). */
+  noAuth?: boolean;
   pathParams: ParamSpec[];
   queryParams: ParamSpec[];
   headerParams: ParamSpec[];

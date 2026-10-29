@@ -13,6 +13,7 @@ export async function runOperation(session: Session, op: OperationSpec, parsed: 
     headers: req.headers,
     body: req.body,
     idempotencyKey: session.globals.idempotencyKey,
+    ...(op.noAuth ? { auth: false } : {}),
   });
   session.out.result(res.data, { op });
   return 0;

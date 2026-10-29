@@ -86,6 +86,9 @@ export interface RunOptions {
   now?: () => number;
   onInterrupt?: Context["onInterrupt"];
   configHome?: string;
+  hostname?: string;
+  /** What openUrl answers. Opened URLs are recorded either way; no browser is started. */
+  canOpen?: boolean;
 }
 
 export interface RunResult {
@@ -93,6 +96,7 @@ export interface RunResult {
   stdout: string;
   stderr: string;
   spawned: Array<{ configDir: string; url: string }>;
+  opened: string[];
   configHome: string;
 }
 
@@ -101,6 +105,7 @@ export async function run(argv: string[], opts: RunOptions = {}): Promise<RunRes
   let stdout = "";
   let stderr = "";
   const spawned: RunResult["spawned"] = [];
+  const opened: string[] = [];
   const configHome = opts.configHome ?? tempDir("smtpfast-xdg-");
   const stdin = Readable.from(opts.stdin !== undefined ? [opts.stdin] : []) as unknown as InStream;
   stdin.isTTY = opts.stdinTTY ?? false;
@@ -119,7 +124,12 @@ export async function run(argv: string[], opts: RunOptions = {}): Promise<RunRes
       spawned.push(a);
     },
     onInterrupt: opts.onInterrupt ?? (() => () => {}),
+    hostname: () => opts.hostname ?? "test-host",
+    openUrl: (url) => {
+      opened.push(url);
+      return opts.canOpen ?? true;
+    },
   };
   const code = await main(argv, ctx);
-  return { code, stdout, stderr, spawned, configHome };
+  return { code, stdout, stderr, spawned, opened, configHome };
 }
