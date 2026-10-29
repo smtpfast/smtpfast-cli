@@ -1,7 +1,7 @@
 import { bool, type FlagValues, one } from "../args.js";
 import { ApiError, CliError, EXIT_API, UsageError } from "../errors.js";
 import type { ApiClient } from "../http.js";
-import { interactive, prompt, readLine } from "../prompt.js";
+import { confirm, interactive, prompt, readLine } from "../prompt.js";
 import { InterruptError, type Session } from "../session.js";
 import { formatDuration, maskKey, parseDuration } from "../util.js";
 import { VERSION } from "../version.js";
@@ -162,9 +162,10 @@ export async function activationStep(
   session: Session,
   client: ApiClient,
   choice: ActivationChoice,
-  opts: { openBrowser: boolean; wait: boolean; timeoutMs: number },
+  opts: { openBrowser: boolean; wait: boolean; timeoutMs: number; ask?: boolean },
 ): Promise<string> {
   const { out } = session;
+  const ask = opts.ask ?? interactive(session.ctx);
   const now = await readActivation(client);
   if (!now) return "active";
   if (now.status !== "pending") {
@@ -174,7 +175,7 @@ export async function activationStep(
   const given = choice.plan || choice.useCase || choice.invite;
   if (!given) {
     out.err(describeStatus(now));
-    if (now.free_trial_requested_at || !interactive(session.ctx)) {
+    if (now.free_trial_requested_at || !ask) {
       if (!now.free_trial_requested_at) {
         out.err("Activate with one of:\n  smtpfast activate --plan growth\n  smtpfast activate --free-trial \"what you will send\"\n  smtpfast activate --invite SF-XXXX-XXXX");
       }
@@ -297,6 +298,15 @@ export const signupCommand: HandCommand = {
   },
 };
 
+/** The first of base, base-2, base-3... that has no key yet. */
+function freeProfileName(session: Session, base: string): string {
+  const profiles = session.config().profiles;
+  for (let n = 1; ; n++) {
+    const name = n === 1 ? base : `${base}-${n}`;
+    if (!profiles[name]?.api_key) return name;
+  }
+}
+
 /** The signup command. From init, activation and the next steps are left to init. */
 export async function runSignup(session: Session, values: FlagValues, { fromInit }: { fromInit: boolean }): Promise<number> {
   const { ctx, out } = session;
@@ -321,7 +331,10 @@ export async function runSignup(session: Session, values: FlagValues, { fromInit
       if (name === undefined) name = (await prompt(ctx, "Your name (optional): ")) || undefined;
     }
     if (!email) throw new UsageError("Missing --email", "Pass the address for the new account with --email.");
-    const started = await startSignup(session, settings.baseUrl, email, name, bool(values, "newsletter") ?? true);
+    // The signup form shows this as a ticked box; a person here gets the same question.
+    let newsletter = bool(values, "newsletter");
+    if (newsletter === undefined) newsletter = interactive(ctx) ? await confirm(ctx, "Get the monthly product update email?") : true;
+    const started = await startSignup(session, settings.baseUrl, email, name, newsletter);
     signupId = started.signup_id;
     const minutes = Math.round((started.expires_in ?? 600) / 60);
     if (sendOnly) {
@@ -339,6 +352,8 @@ export async function runSignup(session: Session, values: FlagValues, { fromInit
   for (;;) {
     const code = await readCode(session, one(values, "code"), again);
     if (!code) throw new UsageError("No code given", "Pass it with --code, or on stdin.", false);
+    out.addSecret(code);
+    out.addSecret(code.replace(/[\s-]/g, ""));
     try {
       const res = await session.client({ baseUrl: settings.baseUrl }).request({
         method: "POST",
@@ -364,18 +379,34 @@ export async function runSignup(session: Session, values: FlagValues, { fromInit
   const key = typeof data.key === "string" ? data.key : "";
   if (!key) throw new CliError("The API created the account but sent no key.");
   out.addSecret(key);
-  const madeCurrent = storeKey(session, settings, key);
   const team = (data.team ?? {}) as Row;
   const account = (data.account ?? {}) as Row;
+  const str = (v: unknown) => (typeof v === "string" ? v : "");
+
+  // Another run may have saved a key to this profile while the code was on its way.
+  let target = settings;
+  if (session.reloadConfig().profiles[settings.profile]?.api_key) {
+    target = { ...settings, profile: freeProfileName(session, `${settings.profile}-signup`) };
+    out.err(out.ce.yellow(`Profile "${settings.profile}" got a key meanwhile, so the new key is saved as profile "${target.profile}".`));
+  }
+  const madeCurrent = storeKey(session, target, key, { email: str(account.email) || undefined });
 
   if (out.json) {
     const client = session.client({ apiKey: key, baseUrl: settings.baseUrl });
-    const status = choice.plan || choice.useCase || choice.invite ? await activationStep(session, client, choice, activationOptions(session, values)) : String(account.status ?? "pending");
-    out.jsonOut({ profile: settings.profile, current: madeCurrent, account: { ...account, status }, team, key_prefix: data.prefix ?? null, scopes: data.scopes ?? [] });
+    const status = choice.plan || choice.useCase || choice.invite ? await activationStep(session, client, choice, activationOptions(session, values)) : str(account.status) || "pending";
+    const summary = {
+      profile: target.profile,
+      current: madeCurrent,
+      account: { id: str(account.id), email: str(account.email), status },
+      team: { id: str(team.id), name: str(team.name) },
+      key_prefix: str(data.prefix) || null,
+      scopes: Array.isArray(data.scopes) ? data.scopes.filter((s): s is string => typeof s === "string") : [],
+    };
+    out.out(out.redact(JSON.stringify(summary, null, 2)));
     return 0;
   }
-  out.out(`${out.c.green("Created")} account ${String(account.email ?? "")} and team "${String(team.name ?? "")}". Saved key ${maskKey(key)} as profile "${settings.profile}".`);
-  if (!madeCurrent) out.out(out.c.dim(`Run "smtpfast profiles use ${settings.profile}" to make it the default.`));
+  out.out(out.redact(`${out.c.green("Created")} account ${str(account.email)} and team "${str(team.name)}". Saved key ${maskKey(key)} as profile "${target.profile}".`));
+  if (!madeCurrent) out.out(out.c.dim(`Run "smtpfast profiles use ${target.profile}" to make it the default.`));
   out.err(out.ce.dim("The account has no password. To use the dashboard later, set one with Forgot password on the login page."));
   if (fromInit) return 0;
 

@@ -68,7 +68,7 @@ const signupRoutes = (extra: Routes = {}): Routes => ({
 describe("smtpfast signup", () => {
   test("asks for the address and the code, saves the key, and leaves activation for later", async () => {
     server = await api(signupRoutes());
-    const r = await run(["signup", "--base-url", server.url], { tty: true, stdinTTY: true, stdin: "ada@example.com\nAda\n4831-0927\n4\n" });
+    const r = await run(["signup", "--base-url", server.url], { tty: true, stdinTTY: true, stdin: "ada@example.com\nAda\n\n4831-0927\n4\n" });
     expect(r.code).toBe(0);
     expect(paths(server)).toEqual(["POST /v1/cli/signup", "POST /v1/cli/signup/verify", "GET /v1/account/activation"]);
     expect(server.requests[0]!.json).toEqual({ email: "ada@example.com", name: "Ada", newsletter: true, client_name: `SMTPfast CLI ${VERSION}`, hostname: "test-host" });
@@ -92,9 +92,11 @@ describe("smtpfast signup", () => {
         ],
       }),
     );
-    const r = await run(["signup", "--email", "ada@example.com", "--name", "Ada", "--base-url", server.url], { stdinTTY: true, stdin: "0000-0000\n4831-0927\n4\n" });
+    const r = await run(["signup", "--email", "ada@example.com", "--name", "Ada", "--base-url", server.url], { stdinTTY: true, stdin: "n\n0000-0000\n4831-0927\n4\n" });
     expect(r.code).toBe(0);
     expect(r.stderr).toContain("That code is not right. 4 tries left.");
+    expect(server.requests[0]!.json.newsletter).toBe(false);
+    expect(r.stderr).not.toContain("4831-0927");
     expect(server.requests.filter((q) => q.path === "/v1/cli/signup/verify").map((q) => q.json.code)).toEqual(["0000-0000", "4831-0927"]);
   });
 
@@ -142,6 +144,36 @@ describe("smtpfast signup", () => {
     expect(r.stderr).toContain('Profile "default" already has an API key');
     expect(server.requests).toHaveLength(0);
     expect(configOf(r.configHome).profiles.default.api_key).toBe(OLD_KEY);
+  });
+
+  test("never prints the key, even when the server puts it in another field", async () => {
+    server = await api(signupRoutes({ "POST /v1/cli/signup/verify": [200, { ...CREATED, prefix: NEW_KEY, team: { id: "team_1", name: NEW_KEY } }] }));
+    const json = await run(["signup", "--email", "ada@example.com", "--code", "4831-0927", "--base-url", server.url]);
+    expect(json.code).toBe(0);
+    expect(json.stdout).not.toContain(NEW_KEY);
+    const human = await run(["signup", "--email", "ada@example.com", "--code", "4831-0927", "--base-url", server.url], { tty: true });
+    expect(human.code).toBe(0);
+    expect(human.stdout + human.stderr).not.toContain(NEW_KEY);
+  });
+
+  test("saves to a new profile when another run stored a key while the code was on its way", async () => {
+    const configHome = tempDir("smtpfast-xdg-");
+    server = await api(
+      signupRoutes({
+        "POST /v1/cli/signup/verify": () => {
+          mkdirSync(join(configHome, "smtpfast"), { recursive: true, mode: 0o700 });
+          writeFileSync(join(configHome, "smtpfast", "config.json"), JSON.stringify({ current: "default", profiles: { default: { api_key: OLD_KEY }, staging: { api_key: OLD_KEY } } }), { mode: 0o600 });
+          return [200, CREATED];
+        },
+      }),
+    );
+    const r = await run(["signup", "--email", "ada@example.com", "--code", "4831-0927", "--base-url", server.url], { configHome });
+    expect(r.code).toBe(0);
+    const config = configOf(configHome);
+    expect(config.profiles.default.api_key).toBe(OLD_KEY);
+    expect(config.profiles.staging.api_key).toBe(OLD_KEY);
+    expect(config.profiles["default-signup"]).toMatchObject({ api_key: NEW_KEY, email: "ada@example.com" });
+    expect(r.stderr).toContain('saved as profile "default-signup"');
   });
 
   test("needs an address and a code when nobody can be asked", async () => {
@@ -212,7 +244,7 @@ describe("smtpfast init", () => {
       "POST /v1/domains/dom_1/verify": [[200, { domain: "mail.example.com", status: "pending" }], [200, { domain: "mail.example.com", status: "verified" }]],
       "POST /v1/emails": [200, { id: "em_1" }],
     });
-    const r = await run(["init", "--domain", "Mail.Example.com.", "--test-email", "--base-url", server.url], { configHome: withKey(NEW_KEY) });
+    const r = await run(["init", "--domain", "Mail.Example.com.", "--test-email", "--to", "ada@example.com", "--base-url", server.url], { configHome: withKey(NEW_KEY) });
     expect(r.code).toBe(0);
     expect(server.requests.find((q) => q.path === "/v1/domains" && q.method === "POST")!.json).toEqual({ domain: "mail.example.com" });
     expect(r.opened).toEqual(["https://dash.cloudflare.com/domainconnect/v2/apply?x=1"]);
@@ -290,15 +322,55 @@ describe("smtpfast init", () => {
     expect(r.stderr).toContain("smtpfast signup");
   });
 
+  test("with --yes asks nothing, even on a terminal", async () => {
+    const noKey = await run(["init", "--yes"], { stdinTTY: true, stdin: "s\n" });
+    expect(noKey.code).toBe(2);
+    server = await api({ "GET /v1/account/activation": [200, pending] });
+    const r = await run(["init", "--yes", "--base-url", server.url], { stdinTTY: true, stdin: "1\ngrowth\nmonthly\n", configHome: withKey(NEW_KEY) });
+    expect(r.code).toBe(1);
+    expect(r.stderr).not.toContain("Choice [1-4]");
+    expect(paths(server)).toEqual(["GET /v1/account/activation"]);
+  });
+
+  test("sends the test email to the address signup saved", async () => {
+    const home = tempDir("smtpfast-xdg-");
+    mkdirSync(join(home, "smtpfast"), { recursive: true, mode: 0o700 });
+    writeFileSync(join(home, "smtpfast", "config.json"), JSON.stringify({ current: "default", profiles: { default: { api_key: NEW_KEY, email: "ada@example.com" } } }), { mode: 0o600 });
+    server = await api({
+      "GET /v1/account/activation": [200, active],
+      "GET /v1/domains": [200, { object: "list", has_more: false, data: [VERIFIED_DOMAIN] }],
+      "POST /v1/emails": [200, { id: "em_1" }],
+    });
+    const r = await run(["init", "--domain", "mail.example.com", "--test-email", "--base-url", server.url], { configHome: home });
+    expect(r.code).toBe(0);
+    expect(server.requests.find((q) => q.path === "/v1/emails")!.json).toMatchObject({ to: "ada@example.com" });
+    const none = await run(["init", "--domain", "mail.example.com", "--test-email", "--base-url", server.url], { configHome: withKey(NEW_KEY) });
+    expect(none.code).toBe(2);
+    expect(none.stderr).toContain("--to");
+  });
+
+  test("passes --no-browser on to the login", async () => {
+    server = await api({
+      "POST /v1/cli/device": [200, { device_code: "Qm9iYnlzLWNvZGUt.dGhpcy1pcy1ub3QtYS1yZWFsLWRldmljZS1jb2RlLW9r", user_code: "BCDF-GHJK", verification_uri: "https://smtpfa.st/cli/device", verification_uri_complete: "https://smtpfa.st/cli/device?code=BCDF-GHJK", expires_in: 600, interval: 5 }],
+      "POST /v1/cli/token": [200, { ...CREATED, account: undefined, activation: undefined }],
+      "GET /v1/me": [200, { api_key_id: "key_new", scopes: ["email:send"], team_id: "team_1", account: { tier: "free", status: "active" } }],
+      "GET /v1/account/activation": [200, active],
+    });
+    const r = await run(["init", "--no-browser", "--base-url", server.url], { stdinTTY: true, stdin: "l\n\n" });
+    expect(r.code).toBe(0);
+    expect(r.opened).toEqual([]);
+    expect(r.stderr).toContain("https://smtpfa.st/cli/device?code=BCDF-GHJK");
+  });
+
   test("on a terminal without a key, signs up first and then carries on", async () => {
     server = await api({
       ...signupRoutes(),
       "GET /v1/account/activation": [200, active],
     });
-    const r = await run(["init", "--base-url", server.url], { tty: true, stdinTTY: true, stdin: "s\nada@example.com\n\n4831-0927\n\n" });
+    const r = await run(["init", "--base-url", server.url], { tty: true, stdinTTY: true, stdin: "s\nada@example.com\n\n\n4831-0927\n\n" });
     expect(r.code).toBe(0);
     expect(paths(server)).toEqual(["POST /v1/cli/signup", "POST /v1/cli/signup/verify", "GET /v1/account/activation"]);
-    expect(configOf(r.configHome).profiles.default.api_key).toBe(NEW_KEY);
+    expect(configOf(r.configHome).profiles.default).toMatchObject({ api_key: NEW_KEY, email: "ada@example.com" });
     expect(r.stderr).toContain("No domain given");
   });
 });

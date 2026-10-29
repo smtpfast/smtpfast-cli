@@ -9,6 +9,8 @@ export const DEFAULT_PROFILE = "default";
 export interface Profile {
   api_key?: string;
   base_url?: string;
+  /** The account's address, saved by smtpfast signup for init's test email. */
+  email?: string;
 }
 
 export interface ConfigFile {

@@ -6,7 +6,7 @@ import { pathSegment } from "../request.js";
 import { parseDuration } from "../util.js";
 import { loginCommand } from "./auth.js";
 import { describeVerification, isVerified, verifyOnce, waitForVerification } from "./domains-verify.js";
-import { activationOptions, activationStep, askLoginOrSignup, readActivation, runSignup } from "./signup.js";
+import { activationOptions, activationStep, askLoginOrSignup, runSignup } from "./signup.js";
 import type { HandCommand } from "./types.js";
 
 type Row = Record<string, unknown>;
@@ -18,7 +18,7 @@ export const initCommand: HandCommand = {
   name: "init",
   summary: "Set up sending from the terminal: account, domain, DNS, verification and a test email",
   description:
-    "Walks through everything the dashboard would: logs in or signs up when there is no key, activates a new account, adds a domain, sets its DNS records through Domain Connect when the DNS host supports it (or prints them), waits until the domain is verified, and offers a test email to the account's own address. Every step is skipped when it is already done, so running it again is safe. Without a terminal nothing is asked: pass the flags.",
+    "Walks through everything the dashboard would: logs in or signs up when there is no key, activates a new account, adds a domain, sets its DNS records through Domain Connect when the DNS host supports it (or prints them), waits until the domain is verified, and offers a test email to the address smtpfast signup saved (or --to). Every step is skipped when it is already done, so running it again is safe. Without a terminal nothing is asked: pass the flags.",
   flags: [
     { name: "domain", kind: "value", valueName: "name", description: "The domain to send from, like mail.example.com" },
     { name: "skip-domain", kind: "boolean", description: "Stop after the account steps" },
@@ -27,13 +27,14 @@ export const initCommand: HandCommand = {
     { name: "timeout", kind: "value", valueName: "duration", description: "How long to wait for verification, like 10m or 1h. Default 10m." },
     { name: "test-email", kind: "boolean", description: "Send a test email to the account's own address. Asked on a terminal; off without one" },
     { name: "from", kind: "value", valueName: "address", description: "Sender of the test email. Default hello@<domain>" },
+    { name: "to", kind: "value", valueName: "address", description: "Recipient of the test email. Default: the address smtpfast signup saved, or asked" },
     { name: "yes", short: "y", kind: "boolean", description: "Take the default answer to every question" },
     { name: "browser", kind: "boolean", description: "Open links in a browser (default). --no-browser only prints them" },
   ],
   examples: [
     "npx smtpfast init",
     "smtpfast init --domain mail.example.com",
-    "smtpfast init --domain mail.example.com --no-domain-connect --timeout 30m --test-email",
+    "smtpfast init --domain mail.example.com --no-domain-connect --timeout 30m --test-email --to you@example.com",
   ],
   async run(session, parsed) {
     if (parsed.positionals.length > 0) throw new UsageError(`Unexpected argument "${parsed.positionals[0]}"`);
@@ -46,7 +47,7 @@ export const initCommand: HandCommand = {
     const summary: Row = {};
     const step = (n: number, title: string) => out.err(out.ce.bold(`\n[${n}/${STEPS}] ${title}`));
     const finish = (code = 0) => {
-      if (out.json) out.jsonOut(summary);
+      if (out.json) out.out(out.redact(JSON.stringify(summary, null, 2)));
       return code;
     };
 
@@ -55,11 +56,11 @@ export const initCommand: HandCommand = {
     if (settings.apiKey) {
       out.err(`Using profile "${settings.profile}".`);
     } else {
-      if (!interactive(ctx)) throw new UsageError("No API key found", "Run smtpfast login or smtpfast signup first, or pass --api-key.", false);
+      if (!ask) throw new UsageError("No API key found", "Run smtpfast login or smtpfast signup first, or pass --api-key.", false);
       const pick = await askLoginOrSignup(session);
       if (!pick) return 0;
-      const none: FlagValues = {};
-      const code = pick === "login" ? await loginCommand.run(session, { positionals: [], values: none }) : await runSignup(session, none, { fromInit: true });
+      const passed: FlagValues = { browser: openBrowser };
+      const code = pick === "login" ? await loginCommand.run(session, { positionals: [], values: passed }) : await runSignup(session, {}, { fromInit: true });
       if (code !== 0) return code;
       session.reloadConfig();
       settings = session.settings();
@@ -69,11 +70,11 @@ export const initCommand: HandCommand = {
     const client = session.client();
 
     step(2, "Activation");
-    const status = await activationStep(session, client, {}, { ...activationOptions(session, values), wait: interactive(ctx) });
+    const status = await activationStep(session, client, {}, { ...activationOptions(session, values), wait: ask, ask });
     summary.account_status = status;
     if (status !== "active") {
       if (status === "rejected") throw new CliError("The account cannot be activated.", EXIT_API, "Write to support@smtpfa.st.");
-      if (!interactive(ctx)) throw new CliError("The account is not active yet.", EXIT_API, "Activate it with smtpfast activate, then run smtpfast init again.");
+      if (!ask) throw new CliError("The account is not active yet.", EXIT_API, "Activate it with smtpfast activate, then run smtpfast init again.");
       out.err("Run smtpfast init again once the account is active.");
       return finish();
     }
@@ -169,14 +170,21 @@ export const initCommand: HandCommand = {
     out.err(out.ce.green(`${name} is verified.`));
 
     step(6, "Test email");
+    // The account's address is not something the API hands to any key, so it comes from --to or from signup.
+    let to = one(values, "to") ?? session.config().profiles[settings.profile]?.email;
     let send = bool(values, "test-email");
-    const to = send === true || (send === undefined && (ask || yes)) ? (await readActivation(client))?.email : undefined;
-    if (send === undefined) send = ask && to ? await confirm(ctx, `Send a test email to ${to}?`) : yes;
+    if (send === undefined) {
+      if (ask && to) send = await confirm(ctx, `Send a test email to ${to}?`);
+      else if (ask) {
+        to = (await prompt(ctx, "Send a test email to (an address, or Enter to skip): ")) || undefined;
+        send = !!to;
+      } else send = yes && !!to;
+    }
     if (!send) {
       out.err("Skipped.");
       return finish();
     }
-    if (!to) throw new CliError("Could not read the account's address for the test email.");
+    if (!to) throw new UsageError("No address for the test email", "Pass --to <address>.");
     const from = one(values, "from") ?? `hello@${name}`;
     const res = await client.request({
       method: "POST",

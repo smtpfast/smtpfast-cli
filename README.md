@@ -74,7 +74,7 @@ smtpfast signup --signup-id <id> --code 4831-0927 --plan growth
 smtpfast init --domain mail.example.com --test-email --json
 ```
 
-`signup --email` also reads the code from stdin. `init` asks nothing without a terminal: pass `--domain`, and `--test-email` for the test email. `--no-domain-connect` prints the DNS records instead of opening the Domain Connect link, `--no-wait` checks the domain once, and `--timeout 30m` waits longer.
+`signup --email` also reads the code from stdin. `init` asks nothing without a terminal: pass `--domain`, and `--test-email` for the test email. It goes to the address `signup` saved in the profile, or to `--to`. `--no-domain-connect` prints the DNS records instead of opening the Domain Connect link, `--no-wait` checks the domain once, and `--timeout 30m` waits longer.
 
 ## Authentication and profiles
 

@@ -152,11 +152,16 @@ async function deviceLogin(session: Session, baseUrl: string, scopes: string[] |
   }
 }
 
-/** Save a key to the profile in use, and make that profile current when there is none. Returns whether it is current. */
-export function storeKey(session: Session, settings: Settings, key: string): boolean {
-  const config = session.config();
+/**
+ * Save a key to the profile in use, and make that profile current when there
+ * is none. Returns whether it is current. The file is read again first, since
+ * a login or signup waits a while and another run may have written it since.
+ */
+export function storeKey(session: Session, settings: Settings, key: string, extra: { email?: string } = {}): boolean {
+  const config = session.reloadConfig();
   const profile = config.profiles[settings.profile] ?? {};
   profile.api_key = key;
+  if (extra.email) profile.email = extra.email;
   if (session.globals.baseUrl) profile.base_url = settings.baseUrl;
   config.profiles[settings.profile] = profile;
   const madeCurrent = !config.current || !config.profiles[config.current] || config.current === settings.profile;
