@@ -69,6 +69,7 @@ describe("smtpfast signup", () => {
   test("asks for the address and the code, saves the key, and leaves activation for later", async () => {
     server = await api(signupRoutes());
     const r = await run(["signup", "--base-url", server.url], { tty: true, stdinTTY: true, stdin: "ada@example.com\nAda\n\n4831-0927\n4\n" });
+    expect(r.stderr).toContain("Get the monthly product update email? [Y/n]");
     expect(r.code).toBe(0);
     expect(paths(server)).toEqual(["POST /v1/cli/signup", "POST /v1/cli/signup/verify", "GET /v1/account/activation"]);
     expect(server.requests[0]!.json).toEqual({ email: "ada@example.com", name: "Ada", newsletter: true, client_name: `SMTPfast CLI ${VERSION}`, hostname: "test-host" });
@@ -92,10 +93,11 @@ describe("smtpfast signup", () => {
         ],
       }),
     );
-    const r = await run(["signup", "--email", "ada@example.com", "--name", "Ada", "--base-url", server.url], { stdinTTY: true, stdin: "n\n0000-0000\n4831-0927\n4\n" });
+    const r = await run(["signup", "--email", "ada@example.com", "--name", "Ada", "--base-url", server.url], { stdinTTY: true, stdin: "0000-0000\n4831-0927\n4\n" });
     expect(r.code).toBe(0);
     expect(r.stderr).toContain("That code is not right. 4 tries left.");
-    expect(server.requests[0]!.json.newsletter).toBe(false);
+    // Given --email, nothing about the newsletter is asked: it is the form's default.
+    expect(server.requests[0]!.json.newsletter).toBe(true);
     expect(r.stderr).not.toContain("4831-0927");
     expect(server.requests.filter((q) => q.path === "/v1/cli/signup/verify").map((q) => q.json.code)).toEqual(["0000-0000", "4831-0927"]);
   });
@@ -147,10 +149,13 @@ describe("smtpfast signup", () => {
   });
 
   test("never prints the key, even when the server puts it in another field", async () => {
-    server = await api(signupRoutes({ "POST /v1/cli/signup/verify": [200, { ...CREATED, prefix: NEW_KEY, team: { id: "team_1", name: NEW_KEY } }] }));
+    server = await api(
+      signupRoutes({ "POST /v1/cli/signup/verify": [200, { ...CREATED, prefix: NEW_KEY, team: { id: "team_1", name: NEW_KEY }, account: { ...CREATED.account, email: NEW_KEY } }] }),
+    );
     const json = await run(["signup", "--email", "ada@example.com", "--code", "4831-0927", "--base-url", server.url]);
     expect(json.code).toBe(0);
     expect(json.stdout).not.toContain(NEW_KEY);
+    expect(configOf(json.configHome).profiles.default.email).toBeUndefined();
     const human = await run(["signup", "--email", "ada@example.com", "--code", "4831-0927", "--base-url", server.url], { tty: true });
     expect(human.code).toBe(0);
     expect(human.stdout + human.stderr).not.toContain(NEW_KEY);
@@ -162,17 +167,19 @@ describe("smtpfast signup", () => {
       signupRoutes({
         "POST /v1/cli/signup/verify": () => {
           mkdirSync(join(configHome, "smtpfast"), { recursive: true, mode: 0o700 });
-          writeFileSync(join(configHome, "smtpfast", "config.json"), JSON.stringify({ current: "default", profiles: { default: { api_key: OLD_KEY }, staging: { api_key: OLD_KEY } } }), { mode: 0o600 });
+          writeFileSync(join(configHome, "smtpfast", "config.json"), JSON.stringify({ current: "default", profiles: { default: { api_key: OLD_KEY, base_url: server!.url }, staging: { api_key: OLD_KEY } } }), { mode: 0o600 });
           return [200, CREATED];
         },
       }),
     );
-    const r = await run(["signup", "--email", "ada@example.com", "--code", "4831-0927", "--base-url", server.url], { configHome });
+    mkdirSync(join(configHome, "smtpfast"), { recursive: true, mode: 0o700 });
+    writeFileSync(join(configHome, "smtpfast", "config.json"), JSON.stringify({ current: "default", profiles: { default: { base_url: server.url } } }), { mode: 0o600 });
+    const r = await run(["signup", "--email", "ada@example.com", "--code", "4831-0927"], { configHome });
     expect(r.code).toBe(0);
     const config = configOf(configHome);
     expect(config.profiles.default.api_key).toBe(OLD_KEY);
     expect(config.profiles.staging.api_key).toBe(OLD_KEY);
-    expect(config.profiles["default-signup"]).toMatchObject({ api_key: NEW_KEY, email: "ada@example.com" });
+    expect(config.profiles["default-signup"]).toEqual({ api_key: NEW_KEY, base_url: server.url, email: "ada@example.com" });
     expect(r.stderr).toContain('saved as profile "default-signup"');
   });
 
@@ -322,6 +329,24 @@ describe("smtpfast init", () => {
     expect(r.stderr).toContain("smtpfast signup");
   });
 
+  test("carries on with the profile signup saved to, not the one another run filled", async () => {
+    const configHome = tempDir("smtpfast-xdg-");
+    server = await api({
+      ...signupRoutes(),
+      "POST /v1/cli/signup/verify": () => {
+        mkdirSync(join(configHome, "smtpfast"), { recursive: true, mode: 0o700 });
+        writeFileSync(join(configHome, "smtpfast", "config.json"), JSON.stringify({ current: "default", profiles: { default: { api_key: OLD_KEY } } }), { mode: 0o600 });
+        return [200, CREATED];
+      },
+      "GET /v1/account/activation": [200, active],
+    });
+    const r = await run(["init", "--base-url", server.url], { configHome, stdinTTY: true, stdin: "s\nada@example.com\n\n\n4831-0927\n\n" });
+    expect(r.code).toBe(0);
+    const activation = server.requests.find((q) => q.path === "/v1/account/activation")!;
+    expect(activation.headers.authorization).toBe(`Bearer ${NEW_KEY}`);
+    expect(JSON.parse(r.stdout)).toMatchObject({ profile: "default-signup" });
+  });
+
   test("with --yes asks nothing, even on a terminal", async () => {
     const noKey = await run(["init", "--yes"], { stdinTTY: true, stdin: "s\n" });
     expect(noKey.code).toBe(2);
@@ -359,6 +384,7 @@ describe("smtpfast init", () => {
     const r = await run(["init", "--no-browser", "--base-url", server.url], { stdinTTY: true, stdin: "l\n\n" });
     expect(r.code).toBe(0);
     expect(r.opened).toEqual([]);
+    expect(JSON.parse(r.stdout)).toMatchObject({ profile: "default", account_status: "active" });
     expect(r.stderr).toContain("https://smtpfa.st/cli/device?code=BCDF-GHJK");
   });
 

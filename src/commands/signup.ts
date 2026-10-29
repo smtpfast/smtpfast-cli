@@ -294,21 +294,12 @@ export const signupCommand: HandCommand = {
   ],
   async run(session, parsed) {
     if (parsed.positionals.length > 0) throw new UsageError(`Unexpected argument "${parsed.positionals[0]}"`);
-    return runSignup(session, parsed.values, { fromInit: false });
+    return (await runSignup(session, parsed.values, { fromInit: false })).code;
   },
 };
 
-/** The first of base, base-2, base-3... that has no key yet. */
-function freeProfileName(session: Session, base: string): string {
-  const profiles = session.config().profiles;
-  for (let n = 1; ; n++) {
-    const name = n === 1 ? base : `${base}-${n}`;
-    if (!profiles[name]?.api_key) return name;
-  }
-}
-
 /** The signup command. From init, activation and the next steps are left to init. */
-export async function runSignup(session: Session, values: FlagValues, { fromInit }: { fromInit: boolean }): Promise<number> {
+export async function runSignup(session: Session, values: FlagValues, { fromInit }: { fromInit: boolean }): Promise<{ code: number; profile?: string }> {
   const { ctx, out } = session;
   const settings = session.settings();
   const choice = choiceFromFlags(values);
@@ -326,14 +317,15 @@ export async function runSignup(session: Session, values: FlagValues, { fromInit
   if (!signupId) {
     let email = one(values, "email");
     let name = one(values, "name");
-    if (!email && interactive(ctx)) {
+    const asked = !email && interactive(ctx);
+    if (asked) {
       email = (await prompt(ctx, "Email: ")) ?? undefined;
       if (name === undefined) name = (await prompt(ctx, "Your name (optional): ")) || undefined;
     }
     if (!email) throw new UsageError("Missing --email", "Pass the address for the new account with --email.");
-    // The signup form shows this as a ticked box; a person here gets the same question.
+    // The signup form shows this as a ticked box; a person typing the address gets the same question.
     let newsletter = bool(values, "newsletter");
-    if (newsletter === undefined) newsletter = interactive(ctx) ? await confirm(ctx, "Get the monthly product update email?") : true;
+    if (newsletter === undefined) newsletter = asked ? await confirm(ctx, "Get the monthly product update email?") : true;
     const started = await startSignup(session, settings.baseUrl, email, name, newsletter);
     signupId = started.signup_id;
     const minutes = Math.round((started.expires_in ?? 600) / 60);
@@ -341,7 +333,7 @@ export async function runSignup(session: Session, values: FlagValues, { fromInit
       if (out.json) out.jsonOut(started);
       else out.out(signupId);
       out.err(`Sent a code to ${email}. Finish within ${minutes} minutes: smtpfast signup --signup-id ${signupId} --code <code>`);
-      return 0;
+      return { code: 0 };
     }
     out.err(`Sent a code to ${email}. It works for ${minutes} minutes.`);
     out.err(out.ce.dim("If the email says you already have an account, run smtpfast login instead."));
@@ -384,14 +376,16 @@ export async function runSignup(session: Session, values: FlagValues, { fromInit
   const str = (v: unknown) => (typeof v === "string" ? v : "");
 
   // Another run may have saved a key to this profile while the code was on its way.
-  let target = settings;
-  if (session.reloadConfig().profiles[settings.profile]?.api_key) {
-    target = { ...settings, profile: freeProfileName(session, `${settings.profile}-signup`) };
-    out.err(out.ce.yellow(`Profile "${settings.profile}" got a key meanwhile, so the new key is saved as profile "${target.profile}".`));
+  const saved = storeKey(session, settings, key, { email: str(account.email) || undefined, keepExisting: true });
+  const target = { ...settings, profile: saved.profile };
+  const madeCurrent = saved.current;
+  if (saved.profile !== settings.profile) {
+    out.err(out.ce.yellow(`Profile "${settings.profile}" got a key meanwhile, so the new key is saved as profile "${saved.profile}".`));
   }
-  const madeCurrent = storeKey(session, target, key, { email: str(account.email) || undefined });
 
   if (out.json) {
+    // From init, init prints the one JSON summary.
+    if (fromInit) return { code: 0, profile: saved.profile };
     const client = session.client({ apiKey: key, baseUrl: settings.baseUrl });
     const status = choice.plan || choice.useCase || choice.invite ? await activationStep(session, client, choice, activationOptions(session, values)) : str(account.status) || "pending";
     const summary = {
@@ -403,18 +397,18 @@ export async function runSignup(session: Session, values: FlagValues, { fromInit
       scopes: Array.isArray(data.scopes) ? data.scopes.filter((s): s is string => typeof s === "string") : [],
     };
     out.out(out.redact(JSON.stringify(summary, null, 2)));
-    return 0;
+    return { code: 0, profile: saved.profile };
   }
   out.out(out.redact(`${out.c.green("Created")} account ${str(account.email)} and team "${str(team.name)}". Saved key ${maskKey(key)} as profile "${target.profile}".`));
   if (!madeCurrent) out.out(out.c.dim(`Run "smtpfast profiles use ${target.profile}" to make it the default.`));
   out.err(out.ce.dim("The account has no password. To use the dashboard later, set one with Forgot password on the login page."));
-  if (fromInit) return 0;
+  if (fromInit) return { code: 0, profile: saved.profile };
 
   const client = session.client({ apiKey: key, baseUrl: settings.baseUrl });
   const status = await activationStep(session, client, choice, activationOptions(session, values));
   if (status === "active") out.out(`Next: ${out.c.bold("smtpfast init")} adds a domain and sends a test email.`);
   else out.out(`Next: activate the account with ${out.c.bold("smtpfast activate")}, then run ${out.c.bold("smtpfast init")}.`);
-  return 0;
+  return { code: 0, profile: saved.profile };
 }
 
 /** For init: ask whether a person wants the browser login or a new account. */

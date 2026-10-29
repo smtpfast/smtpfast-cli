@@ -59,9 +59,16 @@ export const initCommand: HandCommand = {
       if (!ask) throw new UsageError("No API key found", "Run smtpfast login or smtpfast signup first, or pass --api-key.", false);
       const pick = await askLoginOrSignup(session);
       if (!pick) return 0;
-      const passed: FlagValues = { browser: openBrowser };
-      const code = pick === "login" ? await loginCommand.run(session, { positionals: [], values: passed }) : await runSignup(session, {}, { fromInit: true });
-      if (code !== 0) return code;
+      const passed: FlagValues = { browser: openBrowser, "from-init": true };
+      if (pick === "login") {
+        const code = await loginCommand.run(session, { positionals: [], values: passed });
+        if (code !== 0) return code;
+      } else {
+        const signedUp = await runSignup(session, {}, { fromInit: true });
+        if (signedUp.code !== 0) return signedUp.code;
+        // The key may have gone to another profile; carry on with that one.
+        if (signedUp.profile) session.globals.profile = signedUp.profile;
+      }
       session.reloadConfig();
       settings = session.settings();
       if (!settings.apiKey) throw new CliError("No API key was saved.");
@@ -174,7 +181,7 @@ export const initCommand: HandCommand = {
     let to = one(values, "to") ?? session.config().profiles[settings.profile]?.email;
     let send = bool(values, "test-email");
     if (send === undefined) {
-      if (ask && to) send = await confirm(ctx, `Send a test email to ${to}?`);
+      if (ask && to) send = await confirm(ctx, out.redact(`Send a test email to ${to}?`));
       else if (ask) {
         to = (await prompt(ctx, "Send a test email to (an address, or Enter to skip): ")) || undefined;
         send = !!to;

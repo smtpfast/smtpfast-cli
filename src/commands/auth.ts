@@ -154,20 +154,37 @@ async function deviceLogin(session: Session, baseUrl: string, scopes: string[] |
 
 /**
  * Save a key to the profile in use, and make that profile current when there
- * is none. Returns whether it is current. The file is read again first, since
- * a login or signup waits a while and another run may have written it since.
+ * is none. The file is read again first, since a login or signup waits a
+ * while and another run may have written it since. With keepExisting, a
+ * profile that holds a key by then is left alone and the key goes to the
+ * first free "<profile>-signup" profile, with the same base URL. Reading,
+ * choosing and writing happen in one synchronous step.
  */
-export function storeKey(session: Session, settings: Settings, key: string, extra: { email?: string } = {}): boolean {
+export function storeKey(
+  session: Session,
+  settings: Settings,
+  key: string,
+  extra: { email?: string; keepExisting?: boolean } = {},
+): { profile: string; current: boolean } {
   const config = session.reloadConfig();
-  const profile = config.profiles[settings.profile] ?? {};
+  let name = settings.profile;
+  if (extra.keepExisting && config.profiles[name]?.api_key) {
+    const base = `${settings.profile}-signup`;
+    for (let n = 1; ; n++) {
+      name = n === 1 ? base : `${base}-${n}`;
+      if (!config.profiles[name]) break;
+    }
+  }
+  const moved = name !== settings.profile;
+  const profile = moved ? {} : (config.profiles[name] ?? {});
   profile.api_key = key;
-  if (extra.email) profile.email = extra.email;
-  if (session.globals.baseUrl) profile.base_url = settings.baseUrl;
-  config.profiles[settings.profile] = profile;
-  const madeCurrent = !config.current || !config.profiles[config.current] || config.current === settings.profile;
-  if (madeCurrent) config.current = settings.profile;
+  if (session.globals.baseUrl || (moved && config.profiles[settings.profile]?.base_url)) profile.base_url = settings.baseUrl;
+  if (extra.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(extra.email)) profile.email = extra.email;
+  config.profiles[name] = profile;
+  const current = !config.current || !config.profiles[config.current] || config.current === name;
+  if (current) config.current = name;
   writeConfig(session.configDir, config);
-  return madeCurrent;
+  return { profile: name, current };
 }
 
 export const loginCommand: HandCommand = {
@@ -212,11 +229,13 @@ export const loginCommand: HandCommand = {
       throw err;
     }
 
-    const madeCurrent = storeKey(session, settings, key);
+    const madeCurrent = storeKey(session, settings, key).current;
 
     const out = session.out;
     const account = (me.account ?? {}) as Record<string, unknown>;
     if (out.json) {
+      // Set by init, which prints the one JSON summary itself.
+      if (parsed.values["from-init"] === true) return 0;
       out.jsonOut({ profile: settings.profile, current: madeCurrent, config: configPath(session.configDir), team_id: me.team_id ?? null, plan: account.tier ?? null, scopes: me.scopes ?? [] });
       return 0;
     }
