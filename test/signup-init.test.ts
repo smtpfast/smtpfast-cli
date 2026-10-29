@@ -167,7 +167,8 @@ describe("smtpfast signup", () => {
       signupRoutes({
         "POST /v1/cli/signup/verify": () => {
           mkdirSync(join(configHome, "smtpfast"), { recursive: true, mode: 0o700 });
-          writeFileSync(join(configHome, "smtpfast", "config.json"), JSON.stringify({ current: "default", profiles: { default: { api_key: OLD_KEY, base_url: server!.url }, staging: { api_key: OLD_KEY } } }), { mode: 0o600 });
+          // The other run also drops the profile's base URL.
+          writeFileSync(join(configHome, "smtpfast", "config.json"), JSON.stringify({ current: "default", profiles: { default: { api_key: OLD_KEY }, staging: { api_key: OLD_KEY } } }), { mode: 0o600 });
           return [200, CREATED];
         },
       }),
@@ -181,6 +182,26 @@ describe("smtpfast signup", () => {
     expect(config.profiles.staging.api_key).toBe(OLD_KEY);
     expect(config.profiles["default-signup"]).toEqual({ api_key: NEW_KEY, base_url: server.url, email: "ada@example.com" });
     expect(r.stderr).toContain('saved as profile "default-signup"');
+  });
+
+  test("keeps a fallback profile name within the limit", async () => {
+    const long = "p".repeat(64);
+    const configHome = tempDir("smtpfast-xdg-");
+    server = await api(
+      signupRoutes({
+        "POST /v1/cli/signup/verify": () => {
+          mkdirSync(join(configHome, "smtpfast"), { recursive: true, mode: 0o700 });
+          writeFileSync(join(configHome, "smtpfast", "config.json"), JSON.stringify({ current: long, profiles: { [long]: { api_key: OLD_KEY } } }), { mode: 0o600 });
+          return [200, CREATED];
+        },
+      }),
+    );
+    const r = await run(["signup", "--profile", long, "--email", "ada@example.com", "--code", "4831-0927", "--base-url", server.url], { configHome });
+    expect(r.code).toBe(0);
+    const saved = JSON.parse(r.stdout).profile as string;
+    expect(saved.length).toBeLessThanOrEqual(64);
+    expect(configOf(configHome).profiles[saved].api_key).toBe(NEW_KEY);
+    expect((await run(["whoami", "--profile", saved, "--json"], { configHome })).stderr).not.toContain("Invalid profile name");
   });
 
   test("needs an address and a code when nobody can be asked", async () => {

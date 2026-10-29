@@ -169,7 +169,8 @@ export function storeKey(
   const config = session.reloadConfig();
   let name = settings.profile;
   if (extra.keepExisting && config.profiles[name]?.api_key) {
-    const base = `${settings.profile}-signup`;
+    // Profile names stop at 64 characters, numbered suffix included.
+    const base = `${settings.profile.slice(0, 54)}-signup`;
     for (let n = 1; ; n++) {
       name = n === 1 ? base : `${base}-${n}`;
       if (!config.profiles[name]) break;
@@ -178,7 +179,8 @@ export function storeKey(
   const moved = name !== settings.profile;
   const profile = moved ? {} : (config.profiles[name] ?? {});
   profile.api_key = key;
-  if (session.globals.baseUrl || (moved && config.profiles[settings.profile]?.base_url)) profile.base_url = settings.baseUrl;
+  // A moved key keeps the URL it was made with, whatever the old profile says by now.
+  if (session.globals.baseUrl || moved) profile.base_url = settings.baseUrl;
   if (extra.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(extra.email)) profile.email = extra.email;
   config.profiles[name] = profile;
   const current = !config.current || !config.profiles[config.current] || config.current === name;
