@@ -410,6 +410,443 @@
         ],
         "type": "object"
       },
+      "Billing": {
+        "properties": {
+          "cancel_at": {
+            "description": "When a cancelled subscription ends",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cancel_at_period_end": {
+            "description": "True when the subscription is cancelled and will not renew",
+            "type": "boolean"
+          },
+          "current_period_end": {
+            "description": "When the paid plan renews, or ends when it is cancelled",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "interval": {
+            "description": "How the subscription is billed; null without one",
+            "enum": [
+              "monthly",
+              "yearly",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "next_tier": {
+            "description": "The plan above this one, with its price and limits; null on the top plan",
+            "properties": {
+              "limits": {
+                "description": "What the plan allows",
+                "properties": {
+                  "broadcasts": {
+                    "description": "Broadcasts a month",
+                    "example": 200,
+                    "type": "integer"
+                  },
+                  "contacts": {
+                    "example": 150000,
+                    "type": "integer"
+                  },
+                  "domains": {
+                    "description": "Sending domains; null means no cap",
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "emails": {
+                    "description": "Emails a month",
+                    "example": 300000,
+                    "type": "integer"
+                  },
+                  "members": {
+                    "description": "People on the team, the owner included",
+                    "example": 25,
+                    "type": "integer"
+                  },
+                  "segments": {
+                    "example": 200,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "emails",
+                  "contacts",
+                  "segments",
+                  "broadcasts",
+                  "domains",
+                  "members"
+                ],
+                "type": "object"
+              },
+              "name": {
+                "example": "Scale",
+                "type": "string"
+              },
+              "plan": {
+                "example": "scale",
+                "type": "string"
+              },
+              "price": {
+                "description": "In the smallest currency unit (cents)",
+                "properties": {
+                  "currency": {
+                    "example": "USD",
+                    "type": "string"
+                  },
+                  "monthly": {
+                    "example": 4900,
+                    "type": "integer"
+                  },
+                  "yearly": {
+                    "example": 49000,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "monthly",
+                  "yearly",
+                  "currency"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "plan",
+              "name",
+              "price",
+              "limits"
+            ],
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "object": {
+            "enum": [
+              "billing"
+            ],
+            "type": "string"
+          },
+          "payment_issue": {
+            "description": "The last renewal was not paid. past_due: Stripe is still retrying. unpaid: it stopped.",
+            "properties": {
+              "pay_url": {
+                "description": "Stripe's page for the open invoice",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "status": {
+                "enum": [
+                  "past_due",
+                  "unpaid"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "status",
+              "pay_url"
+            ],
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "plan": {
+            "description": "free, starter, growth or scale",
+            "example": "growth",
+            "type": "string"
+          },
+          "scheduled_change": {
+            "description": "A smaller plan waiting for the end of the paid period",
+            "properties": {
+              "effective_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "interval": {
+                "enum": [
+                  "monthly",
+                  "yearly",
+                  null
+                ],
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "plan": {
+                "example": "starter",
+                "type": "string"
+              }
+            },
+            "required": [
+              "plan",
+              "interval",
+              "effective_at"
+            ],
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "status": {
+            "description": "The Stripe subscription status (active, past_due, unpaid and so on); null without a subscription",
+            "example": "active",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "usage": {
+            "description": "This month's usage against the plan, the same numbers as GET /v1/usage. The month is the calendar month in UTC, not the billing period.",
+            "properties": {
+              "broadcasts": {
+                "properties": {
+                  "limit": {
+                    "example": 50,
+                    "type": "integer"
+                  },
+                  "used": {
+                    "example": 3,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "used",
+                  "limit"
+                ],
+                "type": "object"
+              },
+              "contacts": {
+                "properties": {
+                  "limit": {
+                    "example": 50000,
+                    "type": "integer"
+                  },
+                  "used": {
+                    "example": 1840,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "used",
+                  "limit"
+                ],
+                "type": "object"
+              },
+              "domains": {
+                "properties": {
+                  "limit": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "used": {
+                    "example": 2,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "used",
+                  "limit"
+                ],
+                "type": "object"
+              },
+              "emails": {
+                "properties": {
+                  "credits": {
+                    "description": "Prepaid email credits, spent after the monthly allowance",
+                    "example": 0,
+                    "type": "integer"
+                  },
+                  "limit": {
+                    "example": 100000,
+                    "type": "integer"
+                  },
+                  "used": {
+                    "example": 8420,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "used",
+                  "limit",
+                  "credits"
+                ],
+                "type": "object"
+              },
+              "members": {
+                "description": "Members plus pending invitations, as the seat limit counts them",
+                "properties": {
+                  "limit": {
+                    "example": 10,
+                    "type": "integer"
+                  },
+                  "used": {
+                    "example": 3,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "used",
+                  "limit"
+                ],
+                "type": "object"
+              },
+              "period_start": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "resets_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "segments": {
+                "properties": {
+                  "limit": {
+                    "example": 50,
+                    "type": "integer"
+                  },
+                  "used": {
+                    "example": 4,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "used",
+                  "limit"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "period_start",
+              "resets_at",
+              "emails",
+              "contacts",
+              "segments",
+              "broadcasts",
+              "domains",
+              "members"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "object",
+          "plan",
+          "interval",
+          "status",
+          "current_period_end",
+          "cancel_at_period_end",
+          "cancel_at",
+          "scheduled_change",
+          "payment_issue",
+          "usage",
+          "next_tier"
+        ],
+        "type": "object"
+      },
+      "BillingCheckout": {
+        "properties": {
+          "action": {
+            "description": "checkout: a Stripe Checkout page for a first subscription. confirm: the billing page with the change open in its confirmation dialog, for an existing subscription.",
+            "enum": [
+              "checkout",
+              "confirm"
+            ],
+            "type": "string"
+          },
+          "direction": {
+            "description": "For confirm. up or same: the prorated difference is charged when the person confirms, and the plan applies once that is paid. down: nothing is charged now and the plan moves at effective_at.",
+            "enum": [
+              "up",
+              "down",
+              "same",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "effective_at": {
+            "description": "When a move down takes effect",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "interval": {
+            "enum": [
+              "monthly",
+              "yearly"
+            ],
+            "type": "string"
+          },
+          "object": {
+            "enum": [
+              "billing_checkout"
+            ],
+            "type": "string"
+          },
+          "plan": {
+            "example": "growth",
+            "type": "string"
+          },
+          "url": {
+            "example": "https://checkout.stripe.com/c/pay/cs_live_a1b2",
+            "type": "string"
+          }
+        },
+        "required": [
+          "object",
+          "action",
+          "url",
+          "plan",
+          "interval",
+          "direction",
+          "effective_at"
+        ],
+        "type": "object"
+      },
+      "BillingPortalSession": {
+        "properties": {
+          "object": {
+            "enum": [
+              "billing_portal_session"
+            ],
+            "type": "string"
+          },
+          "url": {
+            "example": "https://billing.stripe.com/p/session/live_a1b2",
+            "type": "string"
+          }
+        },
+        "required": [
+          "object",
+          "url"
+        ],
+        "type": "object"
+      },
       "Broadcast": {
         "properties": {
           "archived_at": {
@@ -1362,7 +1799,7 @@
             "type": "string"
           },
           "scopes": {
-            "description": "Optional list of scopes to restrict the key. Available: email:send, email:read, domain:read, domain:write, contact:read, contact:write, form:read, form:write, webhook:read, webhook:write, logs:read, inbound:read, inbound:delete, team:read, team:manage, apikey:manage. If omitted the key gets the default set: everything except logs:read, inbound:read, inbound:delete, team:read, team:manage and apikey:manage. Listing, creating or revoking keys through the API requires apikey:manage.",
+            "description": "Optional list of scopes to restrict the key. Available: email:send, email:read, domain:read, domain:write, contact:read, contact:write, form:read, form:write, webhook:read, webhook:write, logs:read, inbound:read, inbound:delete, team:read, team:manage, billing:read, billing:manage, apikey:manage. If omitted the key gets the default set: everything except logs:read, inbound:read, inbound:delete, team:read, team:manage, billing:read, billing:manage and apikey:manage. Listing, creating or revoking keys through the API requires apikey:manage.",
             "example": [
               "email:send",
               "domain:read"
@@ -3424,6 +3861,85 @@
             "type": "integer"
           }
         },
+        "type": "object"
+      },
+      "Invoice": {
+        "properties": {
+          "amount": {
+            "description": "The invoice total, in the smallest currency unit",
+            "example": 1900,
+            "type": "integer"
+          },
+          "amount_paid": {
+            "example": 1900,
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "currency": {
+            "example": "USD",
+            "type": "string"
+          },
+          "hosted_invoice_url": {
+            "description": "Stripe's page for the invoice, where an open one can be paid",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "example": "in_1QxYz2",
+            "type": "string"
+          },
+          "invoice_pdf": {
+            "description": "A link to the PDF",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "number": {
+            "example": "A1B2C3D4-0007",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "object": {
+            "enum": [
+              "invoice"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "open",
+              "paid",
+              "uncollectible",
+              "void",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "object",
+          "id",
+          "number",
+          "created_at",
+          "amount",
+          "amount_paid",
+          "currency",
+          "status",
+          "hosted_invoice_url",
+          "invoice_pdf"
+        ],
         "type": "object"
       },
       "LinkDomain": {
@@ -6468,6 +6984,531 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/v1/account/activation": {
+      "get": {
+        "description": "A new account is pending until one of three things happens: an invite code is redeemed, a paid plan is bought, or a free-trial request is approved. This says which state the account is in; for an active account it gives the plan and nothing personal. Works with the key smtpfast signup returns while the account is still pending; every other endpoint answers 403 until the account is active. Needs no scope. Not for connected apps.",
+        "operationId": "getAccountActivation",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "email_verified": {
+                      "type": "boolean"
+                    },
+                    "free_trial_requested_at": {
+                      "description": "Set once a free-trial request is waiting for review",
+                      "format": "date-time",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "plan": {
+                      "example": "free",
+                      "type": "string"
+                    },
+                    "rejection_reason": {
+                      "description": "Why a request was turned down, when it was",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "status": {
+                      "enum": [
+                        "pending",
+                        "active",
+                        "rejected"
+                      ],
+                      "example": "pending",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "plan",
+                    "email_verified",
+                    "free_trial_requested_at",
+                    "rejection_reason"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The account's activation state"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Whether the account is active",
+        "tags": [
+          "Account"
+        ],
+        "x-sdk-group": [
+          "account"
+        ],
+        "x-sdk-method": "activation"
+      }
+    },
+    "/v1/account/activation/checkout": {
+      "post": {
+        "description": "Returns a Stripe Checkout link for a paid plan. A person opens it and pays; the account is active as soon as Stripe confirms the payment, so poll GET /v1/account/activation. For an account that is already active, use POST /v1/billing/checkout. Limited to 10 links an hour. Works with the key smtpfast signup returns while the account is still pending; every other endpoint answers 403 until the account is active. Needs no scope. Not for connected apps.",
+        "operationId": "createActivationCheckout",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "interval": {
+                    "default": "monthly",
+                    "enum": [
+                      "monthly",
+                      "yearly"
+                    ],
+                    "type": "string"
+                  },
+                  "plan": {
+                    "enum": [
+                      "starter",
+                      "growth",
+                      "scale"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "plan"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "url": {
+                      "format": "uri",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "url"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The link to open"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad request - check your payload"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Conflict - the resource already exists or changed meanwhile"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Stripe could not be reached - retry shortly"
+          }
+        },
+        "summary": "Activate with a paid plan",
+        "tags": [
+          "Account"
+        ],
+        "x-sdk-group": [
+          "account"
+        ],
+        "x-sdk-method": "activationCheckout"
+      }
+    },
+    "/v1/account/activation/free-trial": {
+      "post": {
+        "description": "Sends a free-trial request with the use case, as the activation page does. A person reviews it and the account is emailed when it is approved. A second request changes nothing. Works with the key smtpfast signup returns while the account is still pending; every other endpoint answers 403 until the account is active. Needs no scope. Not for connected apps.",
+        "operationId": "requestFreeTrial",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "source": {
+                    "description": "How you heard about SMTPfast: one of the options on the activation page, or other",
+                    "type": "string"
+                  },
+                  "source_other": {
+                    "maxLength": 100,
+                    "type": "string"
+                  },
+                  "use_case": {
+                    "example": "Password resets and receipts for our app at example.com.",
+                    "maxLength": 1000,
+                    "minLength": 20,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "use_case"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "requested": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "requested",
+                    "message"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Request received"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad request - check your payload"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Conflict - the resource already exists or changed meanwhile"
+          },
+          "413": {
+            "description": "The body is larger than 16 KB"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Ask for the free plan",
+        "tags": [
+          "Account"
+        ],
+        "x-sdk-group": [
+          "account"
+        ],
+        "x-sdk-method": "requestFreeTrial"
+      }
+    },
+    "/v1/account/activation/invite": {
+      "post": {
+        "description": "Activates the account on the free plan with an invite code. Limited to 10 tries a minute. Works with the key smtpfast signup returns while the account is still pending; every other endpoint answers 403 until the account is active. Needs no scope. Not for connected apps.",
+        "operationId": "redeemActivationInvite",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "code": {
+                    "example": "SF-AB12-CD34",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "plan": {
+                      "enum": [
+                        "free"
+                      ],
+                      "type": "string"
+                    },
+                    "status": {
+                      "enum": [
+                        "active"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "plan"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The account is active"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad request - check your payload"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Activate with an invite code",
+        "tags": [
+          "Account"
+        ],
+        "x-sdk-group": [
+          "account"
+        ],
+        "x-sdk-method": "redeemInvite"
+      }
+    },
     "/v1/analytics": {
       "get": {
         "description": "Sending and deliverability totals for the account, plus a 30-day daily series. Pass days and/or domain to add a `window` object holding exact counts for that window and sending domain, aggregated in the database rather than sampled from the event log.",
@@ -6931,6 +7972,488 @@
           "apiKeys"
         ],
         "x-sdk-method": "update"
+      }
+    },
+    "/v1/billing": {
+      "get": {
+        "description": "The plan the team runs on, its state in Stripe (billing interval, status, renewal or end date, a scheduled move to a smaller plan, a failed payment), usage this month against the plan's limits, and the price and limits of the next plan up. Only keys created by the team owner can call it, because billing is the owner's, as on the billing page. A team with more than one owner gets a 409 with code multiple_owners. Requires the billing:read scope.",
+        "operationId": "getBilling",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Billing"
+                }
+              }
+            },
+            "description": "Plan and usage"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Conflict - the resource already exists or changed meanwhile"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Stripe could not be reached - retry shortly"
+          }
+        },
+        "summary": "Get the plan and usage",
+        "tags": [
+          "Billing"
+        ],
+        "x-sdk-group": [
+          "billing"
+        ],
+        "x-sdk-method": "get"
+      }
+    },
+    "/v1/billing/checkout": {
+      "post": {
+        "description": "Nothing is charged and no plan changes here: the response is a link for a person to open. Without a subscription it is a Stripe Checkout page. With one it is the billing page with the change open in its confirmation dialog, which shows the price before anything is charged. A subscription with an unpaid invoice, one that is set to end, or one with a smaller plan scheduled before an upgrade is refused with the reason. Only keys created by the team owner can call it, because billing is the owner's, as on the billing page. A team with more than one owner gets a 409 with code multiple_owners. Requires the billing:manage scope.",
+        "operationId": "createBillingCheckout",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "interval": {
+                    "description": "Defaults to the subscription's current interval, or monthly without one. Required when the subscription is on a price with no known interval.",
+                    "enum": [
+                      "monthly",
+                      "yearly"
+                    ],
+                    "type": "string"
+                  },
+                  "plan": {
+                    "description": "The plan to move to",
+                    "enum": [
+                      "starter",
+                      "growth",
+                      "scale"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "plan"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingCheckout"
+                }
+              }
+            },
+            "description": "The link"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad request - check your payload"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Conflict - the resource already exists or changed meanwhile"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Stripe could not be reached - retry shortly"
+          }
+        },
+        "summary": "Get a link to start or change a plan",
+        "tags": [
+          "Billing"
+        ],
+        "x-sdk-group": [
+          "billing",
+          "checkout"
+        ],
+        "x-sdk-method": "create"
+      }
+    },
+    "/v1/billing/invoices": {
+      "get": {
+        "description": "Invoices from Stripe, newest first. Page with after or before, set to an invoice id from the list. Only keys created by the team owner can call it, because billing is the owner's, as on the billing page. A team with more than one owner gets a 409 with code multiple_owners. Requires the billing:read scope.",
+        "operationId": "listBillingInvoices",
+        "parameters": [
+          {
+            "description": "How many to return, 1 to 100 (default 10)",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Return invoices older than this invoice id",
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Return invoices newer than this invoice id",
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/Invoice"
+                      },
+                      "type": "array"
+                    },
+                    "has_more": {
+                      "type": "boolean"
+                    },
+                    "object": {
+                      "enum": [
+                        "list"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "object",
+                    "has_more",
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Invoices"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad request - check your payload"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Conflict - the resource already exists or changed meanwhile"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Stripe could not be reached - retry shortly"
+          }
+        },
+        "summary": "List invoices",
+        "tags": [
+          "Billing"
+        ],
+        "x-sdk-group": [
+          "billing",
+          "invoices"
+        ],
+        "x-sdk-method": "list"
+      }
+    },
+    "/v1/billing/portal": {
+      "post": {
+        "description": "A Stripe billing portal link, for cards, invoices, billing details and cancelling. Plan changes are not offered there. With flow set to cancel it opens on the cancel page. Only keys created by the team owner can call it, because billing is the owner's, as on the billing page. A team with more than one owner gets a 409 with code multiple_owners. Requires the billing:manage scope.",
+        "operationId": "createBillingPortalSession",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "flow": {
+                    "description": "Open the portal on the page that cancels the subscription",
+                    "enum": [
+                      "cancel"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingPortalSession"
+                }
+              }
+            },
+            "description": "The link"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad request - check your payload"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Conflict - the resource already exists or changed meanwhile"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Stripe could not be reached - retry shortly"
+          }
+        },
+        "summary": "Get a link to the billing portal",
+        "tags": [
+          "Billing"
+        ],
+        "x-sdk-group": [
+          "billing",
+          "portal"
+        ],
+        "x-sdk-method": "create"
       }
     },
     "/v1/broadcasts": {
@@ -8335,6 +9858,761 @@
           "broadcasts"
         ],
         "x-sdk-method": "unarchive"
+      }
+    },
+    "/v1/cli/device": {
+      "post": {
+        "description": "Start a device login for a command-line tool. Show the user_code and verification_uri to the person, then poll POST /v1/cli/token every interval seconds with the device_code. A team owner or admin approves the code on the dashboard and picks the team. No API key: this is how a CLI gets its first one. The flow follows RFC 8628 (device authorization grant) with JSON bodies. Limited to 10 a quarter hour per network.",
+        "operationId": "createCliDeviceCode",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "client_name": {
+                    "description": "Shown on the approval page. Default: SMTPfast CLI",
+                    "example": "SMTPfast CLI 0.15.0",
+                    "maxLength": 60,
+                    "type": "string"
+                  },
+                  "hostname": {
+                    "description": "The machine's name; the key is called \"CLI on <hostname> (<date>)\"",
+                    "example": "build-01",
+                    "maxLength": 63,
+                    "type": "string"
+                  },
+                  "scopes": {
+                    "description": "Scopes for the key. Default: the default API key scopes. The approver's role caps them: billing scopes are granted only for a team the approver owns.",
+                    "example": [
+                      "email:send",
+                      "email:read",
+                      "domain:read",
+                      "domain:write"
+                    ],
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "device_code": {
+                      "description": "Secret. Send it to POST /v1/cli/token; never show it.",
+                      "type": "string"
+                    },
+                    "expires_in": {
+                      "description": "Seconds until both codes expire",
+                      "example": 600,
+                      "type": "integer"
+                    },
+                    "interval": {
+                      "description": "Seconds to wait between polls",
+                      "example": 5,
+                      "type": "integer"
+                    },
+                    "user_code": {
+                      "description": "For the person to check or type on the approval page",
+                      "example": "BCDF-GHJK",
+                      "type": "string"
+                    },
+                    "verification_uri": {
+                      "example": "https://smtpfa.st/cli/device",
+                      "format": "uri",
+                      "type": "string"
+                    },
+                    "verification_uri_complete": {
+                      "example": "https://smtpfa.st/cli/device?code=BCDF-GHJK",
+                      "format": "uri",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "device_code",
+                    "user_code",
+                    "verification_uri",
+                    "verification_uri_complete",
+                    "expires_in",
+                    "interval"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Codes for the person and for polling"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad request - check your payload"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [],
+        "summary": "Start a CLI login",
+        "tags": [
+          "CLI Login"
+        ],
+        "x-sdk-group": [
+          "cli"
+        ],
+        "x-sdk-method": "createDeviceCode"
+      }
+    },
+    "/v1/cli/signup": {
+      "post": {
+        "description": "Emails an 8-digit code to the address. The answer is the same whether or not the address has an account: an address that has one is emailed to say so, and its code never comes. The address must pass the website's signup checks. Limited per network, per address and overall; codes expire after 10 minutes. No API key: this is how an account starts. Nothing is created until the code from the email comes back.",
+        "operationId": "startCliSignup",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "client_name": {
+                    "example": "SMTPfast CLI 0.15.0",
+                    "maxLength": 60,
+                    "type": "string"
+                  },
+                  "email": {
+                    "example": "you@example.com",
+                    "format": "email",
+                    "type": "string"
+                  },
+                  "hostname": {
+                    "description": "The machine's name; the first API key is called \"CLI on <hostname> (<date>)\"",
+                    "example": "build-01",
+                    "maxLength": 63,
+                    "type": "string"
+                  },
+                  "name": {
+                    "example": "Ada Lovelace",
+                    "maxLength": 100,
+                    "type": "string"
+                  },
+                  "newsletter": {
+                    "default": true,
+                    "description": "The monthly product update email, as the checkbox on the signup form",
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "email"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code_length": {
+                      "example": 8,
+                      "type": "integer"
+                    },
+                    "email": {
+                      "example": "you@example.com",
+                      "type": "string"
+                    },
+                    "expires_in": {
+                      "example": 600,
+                      "type": "integer"
+                    },
+                    "signup_id": {
+                      "description": "Send it back with the code to POST /v1/cli/signup/verify",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "signup_id",
+                    "email",
+                    "expires_in",
+                    "code_length"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "A code is on its way, or a note that the address already has an account"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad request - check your payload"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          },
+          "503": {
+            "description": "Signing up from the CLI is not available right now"
+          }
+        },
+        "security": [],
+        "summary": "Start a signup from the CLI",
+        "tags": [
+          "CLI Login"
+        ],
+        "x-sdk-group": [
+          "cli"
+        ],
+        "x-sdk-method": "startSignup"
+      }
+    },
+    "/v1/cli/signup/verify": {
+      "post": {
+        "description": "Checks the code and creates the account as the website does: pending until it is activated, on the free plan, with a team, the address confirmed. Returns the first API key, once, with the default key scopes. The key works for GET /v1/account/activation and its actions right away and for everything else once the account is active. A code works once and allows five tries. No API key: this is how an account starts. Nothing is created until the code from the email comes back.",
+        "operationId": "verifyCliSignup",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "code": {
+                    "description": "The 8 digits from the email, with or without the dash",
+                    "example": "4831-0927",
+                    "type": "string"
+                  },
+                  "signup_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "signup_id",
+                  "code"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "account": {
+                      "properties": {
+                        "email": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "plan": {
+                          "enum": [
+                            "free"
+                          ],
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": [
+                            "pending"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "email",
+                        "status",
+                        "plan"
+                      ],
+                      "type": "object"
+                    },
+                    "activation": {
+                      "properties": {
+                        "docs": {
+                          "format": "uri",
+                          "type": "string"
+                        },
+                        "required": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "required",
+                        "docs"
+                      ],
+                      "type": "object"
+                    },
+                    "created_at": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "key": {
+                      "description": "The full key. Store it; it cannot be read again.",
+                      "example": "sf_a1b2c3...",
+                      "type": "string"
+                    },
+                    "name": {
+                      "example": "CLI on build-01 (2026-10-29)",
+                      "type": "string"
+                    },
+                    "prefix": {
+                      "example": "sf_a1b2c3d4e",
+                      "type": "string"
+                    },
+                    "scopes": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "team": {
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "key",
+                    "prefix",
+                    "scopes",
+                    "created_at",
+                    "team",
+                    "account",
+                    "activation"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The account and its first API key. The key value is returned only here."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "attempts_remaining": {
+                      "example": 4,
+                      "type": "integer"
+                    },
+                    "error": {
+                      "description": "invalid_code: wrong code, try again (attempts_remaining says how often). expired_code: the signup expired, ran out of tries or was used; start again. account_exists: the address has an account; use smtpfast login. signup_refused: the address cannot sign up. too_many_attempts: wait for Retry-After. unavailable: try later.",
+                      "enum": [
+                        "invalid_code",
+                        "expired_code",
+                        "account_exists",
+                        "signup_refused",
+                        "too_many_attempts",
+                        "unavailable"
+                      ],
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "error_description"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Wrong, expired or used code"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "attempts_remaining": {
+                      "example": 4,
+                      "type": "integer"
+                    },
+                    "error": {
+                      "description": "invalid_code: wrong code, try again (attempts_remaining says how often). expired_code: the signup expired, ran out of tries or was used; start again. account_exists: the address has an account; use smtpfast login. signup_refused: the address cannot sign up. too_many_attempts: wait for Retry-After. unavailable: try later.",
+                      "enum": [
+                        "invalid_code",
+                        "expired_code",
+                        "account_exists",
+                        "signup_refused",
+                        "too_many_attempts",
+                        "unavailable"
+                      ],
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "error_description"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The address cannot sign up"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "attempts_remaining": {
+                      "example": 4,
+                      "type": "integer"
+                    },
+                    "error": {
+                      "description": "invalid_code: wrong code, try again (attempts_remaining says how often). expired_code: the signup expired, ran out of tries or was used; start again. account_exists: the address has an account; use smtpfast login. signup_refused: the address cannot sign up. too_many_attempts: wait for Retry-After. unavailable: try later.",
+                      "enum": [
+                        "invalid_code",
+                        "expired_code",
+                        "account_exists",
+                        "signup_refused",
+                        "too_many_attempts",
+                        "unavailable"
+                      ],
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "error_description"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The address already has an account"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "attempts_remaining": {
+                      "example": 4,
+                      "type": "integer"
+                    },
+                    "error": {
+                      "description": "invalid_code: wrong code, try again (attempts_remaining says how often). expired_code: the signup expired, ran out of tries or was used; start again. account_exists: the address has an account; use smtpfast login. signup_refused: the address cannot sign up. too_many_attempts: wait for Retry-After. unavailable: try later.",
+                      "enum": [
+                        "invalid_code",
+                        "expired_code",
+                        "account_exists",
+                        "signup_refused",
+                        "too_many_attempts",
+                        "unavailable"
+                      ],
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "error_description"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Too many attempts; see Retry-After"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "attempts_remaining": {
+                      "example": 4,
+                      "type": "integer"
+                    },
+                    "error": {
+                      "description": "invalid_code: wrong code, try again (attempts_remaining says how often). expired_code: the signup expired, ran out of tries or was used; start again. account_exists: the address has an account; use smtpfast login. signup_refused: the address cannot sign up. too_many_attempts: wait for Retry-After. unavailable: try later.",
+                      "enum": [
+                        "invalid_code",
+                        "expired_code",
+                        "account_exists",
+                        "signup_refused",
+                        "too_many_attempts",
+                        "unavailable"
+                      ],
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "error_description"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Signing up from the CLI is paused or not available"
+          }
+        },
+        "security": [],
+        "summary": "Finish a CLI signup with the emailed code",
+        "tags": [
+          "CLI Login"
+        ],
+        "x-sdk-group": [
+          "cli"
+        ],
+        "x-sdk-method": "verifySignup"
+      }
+    },
+    "/v1/cli/token": {
+      "post": {
+        "description": "Poll with the device_code from POST /v1/cli/device. Until the code is approved this answers 400 with an RFC 8628 error. Once approved it returns a new API key, once, and the code is used up; presenting it again revokes that key. No API key: this is how a CLI gets its first one. The flow follows RFC 8628 (device authorization grant) with JSON bodies.",
+        "operationId": "exchangeCliDeviceCode",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "device_code": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "device_code"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "created_at": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "key": {
+                      "description": "The full key. Store it; it cannot be read again.",
+                      "example": "sf_a1b2c3...",
+                      "type": "string"
+                    },
+                    "name": {
+                      "example": "CLI on build-01 (2026-10-29)",
+                      "type": "string"
+                    },
+                    "prefix": {
+                      "example": "sf_a1b2c3d4e",
+                      "type": "string"
+                    },
+                    "scopes": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "team": {
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "key",
+                    "prefix",
+                    "scopes",
+                    "created_at",
+                    "team"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The new API key. The key value is returned only here."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "description": "authorization_pending: nobody has decided yet, poll again after interval seconds. slow_down: polled too soon, wait the new interval. expired_token: start again. access_denied: the person denied it, or can no longer create the key. invalid_grant: unknown code, or one already used (the key it issued is then revoked).",
+                      "enum": [
+                        "authorization_pending",
+                        "slow_down",
+                        "expired_token",
+                        "access_denied",
+                        "invalid_grant"
+                      ],
+                      "type": "string"
+                    },
+                    "error_description": {
+                      "type": "string"
+                    },
+                    "interval": {
+                      "description": "With slow_down: the seconds to wait between polls from now on",
+                      "example": 10,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "error_description"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Not approved yet, polled too soon, expired, denied or unknown"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [],
+        "summary": "Collect the CLI login key",
+        "tags": [
+          "CLI Login"
+        ],
+        "x-sdk-group": [
+          "cli"
+        ],
+        "x-sdk-method": "exchangeDeviceCode"
       }
     },
     "/v1/contact-properties": {
@@ -10099,7 +12377,7 @@
                 }
               }
             },
-            "description": "Error"
+            "description": "Stripe could not be reached - retry shortly"
           }
         },
         "summary": "Claim a domain held by another account",
@@ -10423,7 +12701,7 @@
                 }
               }
             },
-            "description": "Error"
+            "description": "Stripe could not be reached - retry shortly"
           }
         },
         "summary": "Turn inbound receiving on or off",
@@ -17410,7 +19688,7 @@
                 }
               }
             },
-            "description": "Error"
+            "description": "Stripe could not be reached - retry shortly"
           }
         },
         "summary": "Add a link domain",
@@ -17871,7 +20149,7 @@
                 }
               }
             },
-            "description": "Error"
+            "description": "Stripe could not be reached - retry shortly"
           }
         },
         "summary": "Refresh a link domain's status",
@@ -22379,7 +24657,7 @@
       "name": "Analytics"
     },
     {
-      "description": "The calling key or connection: scopes, team and plan usage",
+      "description": "The calling key or connection: scopes, team and plan usage, and activating a new account",
       "name": "Account"
     },
     {
@@ -22393,6 +24671,14 @@
     {
       "description": "Members and invitations",
       "name": "Team"
+    },
+    {
+      "description": "The plan, usage against its limits, invoices, and Checkout and billing portal links",
+      "name": "Billing"
+    },
+    {
+      "description": "The device login behind smtpfast login and the emailed-code signup behind smtpfast signup",
+      "name": "CLI Login"
     }
   ]
 }

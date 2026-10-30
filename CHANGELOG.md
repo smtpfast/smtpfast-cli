@@ -2,6 +2,25 @@
 
 All notable changes to the smtpfast CLI. The spec sync workflow adds an entry for each release it publishes.
 
+## [0.15.0] - 2026-10-30
+
+Updated from the live API spec.
+
+### New commands
+
+- `smtpfast account activation` (GET /v1/account/activation): Whether the account is active
+- `smtpfast account create-activation-checkout` (POST /v1/account/activation/checkout): Activate with a paid plan
+- `smtpfast account redeem-activation-invite` (POST /v1/account/activation/invite): Activate with an invite code
+- `smtpfast account request-free-trial` (POST /v1/account/activation/free-trial): Ask for the free plan
+- `smtpfast billing create-checkout` (POST /v1/billing/checkout): Get a link to start or change a plan
+- `smtpfast billing create-portal-session` (POST /v1/billing/portal): Get a link to the billing portal
+- `smtpfast billing get` (GET /v1/billing): Get the plan and usage
+- `smtpfast billing invoices` (GET /v1/billing/invoices): List invoices
+- `smtpfast cli create-device-code` (POST /v1/cli/device): Start a CLI login
+- `smtpfast cli exchange-device-code` (POST /v1/cli/token): Collect the CLI login key
+- `smtpfast cli start-signup` (POST /v1/cli/signup): Start a signup from the CLI
+- `smtpfast cli verify-signup` (POST /v1/cli/signup/verify): Finish a CLI signup with the emailed code
+
 ## [0.14.1] - 2026-10-24
 
 Updated from the live API spec.

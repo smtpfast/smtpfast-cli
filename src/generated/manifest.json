@@ -2,8 +2,8 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "b4ef42d03395867f0ce46bc8a8789ecc3d90dd78ec926a559bcb76f2dfaedf39",
-  "operationCount": 146,
+  "specHash": "ad006240b17a376dbfe6c3401653660905592dc728ebe0c128ec81ab79f65219",
+  "operationCount": 158,
   "groups": [
     {
       "name": "account",
@@ -18,8 +18,16 @@
       "description": "Create, list, and revoke API keys"
     },
     {
+      "name": "billing",
+      "description": "The plan, usage against its limits, invoices, and Checkout and billing portal links"
+    },
+    {
       "name": "broadcasts",
       "description": "Create, test, schedule, cancel, and measure broadcast campaigns"
+    },
+    {
+      "name": "cli",
+      "description": "The device login behind smtpfast login and the emailed-code signup behind smtpfast signup"
     },
     {
       "name": "contact-properties",
@@ -80,6 +88,22 @@
   ],
   "operations": [
     {
+      "operationId": "getAccountActivation",
+      "method": "GET",
+      "path": "/v1/account/activation",
+      "group": "account",
+      "command": "activation",
+      "summary": "Whether the account is active",
+      "description": "A new account is pending until one of three things happens: an invite code is redeemed, a paid plan is bought, or a free-trial request is approved. This says which state the account is in; for an active account it gives the plan and nothing personal. Works with the key smtpfast signup returns while the account is still pending; every other endpoint answers 403 until the account is active. Needs no scope. Not for connected apps.",
+      "tags": [
+        "Account"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
       "operationId": "getCapabilities",
       "method": "GET",
       "path": "/v1/me",
@@ -94,6 +118,127 @@
       "queryParams": [],
       "headerParams": [],
       "body": null
+    },
+    {
+      "operationId": "createActivationCheckout",
+      "method": "POST",
+      "path": "/v1/account/activation/checkout",
+      "group": "account",
+      "command": "create-activation-checkout",
+      "summary": "Activate with a paid plan",
+      "description": "Returns a Stripe Checkout link for a paid plan. A person opens it and pays; the account is active as soon as Stripe confirms the payment, so poll GET /v1/account/activation. For an account that is already active, use POST /v1/billing/checkout. Limited to 10 links an hour. Works with the key smtpfast signup returns while the account is still pending; every other endpoint answers 403 until the account is active. Needs no scope. Not for connected apps.",
+      "tags": [
+        "Account"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "interval",
+            "flag": "interval",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "enum": [
+              "monthly",
+              "yearly"
+            ],
+            "default": "monthly"
+          },
+          {
+            "name": "plan",
+            "flag": "plan",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "enum": [
+              "starter",
+              "growth",
+              "scale"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "redeemActivationInvite",
+      "method": "POST",
+      "path": "/v1/account/activation/invite",
+      "group": "account",
+      "command": "redeem-activation-invite",
+      "summary": "Activate with an invite code",
+      "description": "Activates the account on the free plan with an invite code. Limited to 10 tries a minute. Works with the key smtpfast signup returns while the account is still pending; every other endpoint answers 403 until the account is active. Needs no scope. Not for connected apps.",
+      "tags": [
+        "Account"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "code",
+            "flag": "code",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "example": "SF-AB12-CD34"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "requestFreeTrial",
+      "method": "POST",
+      "path": "/v1/account/activation/free-trial",
+      "group": "account",
+      "command": "request-free-trial",
+      "summary": "Ask for the free plan",
+      "description": "Sends a free-trial request with the use case, as the activation page does. A person reviews it and the account is emailed when it is approved. A second request changes nothing. Works with the key smtpfast signup returns while the account is still pending; every other endpoint answers 403 until the account is active. Needs no scope. Not for connected apps.",
+      "tags": [
+        "Account"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "source",
+            "flag": "source",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "How you heard about SMTPfast: one of the options on the activation page, or other"
+          },
+          {
+            "name": "source_other",
+            "flag": "source-other",
+            "in": "body",
+            "type": "string",
+            "required": false
+          },
+          {
+            "name": "use_case",
+            "flag": "use-case",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "example": "Password resets and receipts for our app at example.com."
+          }
+        ]
+      }
     },
     {
       "operationId": "getUsage",
@@ -180,7 +325,7 @@
             "type": "array",
             "required": false,
             "items": "string",
-            "description": "Optional list of scopes to restrict the key. Available: email:send, email:read, domain:read, domain:write, contact:read, contact:write, form:read, form:write, webhook:read, webhook:write, logs:read, inbound:read, inbound:delete, team:read, team:manage, apikey:manage. If omitted the key gets the default set: everything except logs:read, inbound:read, inbound:delete, team:read, team:manage and apikey:manage. Listing, creating or revoking keys through the API requires apikey:manage.",
+            "description": "Optional list of scopes to restrict the key. Available: email:send, email:read, domain:read, domain:write, contact:read, contact:write, form:read, form:write, webhook:read, webhook:write, logs:read, inbound:read, inbound:delete, team:read, team:manage, billing:read, billing:manage, apikey:manage. If omitted the key gets the default set: everything except logs:read, inbound:read, inbound:delete, team:read, team:manage, billing:read, billing:manage and apikey:manage. Listing, creating or revoking keys through the API requires apikey:manage.",
             "example": "email:send,domain:read"
           }
         ]
@@ -273,6 +418,144 @@
           }
         ]
       }
+    },
+    {
+      "operationId": "createBillingCheckout",
+      "method": "POST",
+      "path": "/v1/billing/checkout",
+      "group": "billing",
+      "command": "create-checkout",
+      "summary": "Get a link to start or change a plan",
+      "description": "Nothing is charged and no plan changes here: the response is a link for a person to open. Without a subscription it is a Stripe Checkout page. With one it is the billing page with the change open in its confirmation dialog, which shows the price before anything is charged. A subscription with an unpaid invoice, one that is set to end, or one with a smaller plan scheduled before an upgrade is refused with the reason. Only keys created by the team owner can call it, because billing is the owner's, as on the billing page. A team with more than one owner gets a 409 with code multiple_owners. Requires the billing:manage scope.",
+      "tags": [
+        "Billing"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "interval",
+            "flag": "interval",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Defaults to the subscription's current interval, or monthly without one. Required when the subscription is on a price with no known interval.",
+            "enum": [
+              "monthly",
+              "yearly"
+            ]
+          },
+          {
+            "name": "plan",
+            "flag": "plan",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "description": "The plan to move to",
+            "enum": [
+              "starter",
+              "growth",
+              "scale"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "createBillingPortalSession",
+      "method": "POST",
+      "path": "/v1/billing/portal",
+      "group": "billing",
+      "command": "create-portal-session",
+      "summary": "Get a link to the billing portal",
+      "description": "A Stripe billing portal link, for cards, invoices, billing details and cancelling. Plan changes are not offered there. With flow set to cancel it opens on the cancel page. Only keys created by the team owner can call it, because billing is the owner's, as on the billing page. A team with more than one owner gets a 409 with code multiple_owners. Requires the billing:manage scope.",
+      "tags": [
+        "Billing"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": false,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "flow",
+            "flag": "flow",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Open the portal on the page that cancels the subscription",
+            "enum": [
+              "cancel"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "getBilling",
+      "method": "GET",
+      "path": "/v1/billing",
+      "group": "billing",
+      "command": "get",
+      "summary": "Get the plan and usage",
+      "description": "The plan the team runs on, its state in Stripe (billing interval, status, renewal or end date, a scheduled move to a smaller plan, a failed payment), usage this month against the plan's limits, and the price and limits of the next plan up. Only keys created by the team owner can call it, because billing is the owner's, as on the billing page. A team with more than one owner gets a 409 with code multiple_owners. Requires the billing:read scope.",
+      "tags": [
+        "Billing"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listBillingInvoices",
+      "method": "GET",
+      "path": "/v1/billing/invoices",
+      "group": "billing",
+      "command": "invoices",
+      "summary": "List invoices",
+      "description": "Invoices from Stripe, newest first. Page with after or before, set to an invoice id from the list. Only keys created by the team owner can call it, because billing is the owner's, as on the billing page. A team with more than one owner gets a 409 with code multiple_owners. Requires the billing:read scope.",
+      "tags": [
+        "Billing"
+      ],
+      "pathParams": [],
+      "queryParams": [
+        {
+          "name": "after",
+          "flag": "after",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Return invoices older than this invoice id"
+        },
+        {
+          "name": "before",
+          "flag": "before",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Return invoices newer than this invoice id"
+        },
+        {
+          "name": "limit",
+          "flag": "limit",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "How many to return, 1 to 100 (default 10)",
+          "default": 10
+        }
+      ],
+      "headerParams": [],
+      "body": null
     },
     {
       "operationId": "archiveBroadcast",
@@ -1014,6 +1297,191 @@
             "type": "boolean",
             "required": false,
             "default": true
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "createCliDeviceCode",
+      "method": "POST",
+      "path": "/v1/cli/device",
+      "group": "cli",
+      "command": "create-device-code",
+      "summary": "Start a CLI login",
+      "description": "Start a device login for a command-line tool. Show the user_code and verification_uri to the person, then poll POST /v1/cli/token every interval seconds with the device_code. A team owner or admin approves the code on the dashboard and picks the team. No API key: this is how a CLI gets its first one. The flow follows RFC 8628 (device authorization grant) with JSON bodies. Limited to 10 a quarter hour per network.",
+      "tags": [
+        "CLI Login"
+      ],
+      "noAuth": true,
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": false,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "client_name",
+            "flag": "client-name",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Shown on the approval page. Default: SMTPfast CLI",
+            "example": "SMTPfast CLI 0.15.0"
+          },
+          {
+            "name": "hostname",
+            "flag": "hostname",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "The machine's name; the key is called \"CLI on <hostname> (<date>)\"",
+            "example": "build-01"
+          },
+          {
+            "name": "scopes",
+            "flag": "scopes",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "string",
+            "description": "Scopes for the key. Default: the default API key scopes. The approver's role caps them: billing scopes are granted only for a team the approver owns.",
+            "example": "email:send,email:read,domain:read,domain:write"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "exchangeCliDeviceCode",
+      "method": "POST",
+      "path": "/v1/cli/token",
+      "group": "cli",
+      "command": "exchange-device-code",
+      "summary": "Collect the CLI login key",
+      "description": "Poll with the device_code from POST /v1/cli/device. Until the code is approved this answers 400 with an RFC 8628 error. Once approved it returns a new API key, once, and the code is used up; presenting it again revokes that key. No API key: this is how a CLI gets its first one. The flow follows RFC 8628 (device authorization grant) with JSON bodies.",
+      "tags": [
+        "CLI Login"
+      ],
+      "noAuth": true,
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "device_code",
+            "flag": "device-code",
+            "in": "body",
+            "type": "string",
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "startCliSignup",
+      "method": "POST",
+      "path": "/v1/cli/signup",
+      "group": "cli",
+      "command": "start-signup",
+      "summary": "Start a signup from the CLI",
+      "description": "Emails an 8-digit code to the address. The answer is the same whether or not the address has an account: an address that has one is emailed to say so, and its code never comes. The address must pass the website's signup checks. Limited per network, per address and overall; codes expire after 10 minutes. No API key: this is how an account starts. Nothing is created until the code from the email comes back.",
+      "tags": [
+        "CLI Login"
+      ],
+      "noAuth": true,
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "client_name",
+            "flag": "client-name",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "SMTPfast CLI 0.15.0"
+          },
+          {
+            "name": "email",
+            "flag": "email",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "example": "you@example.com"
+          },
+          {
+            "name": "hostname",
+            "flag": "hostname",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "The machine's name; the first API key is called \"CLI on <hostname> (<date>)\"",
+            "example": "build-01"
+          },
+          {
+            "name": "name",
+            "flag": "name",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "Ada Lovelace"
+          },
+          {
+            "name": "newsletter",
+            "flag": "newsletter",
+            "in": "body",
+            "type": "boolean",
+            "required": false,
+            "description": "The monthly product update email, as the checkbox on the signup form",
+            "default": true
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "verifyCliSignup",
+      "method": "POST",
+      "path": "/v1/cli/signup/verify",
+      "group": "cli",
+      "command": "verify-signup",
+      "summary": "Finish a CLI signup with the emailed code",
+      "description": "Checks the code and creates the account as the website does: pending until it is activated, on the free plan, with a team, the address confirmed. Returns the first API key, once, with the default key scopes. The key works for GET /v1/account/activation and its actions right away and for everything else once the account is active. A code works once and allows five tries. No API key: this is how an account starts. Nothing is created until the code from the email comes back.",
+      "tags": [
+        "CLI Login"
+      ],
+      "noAuth": true,
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "code",
+            "flag": "code",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "description": "The 8 digits from the email, with or without the dash",
+            "example": "4831-0927"
+          },
+          {
+            "name": "signup_id",
+            "flag": "signup-id",
+            "in": "body",
+            "type": "string",
+            "required": true
           }
         ]
       }
