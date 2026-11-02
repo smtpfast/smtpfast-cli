@@ -2,6 +2,20 @@
 
 All notable changes to the smtpfast CLI. The spec sync workflow adds an entry for each release it publishes.
 
+## [0.16.0] - 2026-11-02
+
+Updated from the live API spec.
+
+### New commands
+
+- `smtpfast inboxes create-thread-note` (POST /v1/inboxes/{inbox_id}/threads/{thread_id}/notes): Add a thread note
+- `smtpfast inboxes delete-thread-note` (DELETE /v1/inboxes/{inbox_id}/threads/{thread_id}/notes/{note_id}): Delete a thread note
+- `smtpfast inboxes thread-notes` (GET /v1/inboxes/{inbox_id}/threads/{thread_id}/notes): List thread notes
+
+### Changed commands
+
+- `smtpfast inboxes update-thread`: new flags --assignee-email
+
 ## [0.15.0] - 2026-10-30
 
 Updated from the live API spec.

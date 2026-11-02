@@ -2327,7 +2327,10 @@
                 "contact.created",
                 "contact.updated",
                 "contact.deleted",
-                "contact.subscribed"
+                "contact.subscribed",
+                "inbox.email.received",
+                "inbox.thread.assigned",
+                "inbox.thread.unassigned"
               ],
               "type": "string"
             },
@@ -3585,6 +3588,13 @@
       },
       "InboxThread": {
         "properties": {
+          "assignee_email": {
+            "description": "The team member the thread is assigned to. Not in Resend's thread object.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "delete_after": {
             "description": "When a thread in trash is removed. Not in Resend.",
             "format": "date-time",
@@ -3789,6 +3799,13 @@
       },
       "InboxThreadListItem": {
         "properties": {
+          "assignee_email": {
+            "description": "The team member the thread is assigned to. Not in Resend.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "bcc": {
             "items": {
               "type": "string"
@@ -3859,6 +3876,44 @@
           "unread_count": {
             "description": "Unread messages in the thread. Not in Resend.",
             "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "InboxThreadNote": {
+        "description": "An internal note on a thread. Never sent to anyone. Not in Resend.",
+        "properties": {
+          "author_email": {
+            "description": "The member who wrote it; null once their account is deleted",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "created_via": {
+            "enum": [
+              "api",
+              "dashboard"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "object": {
+            "example": "inbox_thread_note",
+            "type": "string"
+          },
+          "text": {
+            "description": "Plain text, as written",
+            "type": "string"
+          },
+          "thread_id": {
+            "type": "string"
           }
         },
         "type": "object"
@@ -6372,7 +6427,10 @@
                 "contact.created",
                 "contact.updated",
                 "contact.deleted",
-                "contact.subscribed"
+                "contact.subscribed",
+                "inbox.email.received",
+                "inbox.thread.assigned",
+                "inbox.thread.unassigned"
               ],
               "type": "string"
             },
@@ -6690,7 +6748,10 @@
                 "contact.created",
                 "contact.updated",
                 "contact.deleted",
-                "contact.subscribed"
+                "contact.subscribed",
+                "inbox.email.received",
+                "inbox.thread.assigned",
+                "inbox.thread.unassigned"
               ],
               "type": "string"
             },
@@ -6931,7 +6992,10 @@
                 "contact.created",
                 "contact.updated",
                 "contact.deleted",
-                "contact.subscribed"
+                "contact.subscribed",
+                "inbox.email.received",
+                "inbox.thread.assigned",
+                "inbox.thread.unassigned"
               ],
               "type": "string"
             },
@@ -18318,7 +18382,7 @@
     },
     "/v1/inboxes/{inbox_id}/threads": {
       "get": {
-        "description": "Threads in one folder, most recently active first. query matches the subject and label names (case-insensitive, up to 256 characters); label filters to threads carrying any of the given label ids. read is true only when every message is read; it follows the same read state as the received email API. folder, unread_count and snippet are not in Resend. Requires the inbound:read scope.",
+        "description": "Threads in one folder, most recently active first. query takes Gmail-style search, with the operators Resend's dashboard search uses: from:, to: (a full address), label: (a label name), has:attachment, is:read, is:unread, and after: and before: with a YYYY-MM-DD date (UTC; after: includes that day, before: does not). subject: is not in Resend. Words and \"quoted phrases\" match the subject or a label name, case-insensitive, and every one must match; a leading - excludes a word or phrase. from:, to:, has:attachment, after: and before: describe one message: a thread matches when one of its messages matches all of them, and - negates a term for that message (-has:attachment is a message without one). Dates are when a message was received or sent. Anything else with a colon is searched as plain text. Up to 256 characters and 32 terms; a date that is not valid is a 422 with name validation_error. label filters to threads carrying any of the given label ids. read is true only when every message is read; it follows the same read state as the received email API. folder, unread_count, snippet and assignee_email are not in Resend. Requires the inbound:read scope.",
         "operationId": "listInboxThreads",
         "parameters": [
           {
@@ -18347,6 +18411,7 @@
             }
           },
           {
+            "description": "Search, for example from:ada@example.com is:unread after:2026-09-01 \"late fee\"",
             "in": "query",
             "name": "query",
             "required": false,
@@ -18464,6 +18529,16 @@
               }
             },
             "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The request is well formed but cannot be carried out in the current state, for example an unpublished template"
           },
           "429": {
             "content": {
@@ -18701,7 +18776,7 @@
         "x-sdk-method": "get"
       },
       "patch": {
-        "description": "Mark every message read or unread (the same read state the mailbox and GET /v1/emails/receiving show), move the thread to inbox, archive, spam or trash (sent is assigned automatically), apply a label, or remove one with remove_label_id (not in Resend). At least one of read, folder, label_id or remove_label_id. Requires the inbound:read scope; moving to trash is a delete and needs the inbound:delete scope on a key created by a team owner or admin.",
+        "description": "Mark every message read or unread (the same read state the mailbox and GET /v1/emails/receiving show), move the thread to inbox, archive, spam or trash (sent is assigned automatically), apply a label, or remove one with remove_label_id (not in Resend). assignee_email (not in Resend's API; named after their inbox.thread.assigned field) assigns the thread to a member of the team, or unassigns it with null; a change sends inbox.thread.assigned or inbox.thread.unassigned. An address that is not a team member is a 422 and nothing changes. At least one of read, folder, label_id, remove_label_id or assignee_email. Requires the inbound:read scope; moving to trash is a delete and needs the inbound:delete scope on a key created by a team owner or admin.",
         "operationId": "updateInboxThread",
         "parameters": [
           {
@@ -18728,6 +18803,13 @@
             "application/json": {
               "schema": {
                 "properties": {
+                  "assignee_email": {
+                    "description": "The email of a team member to assign the thread to, or null to unassign. Not in Resend.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
                   "folder": {
                     "enum": [
                       "inbox",
@@ -18805,6 +18887,16 @@
               }
             },
             "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The request is well formed but cannot be carried out in the current state, for example an unpublished template"
           },
           "429": {
             "content": {
@@ -19509,6 +19601,413 @@
           "emails"
         ],
         "x-sdk-method": "reply"
+      }
+    },
+    "/v1/inboxes/{inbox_id}/threads/{thread_id}/notes": {
+      "get": {
+        "description": "Internal notes on a thread, oldest first (after walks newer, before walks older). Notes are for the team: they are never emailed, never part of a reply, forward or draft, and no webhook carries them. Not in Resend. Requires the inbound:read scope.",
+        "operationId": "listInboxThreadNotes",
+        "parameters": [
+          {
+            "description": "The inbox id or its email address",
+            "in": "path",
+            "name": "inbox_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The thread id",
+            "in": "path",
+            "name": "thread_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The id of the last note on the page; returns the next, newer page",
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The id of the first note on the page; returns the previous, older page. Not with after.",
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/InboxThreadNote"
+                      },
+                      "type": "array"
+                    },
+                    "has_more": {
+                      "type": "boolean"
+                    },
+                    "object": {
+                      "example": "list",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "A page of notes"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad request - check your payload"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "summary": "List thread notes",
+        "tags": [
+          "Inboxes"
+        ],
+        "x-sdk-group": [
+          "inboxes",
+          "threads",
+          "notes"
+        ],
+        "x-sdk-method": "list"
+      },
+      "post": {
+        "description": "Add an internal note to a thread as the member the key belongs to. Plain text, up to 5000 characters; a thread holds up to 500 notes. The note is never sent to anyone. Not in Resend. Requires the inbound:read scope.",
+        "operationId": "createInboxThreadNote",
+        "parameters": [
+          {
+            "description": "The inbox id or its email address",
+            "in": "path",
+            "name": "inbox_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The thread id",
+            "in": "path",
+            "name": "thread_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "text": {
+                    "maxLength": 5000,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "text"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxThreadNote"
+                }
+              }
+            },
+            "description": "The new note"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad request - check your payload"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The request is well formed but cannot be carried out in the current state, for example an unpublished template"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Add a thread note",
+        "tags": [
+          "Inboxes"
+        ],
+        "x-sdk-group": [
+          "inboxes",
+          "threads",
+          "notes"
+        ],
+        "x-sdk-method": "create"
+      }
+    },
+    "/v1/inboxes/{inbox_id}/threads/{thread_id}/notes/{note_id}": {
+      "delete": {
+        "description": "Remove a note. Its author can remove it, and so can a team owner or admin. Not in Resend. Requires the inbound:read scope.",
+        "operationId": "deleteInboxThreadNote",
+        "parameters": [
+          {
+            "description": "The inbox id or its email address",
+            "in": "path",
+            "name": "inbox_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The thread id",
+            "in": "path",
+            "name": "thread_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The note id",
+            "in": "path",
+            "name": "note_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "object": {
+                      "example": "inbox_thread_note",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Deleted"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Delete a thread note",
+        "tags": [
+          "Inboxes"
+        ],
+        "x-sdk-group": [
+          "inboxes",
+          "threads",
+          "notes"
+        ],
+        "x-sdk-method": "delete"
       }
     },
     "/v1/link-domains": {

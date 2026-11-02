@@ -2,8 +2,8 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "ad006240b17a376dbfe6c3401653660905592dc728ebe0c128ec81ab79f65219",
-  "operationCount": 158,
+  "specHash": "2867fd3a6ccaabe34700ad557dda18b64d73f07b7b87c5a8a34c312d788f99cb",
+  "operationCount": 161,
   "groups": [
     {
       "name": "account",
@@ -3798,6 +3798,52 @@
       }
     },
     {
+      "operationId": "createInboxThreadNote",
+      "method": "POST",
+      "path": "/v1/inboxes/{inbox_id}/threads/{thread_id}/notes",
+      "group": "inboxes",
+      "command": "create-thread-note",
+      "summary": "Add a thread note",
+      "description": "Add an internal note to a thread as the member the key belongs to. Plain text, up to 5000 characters; a thread holds up to 500 notes. The note is never sent to anyone. Not in Resend. Requires the inbound:read scope.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        },
+        {
+          "name": "thread_id",
+          "flag": "thread-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The thread id"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "text",
+            "flag": "text",
+            "in": "body",
+            "type": "string",
+            "required": true
+          }
+        ]
+      }
+    },
+    {
       "operationId": "deleteInbox",
       "method": "DELETE",
       "path": "/v1/inboxes/{inbox_id}",
@@ -3915,6 +3961,47 @@
           "type": "string",
           "required": true,
           "description": "The thread id"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "deleteInboxThreadNote",
+      "method": "DELETE",
+      "path": "/v1/inboxes/{inbox_id}/threads/{thread_id}/notes/{note_id}",
+      "group": "inboxes",
+      "command": "delete-thread-note",
+      "summary": "Delete a thread note",
+      "description": "Remove a note. Its author can remove it, and so can a team owner or admin. Not in Resend. Requires the inbound:read scope.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        },
+        {
+          "name": "thread_id",
+          "flag": "thread-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The thread id"
+        },
+        {
+          "name": "note_id",
+          "flag": "note-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The note id"
         }
       ],
       "queryParams": [],
@@ -4495,13 +4582,71 @@
       "body": null
     },
     {
+      "operationId": "listInboxThreadNotes",
+      "method": "GET",
+      "path": "/v1/inboxes/{inbox_id}/threads/{thread_id}/notes",
+      "group": "inboxes",
+      "command": "thread-notes",
+      "summary": "List thread notes",
+      "description": "Internal notes on a thread, oldest first (after walks newer, before walks older). Notes are for the team: they are never emailed, never part of a reply, forward or draft, and no webhook carries them. Not in Resend. Requires the inbound:read scope.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        },
+        {
+          "name": "thread_id",
+          "flag": "thread-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The thread id"
+        }
+      ],
+      "queryParams": [
+        {
+          "name": "after",
+          "flag": "after",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "The id of the last note on the page; returns the next, newer page"
+        },
+        {
+          "name": "before",
+          "flag": "before",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "The id of the first note on the page; returns the previous, older page. Not with after."
+        },
+        {
+          "name": "limit",
+          "flag": "limit",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "default": 20
+        }
+      ],
+      "headerParams": [],
+      "body": null
+    },
+    {
       "operationId": "listInboxThreads",
       "method": "GET",
       "path": "/v1/inboxes/{inbox_id}/threads",
       "group": "inboxes",
       "command": "threads",
       "summary": "List threads",
-      "description": "Threads in one folder, most recently active first. query matches the subject and label names (case-insensitive, up to 256 characters); label filters to threads carrying any of the given label ids. read is true only when every message is read; it follows the same read state as the received email API. folder, unread_count and snippet are not in Resend. Requires the inbound:read scope.",
+      "description": "Threads in one folder, most recently active first. query takes Gmail-style search, with the operators Resend's dashboard search uses: from:, to: (a full address), label: (a label name), has:attachment, is:read, is:unread, and after: and before: with a YYYY-MM-DD date (UTC; after: includes that day, before: does not). subject: is not in Resend. Words and \"quoted phrases\" match the subject or a label name, case-insensitive, and every one must match; a leading - excludes a word or phrase. from:, to:, has:attachment, after: and before: describe one message: a thread matches when one of its messages matches all of them, and - negates a term for that message (-has:attachment is a message without one). Dates are when a message was received or sent. Anything else with a colon is searched as plain text. Up to 256 characters and 32 terms; a date that is not valid is a 422 with name validation_error. label filters to threads carrying any of the given label ids. read is true only when every message is read; it follows the same read state as the received email API. folder, unread_count, snippet and assignee_email are not in Resend. Requires the inbound:read scope.",
       "tags": [
         "Inboxes"
       ],
@@ -4569,7 +4714,8 @@
           "flag": "query",
           "in": "query",
           "type": "string",
-          "required": false
+          "required": false,
+          "description": "Search, for example from:ada@example.com is:unread after:2026-09-01 \"late fee\""
         }
       ],
       "headerParams": [],
@@ -4792,7 +4938,7 @@
       "group": "inboxes",
       "command": "update-thread",
       "summary": "Update a thread",
-      "description": "Mark every message read or unread (the same read state the mailbox and GET /v1/emails/receiving show), move the thread to inbox, archive, spam or trash (sent is assigned automatically), apply a label, or remove one with remove_label_id (not in Resend). At least one of read, folder, label_id or remove_label_id. Requires the inbound:read scope; moving to trash is a delete and needs the inbound:delete scope on a key created by a team owner or admin.",
+      "description": "Mark every message read or unread (the same read state the mailbox and GET /v1/emails/receiving show), move the thread to inbox, archive, spam or trash (sent is assigned automatically), apply a label, or remove one with remove_label_id (not in Resend). assignee_email (not in Resend's API; named after their inbox.thread.assigned field) assigns the thread to a member of the team, or unassigns it with null; a change sends inbox.thread.assigned or inbox.thread.unassigned. An address that is not a team member is a 422 and nothing changes. At least one of read, folder, label_id, remove_label_id or assignee_email. Requires the inbound:read scope; moving to trash is a delete and needs the inbound:delete scope on a key created by a team owner or admin.",
       "tags": [
         "Inboxes"
       ],
@@ -4821,6 +4967,15 @@
         "contentType": "application/json",
         "type": "object",
         "fields": [
+          {
+            "name": "assignee_email",
+            "flag": "assignee-email",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "The email of a team member to assign the thread to, or null to unassign. Not in Resend.",
+            "nullable": true
+          },
           {
             "name": "folder",
             "flag": "folder",
@@ -6588,7 +6743,10 @@
               "contact.created",
               "contact.updated",
               "contact.deleted",
-              "contact.subscribed"
+              "contact.subscribed",
+              "inbox.email.received",
+              "inbox.thread.assigned",
+              "inbox.thread.unassigned"
             ],
             "example": "email.delivered,email.bounced"
           },
@@ -6957,7 +7115,10 @@
               "contact.created",
               "contact.updated",
               "contact.deleted",
-              "contact.subscribed"
+              "contact.subscribed",
+              "inbox.email.received",
+              "inbox.thread.assigned",
+              "inbox.thread.unassigned"
             ],
             "example": "email.delivered,email.bounced"
           },
@@ -7164,7 +7325,10 @@
               "contact.created",
               "contact.updated",
               "contact.deleted",
-              "contact.subscribed"
+              "contact.subscribed",
+              "inbox.email.received",
+              "inbox.thread.assigned",
+              "inbox.thread.unassigned"
             ],
             "example": "email.delivered,email.bounced"
           },
