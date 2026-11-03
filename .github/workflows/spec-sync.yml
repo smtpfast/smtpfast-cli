@@ -36,7 +36,7 @@ jobs:
     env:
       SPEC_URL: ${{ inputs.spec_url || 'https://smtpfa.st/api/v1/openapi.json' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 0
