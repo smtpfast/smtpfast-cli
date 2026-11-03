@@ -2,8 +2,8 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "2867fd3a6ccaabe34700ad557dda18b64d73f07b7b87c5a8a34c312d788f99cb",
-  "operationCount": 161,
+  "specHash": "ded4801f8ebac7d855c5627f529b93843838fcae518eefa24985dcacd2ead931",
+  "operationCount": 162,
   "groups": [
     {
       "name": "account",
@@ -3648,7 +3648,7 @@
       "group": "inboxes",
       "command": "create-draft",
       "summary": "Create a draft",
-      "description": "Create a draft for a person to review and send. Nothing is sent, so it needs only the inbound:read scope: give an agent a key without email:send and every message it writes waits here for approval. Omit thread_id for a new conversation; send thread_id and reply_to_email_id together for a reply (recipients are not copied, set to before sending). At least one of to, cc, bcc, subject, text or html must be non-empty; 50 recipients at most; subject up to 900 characters (Resend allows 2000; a longer subject could never be sent here). Returns 201 for a new draft, or 200 when an unsent reply draft for that message already exists, updated with the fields sent.",
+      "description": "Create a draft for a person to review and send. Nothing is sent, so it needs only the inbound:read scope: give an agent a key without email:send and every message it writes waits here for approval. Omit thread_id for a new conversation; send thread_id and reply_to_email_id together for a reply (recipients are not copied, set to before sending). At least one of to, cc, bcc, subject, text, html or attachments must be non-empty; 50 recipients at most; subject up to 900 characters (Resend allows 2000; a longer subject could never be sent here). attachments are stored on the draft and sent with it: up to 10 files, 10 MB each and 25 MB in total, the limits of the send path; no path or content_id, as in Resend. Files are kept for 30 days after they are added. Returns 201 for a new draft, or 200 when an unsent reply draft for that message already exists, updated with the fields sent.",
       "tags": [
         "Inboxes"
       ],
@@ -3669,6 +3669,16 @@
         "contentType": "application/json",
         "type": "object",
         "fields": [
+          {
+            "name": "attachments",
+            "flag": "attachments",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "object",
+            "description": "The draft's files; sending the field replaces every file it has, null or [] removes them all. Up to 10 files, 10 MB each and 25 MB in total. Drafts take no path or content_id.",
+            "nullable": true
+          },
           {
             "name": "bcc",
             "flag": "bcc",
@@ -3875,7 +3885,7 @@
       "group": "inboxes",
       "command": "delete-draft",
       "summary": "Delete a draft",
-      "description": "Discard a draft. Requires the inbound:read scope.",
+      "description": "Discard a draft and its files. A draft being sent right now returns 409. Requires the inbound:read scope.",
       "tags": [
         "Inboxes"
       ],
@@ -4065,7 +4075,7 @@
       "group": "inboxes",
       "command": "forward-thread-email",
       "summary": "Forward a thread email",
-      "description": "Sends real email: a forward from the inbox address with the original quoted under a forwarded-message banner, through the normal send path. to is required; 50 recipients at most with cc and bcc. html or text is a note above the original. subject defaults to Fwd: plus the thread subject. Attachments of the original are not included. The forward joins the thread. Supports Idempotency-Key. Requires the inbound:read and email:send scopes.",
+      "description": "Sends real email: a forward from the inbox address with the original quoted under a forwarded-message banner, through the normal send path. to is required; 50 recipients at most with cc and bcc. html or text is a note above the original. subject defaults to Fwd: plus the thread subject. Attachments of the original are not included; send files with attachments, in the shape and limits of POST /v1/emails. The forward joins the thread. Supports Idempotency-Key. Requires the inbound:read and email:send scopes.",
       "tags": [
         "Inboxes"
       ],
@@ -4103,6 +4113,15 @@
         "contentType": "application/json",
         "type": "object",
         "fields": [
+          {
+            "name": "attachments",
+            "flag": "attachments",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "object",
+            "description": "Up to 10 files, base64 encoded, 10 MB each and 25 MB in total. A content_id makes the part inline: reference it from the HTML as cid:<content_id>."
+          },
           {
             "name": "bcc",
             "flag": "bcc",
@@ -4203,6 +4222,47 @@
           "type": "string",
           "required": true,
           "description": "The draft id"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "getInboxDraftAttachment",
+      "method": "GET",
+      "path": "/v1/inboxes/{inbox_id}/drafts/{draft_id}/attachments/{attachment_id}",
+      "group": "inboxes",
+      "command": "get-draft-attachment",
+      "summary": "Retrieve a draft attachment",
+      "description": "One file of a draft with a download link that works for 15 minutes, so the person approving a draft can open what was attached. Not in Resend. A sent draft lists the names of its files but no longer stores them: 410. Requires the inbound:read scope.",
+      "tags": [
+        "Inboxes"
+      ],
+      "pathParams": [
+        {
+          "name": "inbox_id",
+          "flag": "inbox-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The inbox id or its email address"
+        },
+        {
+          "name": "draft_id",
+          "flag": "draft-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The draft id"
+        },
+        {
+          "name": "attachment_id",
+          "flag": "attachment-id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The attachment id, from the draft's attachments"
         }
       ],
       "queryParams": [],
@@ -4389,7 +4449,7 @@
       "group": "inboxes",
       "command": "reply-to-thread-email",
       "summary": "Reply to a thread email",
-      "description": "Sends real email: a reply from the inbox address, threaded with In-Reply-To and References, through the normal send path (verified domain, suppression, plan limits, credits, safety checks). to is taken from the message: a received message's Reply-To or From, or a sent message's recipients. Passing to or from is refused. Add cc and bcc; 50 recipients at most. subject defaults to Re: plus the thread subject (900 characters at most, the send path's limit). Supports Idempotency-Key. To have a person approve the text first, create a reply draft instead. Requires the inbound:read and email:send scopes.",
+      "description": "Sends real email: a reply from the inbox address, threaded with In-Reply-To and References, through the normal send path (verified domain, suppression, plan limits, credits, safety checks). to is taken from the message: a received message's Reply-To or From, or a sent message's recipients. Passing to or from is refused. Add cc and bcc; 50 recipients at most. subject defaults to Re: plus the thread subject (900 characters at most, the send path's limit). attachments take the shape and limits of POST /v1/emails: up to 10 files, 10 MB each and 25 MB in total. Supports Idempotency-Key. To have a person approve the text first, create a reply draft instead. Requires the inbound:read and email:send scopes.",
       "tags": [
         "Inboxes"
       ],
@@ -4427,6 +4487,15 @@
         "contentType": "application/json",
         "type": "object",
         "fields": [
+          {
+            "name": "attachments",
+            "flag": "attachments",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "object",
+            "description": "Up to 10 files, base64 encoded, 10 MB each and 25 MB in total. A content_id makes the part inline: reference it from the HTML as cid:<content_id>."
+          },
           {
             "name": "bcc",
             "flag": "bcc",
@@ -4474,7 +4543,7 @@
       "group": "inboxes",
       "command": "send-draft",
       "summary": "Send a draft",
-      "description": "Sends real email: the approval step for a draft. It goes out from the inbox address through the normal send path; a reply draft joins its thread with threading headers, a new conversation starts a thread in sent. The draft needs a recipient and a body (and a subject when it is not a reply). The send claims the draft on the version it read, so an edit cannot slip in while it runs. Not in Resend: pass the revision a person reviewed; if the draft changed since, nothing is sent and the answer is 409 with code draft_changed. Without a body this is Resend's call. Sending the same draft twice queues one email; a draft that was already sent returns 409. Requires the inbound:read and email:send scopes.",
+      "description": "Sends real email: the approval step for a draft. It goes out from the inbox address through the normal send path; a reply draft joins its thread with threading headers, a new conversation starts a thread in sent. The draft needs a recipient and a body (and a subject when it is not a reply). Its files go with it; a file older than the 30 days a draft keeps them is a 409 that names it. The send claims the draft on the version it read, so an edit cannot slip in while it runs. Not in Resend: pass the revision a person reviewed; if the draft changed since, nothing is sent and the answer is 409 with code draft_changed. Without a body this is Resend's call. Sending the same draft twice queues one email; a draft that was already sent returns 409. Requires the inbound:read and email:send scopes.",
       "tags": [
         "Inboxes"
       ],
@@ -4774,7 +4843,7 @@
       "group": "inboxes",
       "command": "update-draft",
       "summary": "Update a draft",
-      "description": "Omitted fields stay as they are; null clears one. The result must keep at least one non-empty field and at most 50 recipients. A sent draft, or one being sent, returns 409. Not in Resend: pass revision (from the draft object) to make the edit land only on that version; if the draft changed since, nothing is written and the answer is 409 with code draft_changed and the current revision. Requires the inbound:read scope.",
+      "description": "Omitted fields stay as they are; null clears one. attachments replace every file on the draft (null or [] removes them all), as in Resend; not in Resend, an entry { id } keeps a file the draft already holds without sending it again. The result must keep at least one non-empty field and at most 50 recipients. A sent draft, or one being sent, returns 409. Not in Resend: pass revision (from the draft object) to make the edit land only on that version; if the draft changed since, nothing is written and the answer is 409 with code draft_changed and the current revision. Requires the inbound:read scope.",
       "tags": [
         "Inboxes"
       ],
@@ -4803,6 +4872,16 @@
         "contentType": "application/json",
         "type": "object",
         "fields": [
+          {
+            "name": "attachments",
+            "flag": "attachments",
+            "in": "body",
+            "type": "array",
+            "required": false,
+            "items": "object",
+            "description": "The draft's files; sending the field replaces every file it has, null or [] removes them all. Up to 10 files, 10 MB each and 25 MB in total. Drafts take no path or content_id.",
+            "nullable": true
+          },
           {
             "name": "bcc",
             "flag": "bcc",

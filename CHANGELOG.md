@@ -2,6 +2,21 @@
 
 All notable changes to the smtpfast CLI. The spec sync workflow adds an entry for each release it publishes.
 
+## [0.17.0] - 2026-11-03
+
+Updated from the live API spec.
+
+### New commands
+
+- `smtpfast inboxes get-draft-attachment` (GET /v1/inboxes/{inbox_id}/drafts/{draft_id}/attachments/{attachment_id}): Retrieve a draft attachment
+
+### Changed commands
+
+- `smtpfast inboxes create-draft`: new flags --attachments
+- `smtpfast inboxes forward-thread-email`: new flags --attachments
+- `smtpfast inboxes reply-to-thread-email`: new flags --attachments
+- `smtpfast inboxes update-draft`: new flags --attachments
+
 ## [0.16.0] - 2026-11-02
 
 Updated from the live API spec.

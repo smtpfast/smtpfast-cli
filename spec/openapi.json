@@ -3269,6 +3269,13 @@
       },
       "InboxDraft": {
         "properties": {
+          "attachments": {
+            "description": "The files stored on the draft, in the order they are sent. Download one with GET /v1/inboxes/{inbox_id}/drafts/{draft_id}/attachments/{attachment_id}.",
+            "items": {
+              "$ref": "#/components/schemas/InboxDraftAttachment"
+            },
+            "type": "array"
+          },
           "bcc": {
             "items": {
               "type": "string"
@@ -3378,6 +3385,47 @@
           }
         },
         "type": "object"
+      },
+      "InboxDraftAttachment": {
+        "properties": {
+          "content_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "filename": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "size": {
+            "description": "Bytes",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "InboxDraftAttachmentDownload": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/InboxDraftAttachment"
+          },
+          {
+            "properties": {
+              "download_url": {
+                "description": "Works until expires_at",
+                "type": "string"
+              },
+              "expires_at": {
+                "format": "date-time",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          }
+        ]
       },
       "InboxDraftListItem": {
         "properties": {
@@ -14801,7 +14849,7 @@
                 }
               }
             },
-            "description": "Error"
+            "description": "Payload too large - over a size limit"
           },
           "422": {
             "content": {
@@ -17028,7 +17076,7 @@
         "x-sdk-method": "list"
       },
       "post": {
-        "description": "Create a draft for a person to review and send. Nothing is sent, so it needs only the inbound:read scope: give an agent a key without email:send and every message it writes waits here for approval. Omit thread_id for a new conversation; send thread_id and reply_to_email_id together for a reply (recipients are not copied, set to before sending). At least one of to, cc, bcc, subject, text or html must be non-empty; 50 recipients at most; subject up to 900 characters (Resend allows 2000; a longer subject could never be sent here). Returns 201 for a new draft, or 200 when an unsent reply draft for that message already exists, updated with the fields sent.",
+        "description": "Create a draft for a person to review and send. Nothing is sent, so it needs only the inbound:read scope: give an agent a key without email:send and every message it writes waits here for approval. Omit thread_id for a new conversation; send thread_id and reply_to_email_id together for a reply (recipients are not copied, set to before sending). At least one of to, cc, bcc, subject, text, html or attachments must be non-empty; 50 recipients at most; subject up to 900 characters (Resend allows 2000; a longer subject could never be sent here). attachments are stored on the draft and sent with it: up to 10 files, 10 MB each and 25 MB in total, the limits of the send path; no path or content_id, as in Resend. Files are kept for 30 days after they are added. Returns 201 for a new draft, or 200 when an unsent reply draft for that message already exists, updated with the fields sent.",
         "operationId": "createInboxDraft",
         "parameters": [
           {
@@ -17046,6 +17094,51 @@
             "application/json": {
               "schema": {
                 "properties": {
+                  "attachments": {
+                    "description": "The draft's files; sending the field replaces every file it has, null or [] removes them all. Up to 10 files, 10 MB each and 25 MB in total. Drafts take no path or content_id.",
+                    "items": {
+                      "oneOf": [
+                        {
+                          "properties": {
+                            "content": {
+                              "description": "Base64-encoded file content",
+                              "type": "string"
+                            },
+                            "content_type": {
+                              "example": "application/pdf",
+                              "type": "string"
+                            },
+                            "filename": {
+                              "maxLength": 200,
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "filename",
+                            "content"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "properties": {
+                            "id": {
+                              "description": "Keep this file of the draft as it is. Not in Resend.",
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id"
+                          ],
+                          "type": "object"
+                        }
+                      ]
+                    },
+                    "maxItems": 10,
+                    "type": [
+                      "array",
+                      "null"
+                    ]
+                  },
                   "bcc": {
                     "oneOf": [
                       {
@@ -17189,6 +17282,26 @@
             },
             "description": "Resource not found"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Conflict - the resource already exists or changed meanwhile"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Payload too large - over a size limit"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -17233,7 +17346,7 @@
     },
     "/v1/inboxes/{inbox_id}/drafts/{draft_id}": {
       "delete": {
-        "description": "Discard a draft. Requires the inbound:read scope.",
+        "description": "Discard a draft and its files. A draft being sent right now returns 409. Requires the inbound:read scope.",
         "operationId": "deleteInboxDraft",
         "parameters": [
           {
@@ -17307,6 +17420,16 @@
               }
             },
             "description": "Resource not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Conflict - the resource already exists or changed meanwhile"
           },
           "429": {
             "content": {
@@ -17435,7 +17558,7 @@
         "x-sdk-method": "get"
       },
       "patch": {
-        "description": "Omitted fields stay as they are; null clears one. The result must keep at least one non-empty field and at most 50 recipients. A sent draft, or one being sent, returns 409. Not in Resend: pass revision (from the draft object) to make the edit land only on that version; if the draft changed since, nothing is written and the answer is 409 with code draft_changed and the current revision. Requires the inbound:read scope.",
+        "description": "Omitted fields stay as they are; null clears one. attachments replace every file on the draft (null or [] removes them all), as in Resend; not in Resend, an entry { id } keeps a file the draft already holds without sending it again. The result must keep at least one non-empty field and at most 50 recipients. A sent draft, or one being sent, returns 409. Not in Resend: pass revision (from the draft object) to make the edit land only on that version; if the draft changed since, nothing is written and the answer is 409 with code draft_changed and the current revision. Requires the inbound:read scope.",
         "operationId": "updateInboxDraft",
         "parameters": [
           {
@@ -17462,6 +17585,51 @@
             "application/json": {
               "schema": {
                 "properties": {
+                  "attachments": {
+                    "description": "The draft's files; sending the field replaces every file it has, null or [] removes them all. Up to 10 files, 10 MB each and 25 MB in total. Drafts take no path or content_id.",
+                    "items": {
+                      "oneOf": [
+                        {
+                          "properties": {
+                            "content": {
+                              "description": "Base64-encoded file content",
+                              "type": "string"
+                            },
+                            "content_type": {
+                              "example": "application/pdf",
+                              "type": "string"
+                            },
+                            "filename": {
+                              "maxLength": 200,
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "filename",
+                            "content"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "properties": {
+                            "id": {
+                              "description": "Keep this file of the draft as it is. Not in Resend.",
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id"
+                          ],
+                          "type": "object"
+                        }
+                      ]
+                    },
+                    "maxItems": 10,
+                    "type": [
+                      "array",
+                      "null"
+                    ]
+                  },
                   "bcc": {
                     "oneOf": [
                       {
@@ -17602,6 +17770,16 @@
             },
             "description": "Conflict - the resource already exists or changed meanwhile"
           },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Payload too large - over a size limit"
+          },
           "429": {
             "content": {
               "application/json": {
@@ -17634,9 +17812,126 @@
         "x-sdk-method": "update"
       }
     },
+    "/v1/inboxes/{inbox_id}/drafts/{draft_id}/attachments/{attachment_id}": {
+      "get": {
+        "description": "One file of a draft with a download link that works for 15 minutes, so the person approving a draft can open what was attached. Not in Resend. A sent draft lists the names of its files but no longer stores them: 410. Requires the inbound:read scope.",
+        "operationId": "getInboxDraftAttachment",
+        "parameters": [
+          {
+            "description": "The inbox id or its email address",
+            "in": "path",
+            "name": "inbox_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The draft id",
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The attachment id, from the draft's attachments",
+            "in": "path",
+            "name": "attachment_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxDraftAttachmentDownload"
+                }
+              }
+            },
+            "description": "The file with a download link"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Gone - the resource no longer holds what was asked for"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Retrieve a draft attachment",
+        "tags": [
+          "Inboxes"
+        ],
+        "x-sdk-group": [
+          "inboxes",
+          "drafts",
+          "attachments"
+        ],
+        "x-sdk-method": "get"
+      }
+    },
     "/v1/inboxes/{inbox_id}/drafts/{draft_id}/send": {
       "post": {
-        "description": "Sends real email: the approval step for a draft. It goes out from the inbox address through the normal send path; a reply draft joins its thread with threading headers, a new conversation starts a thread in sent. The draft needs a recipient and a body (and a subject when it is not a reply). The send claims the draft on the version it read, so an edit cannot slip in while it runs. Not in Resend: pass the revision a person reviewed; if the draft changed since, nothing is sent and the answer is 409 with code draft_changed. Without a body this is Resend's call. Sending the same draft twice queues one email; a draft that was already sent returns 409. Requires the inbound:read and email:send scopes.",
+        "description": "Sends real email: the approval step for a draft. It goes out from the inbox address through the normal send path; a reply draft joins its thread with threading headers, a new conversation starts a thread in sent. The draft needs a recipient and a body (and a subject when it is not a reply). Its files go with it; a file older than the 30 days a draft keeps them is a 409 that names it. The send claims the draft on the version it read, so an edit cannot slip in while it runs. Not in Resend: pass the revision a person reviewed; if the draft changed since, nothing is sent and the answer is 409 with code draft_changed. Without a body this is Resend's call. Sending the same draft twice queues one email; a draft that was already sent returns 409. Requires the inbound:read and email:send scopes.",
         "operationId": "sendInboxDraft",
         "parameters": [
           {
@@ -19201,7 +19496,7 @@
     },
     "/v1/inboxes/{inbox_id}/threads/{thread_id}/emails/{email_id}/forward": {
       "post": {
-        "description": "Sends real email: a forward from the inbox address with the original quoted under a forwarded-message banner, through the normal send path. to is required; 50 recipients at most with cc and bcc. html or text is a note above the original. subject defaults to Fwd: plus the thread subject. Attachments of the original are not included. The forward joins the thread. Supports Idempotency-Key. Requires the inbound:read and email:send scopes.",
+        "description": "Sends real email: a forward from the inbox address with the original quoted under a forwarded-message banner, through the normal send path. to is required; 50 recipients at most with cc and bcc. html or text is a note above the original. subject defaults to Fwd: plus the thread subject. Attachments of the original are not included; send files with attachments, in the shape and limits of POST /v1/emails. The forward joins the thread. Supports Idempotency-Key. Requires the inbound:read and email:send scopes.",
         "operationId": "forwardInboxThreadEmail",
         "parameters": [
           {
@@ -19246,6 +19541,40 @@
             "application/json": {
               "schema": {
                 "properties": {
+                  "attachments": {
+                    "description": "Up to 10 files, base64 encoded, 10 MB each and 25 MB in total. A content_id makes the part inline: reference it from the HTML as cid:<content_id>.",
+                    "items": {
+                      "properties": {
+                        "content": {
+                          "description": "Base64-encoded file content",
+                          "type": "string"
+                        },
+                        "content_id": {
+                          "description": "Letters, digits, . _ - with an optional @domain; sent inline as multipart/related",
+                          "type": "string"
+                        },
+                        "content_type": {
+                          "example": "application/pdf",
+                          "type": "string"
+                        },
+                        "filename": {
+                          "maxLength": 200,
+                          "type": "string"
+                        },
+                        "inline": {
+                          "description": "Send inline even without a content_id (a Content-ID is derived from the filename)",
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "filename",
+                        "content"
+                      ],
+                      "type": "object"
+                    },
+                    "maxItems": 10,
+                    "type": "array"
+                  },
                   "bcc": {
                     "oneOf": [
                       {
@@ -19366,6 +19695,16 @@
             },
             "description": "Conflict - the resource already exists or changed meanwhile"
           },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Payload too large - over a size limit"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -19411,7 +19750,7 @@
     },
     "/v1/inboxes/{inbox_id}/threads/{thread_id}/emails/{email_id}/reply": {
       "post": {
-        "description": "Sends real email: a reply from the inbox address, threaded with In-Reply-To and References, through the normal send path (verified domain, suppression, plan limits, credits, safety checks). to is taken from the message: a received message's Reply-To or From, or a sent message's recipients. Passing to or from is refused. Add cc and bcc; 50 recipients at most. subject defaults to Re: plus the thread subject (900 characters at most, the send path's limit). Supports Idempotency-Key. To have a person approve the text first, create a reply draft instead. Requires the inbound:read and email:send scopes.",
+        "description": "Sends real email: a reply from the inbox address, threaded with In-Reply-To and References, through the normal send path (verified domain, suppression, plan limits, credits, safety checks). to is taken from the message: a received message's Reply-To or From, or a sent message's recipients. Passing to or from is refused. Add cc and bcc; 50 recipients at most. subject defaults to Re: plus the thread subject (900 characters at most, the send path's limit). attachments take the shape and limits of POST /v1/emails: up to 10 files, 10 MB each and 25 MB in total. Supports Idempotency-Key. To have a person approve the text first, create a reply draft instead. Requires the inbound:read and email:send scopes.",
         "operationId": "replyToInboxThreadEmail",
         "parameters": [
           {
@@ -19456,6 +19795,40 @@
             "application/json": {
               "schema": {
                 "properties": {
+                  "attachments": {
+                    "description": "Up to 10 files, base64 encoded, 10 MB each and 25 MB in total. A content_id makes the part inline: reference it from the HTML as cid:<content_id>.",
+                    "items": {
+                      "properties": {
+                        "content": {
+                          "description": "Base64-encoded file content",
+                          "type": "string"
+                        },
+                        "content_id": {
+                          "description": "Letters, digits, . _ - with an optional @domain; sent inline as multipart/related",
+                          "type": "string"
+                        },
+                        "content_type": {
+                          "example": "application/pdf",
+                          "type": "string"
+                        },
+                        "filename": {
+                          "maxLength": 200,
+                          "type": "string"
+                        },
+                        "inline": {
+                          "description": "Send inline even without a content_id (a Content-ID is derived from the filename)",
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "filename",
+                        "content"
+                      ],
+                      "type": "object"
+                    },
+                    "maxItems": 10,
+                    "type": "array"
+                  },
                   "bcc": {
                     "oneOf": [
                       {
@@ -19559,6 +19932,16 @@
               }
             },
             "description": "Conflict - the resource already exists or changed meanwhile"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Payload too large - over a size limit"
           },
           "422": {
             "content": {
