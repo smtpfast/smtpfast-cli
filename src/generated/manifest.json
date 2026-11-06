@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "ded4801f8ebac7d855c5627f529b93843838fcae518eefa24985dcacd2ead931",
+  "specHash": "1946362310d64f0304b2ba91b7c5fc2fe4e315abb0e175b37d404e2fdb6afa9f",
   "operationCount": 162,
   "groups": [
     {
@@ -6256,7 +6256,7 @@
       "group": "team",
       "command": "remove-member",
       "summary": "Remove a member",
-      "description": "Removes the person from the team and revokes their API keys for it. Team resources stay. You cannot remove yourself this way, and the last owner cannot be removed. Owner or admin only; requires the team:manage scope.",
+      "description": "Removes the person from the team and revokes their API keys for it. Team resources stay. You cannot remove yourself this way, and the last owner cannot be removed. The owner who pays for the team cannot be removed until they transfer ownership (409). Owner or admin only; requires the team:manage scope.",
       "tags": [
         "Team"
       ],
@@ -6306,7 +6306,7 @@
       "group": "team",
       "command": "update-member",
       "summary": "Change a member's role or billing access",
-      "description": "Send role, can_manage_billing, or both. Owners and admins can change roles under the same rules as the Members page (an admin cannot touch an owner, a team keeps at least one owner). Only an owner can change billing access. The member gets an email when their role changes. Requires the team:manage scope.",
+      "description": "Send role, can_manage_billing, or both. Owners and admins can change roles under the same rules as the Members page (an admin cannot touch an owner, a team keeps at least one owner). The owner who pays for a team with several owners keeps the owner role until they transfer ownership: changing it answers 409. Only an owner can change billing access. The member gets an email when their role changes. Requires the team:manage scope.",
       "tags": [
         "Team"
       ],
