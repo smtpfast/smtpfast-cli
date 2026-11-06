@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "1946362310d64f0304b2ba91b7c5fc2fe4e315abb0e175b37d404e2fdb6afa9f",
+  "specHash": "8287bf566ca59f8d5f1aa2ad707d2a370f127fc453c8fd59a18ed516262ed673",
   "operationCount": 162,
   "groups": [
     {
@@ -796,6 +796,7 @@
             "in": "body",
             "type": "boolean",
             "required": false,
+            "description": "Send each link through the click tracker. Available on every plan.",
             "default": true
           },
           {
@@ -804,6 +805,7 @@
             "in": "body",
             "type": "boolean",
             "required": false,
+            "description": "Add the open-tracking pixel to each email. Available on every plan.",
             "default": true
           }
         ]
@@ -1288,6 +1290,7 @@
             "in": "body",
             "type": "boolean",
             "required": false,
+            "description": "Send each link through the click tracker. Available on every plan.",
             "default": true
           },
           {
@@ -1296,6 +1299,7 @@
             "in": "body",
             "type": "boolean",
             "required": false,
+            "description": "Add the open-tracking pixel to each email. Available on every plan.",
             "default": true
           }
         ]
@@ -2836,7 +2840,7 @@
             "in": "body",
             "type": "boolean",
             "required": false,
-            "description": "Not in Resend, which sets tracking per domain. Rewrite this email's links through the click tracker (true) or send them exactly as written (false). Left out, the account's tracking settings apply, including the setting for transactional email, except that a contact-form relay (every recipient on the From domain or a parent or subdomain of it, Reply-To on an unrelated domain, not sent from an inbox) gets no click tracking. Over SMTP, set the X-SMTPfast-Track-Clicks header to true or false instead; it is removed before sending. To keep one link out of tracking, such as a password reset link with a token, add data-smtpfast-track=\"off\" to its <a> tag; the attribute is removed before sending. null is the same as leaving it out; any other value that is not true or false is refused with 400.",
+            "description": "Not in Resend, which sets tracking per domain. Rewrite this email's links through the click tracker (true) or send them exactly as written (false). Left out, the account's tracking settings apply, including the setting for transactional email, except that a contact-form relay (every recipient on the From domain or a parent or subdomain of it, Reply-To on an unrelated domain, not sent from an inbox) gets no click tracking. Over SMTP, set the X-SMTPfast-Track-Clicks header to true or false instead; it is removed before sending. To keep one link out of tracking, such as a password reset link with a token, add data-smtpfast-track=\"off\" to its <a> tag; the attribute is removed before sending. null is the same as leaving it out; any other value that is not true or false is refused with 400. Click tracking is available on every plan.",
             "example": "false"
           },
           {
@@ -2845,7 +2849,7 @@
             "in": "body",
             "type": "boolean",
             "required": false,
-            "description": "Not in Resend. Add the open-tracking pixel to this email (true) or not (false). Left out, the account's tracking settings apply. Over SMTP, set the X-SMTPfast-Track-Opens header to true or false instead; it is removed before sending. null is the same as leaving it out; any other value that is not true or false is refused with 400.",
+            "description": "Not in Resend. Add the open-tracking pixel to this email (true) or not (false). Left out, the account's tracking settings apply. Over SMTP, set the X-SMTPfast-Track-Opens header to true or false instead; it is removed before sending. null is the same as leaving it out; any other value that is not true or false is refused with 400. Open tracking is available on every plan.",
             "example": "false"
           }
         ]
