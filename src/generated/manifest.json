@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "8287bf566ca59f8d5f1aa2ad707d2a370f127fc453c8fd59a18ed516262ed673",
+  "specHash": "af7cdce5d8ace674debdcd3de2185a2238e8437e21fad5281a92a909a3d96c57",
   "operationCount": 162,
   "groups": [
     {
@@ -6852,7 +6852,7 @@
             "in": "body",
             "type": "string",
             "required": true,
-            "description": "The URL that will receive webhook POST requests",
+            "description": "The URL that will receive webhook POST requests: HTTPS on the standard port (443) of a public host",
             "example": "https://yourapp.com/webhooks/smtpfast"
           }
         ]
@@ -7223,6 +7223,7 @@
             "in": "body",
             "type": "string",
             "required": false,
+            "description": "HTTPS on the standard port (443) of a public host",
             "example": "https://yourapp.com/webhooks/smtpfast"
           }
         ]
@@ -7433,6 +7434,7 @@
             "in": "body",
             "type": "string",
             "required": false,
+            "description": "HTTPS on the standard port (443) of a public host",
             "example": "https://yourapp.com/webhooks/smtpfast"
           }
         ]

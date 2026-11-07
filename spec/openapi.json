@@ -2348,7 +2348,7 @@
             "type": "string"
           },
           "url": {
-            "description": "The URL that will receive webhook POST requests",
+            "description": "The URL that will receive webhook POST requests: HTTPS on the standard port (443) of a public host",
             "example": "https://yourapp.com/webhooks/smtpfast",
             "format": "uri",
             "type": "string"
@@ -6495,6 +6495,7 @@
             "type": "string"
           },
           "url": {
+            "description": "HTTPS on the standard port (443) of a public host",
             "example": "https://yourapp.com/webhooks/smtpfast",
             "format": "uri",
             "type": "string"
