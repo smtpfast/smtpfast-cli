@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "af7cdce5d8ace674debdcd3de2185a2238e8437e21fad5281a92a909a3d96c57",
+  "specHash": "faa8576c4cb84267ced4c695aaca93d137471d1dad0f81fbae091f4e20497056",
   "operationCount": 162,
   "groups": [
     {
@@ -263,7 +263,7 @@
       "group": "analytics",
       "command": "get",
       "summary": "Get analytics",
-      "description": "Sending and deliverability totals for the account, plus a 30-day daily series. Pass days and/or domain to add a `window` object holding exact counts for that window and sending domain, aggregated in the database rather than sampled from the event log.",
+      "description": "Sending and deliverability totals for the account, plus a 30-day daily series. bounceRate counts hard bounces only, over the last 30 days; the bounces object has the hard and soft counts behind it. Pass days and/or domain to add a `window` object holding exact counts for that window and sending domain, aggregated in the database rather than sampled from the event log.",
       "tags": [
         "Analytics"
       ],
@@ -2581,7 +2581,7 @@
       "group": "emails",
       "command": "metrics",
       "summary": "Retrieve email metrics",
-      "description": "Resend-compatible counts and rates over a date range, for transactional and broadcast email together. Leave dimensions out for one totals row; add period, domain, email or broadcast (email and broadcast cannot be combined) to break the numbers down. Each lifecycle timestamp counts in its own period. Sends where every recipient is the SES mailbox simulator are left out. Rates are percentages with one decimal. Open and click metrics need tracking on. Add include=providers for a breakdown by mailbox provider (Gmail, Outlook, iCloud, Yahoo, Proton, other). Requires the email:read scope.",
+      "description": "Resend-compatible counts and rates over a date range, for transactional and broadcast email together. Leave dimensions out for one totals row; add period, domain, email or broadcast (email and broadcast cannot be combined) to break the numbers down. Each lifecycle timestamp counts in its own period. Sends where every recipient is the SES mailbox simulator are left out. Rates are percentages with one decimal. bounce_rate counts hard bounces only, as SES does (bounced_hard: permanent plus undetermined); bounced_soft and soft_bounce_rate count transient bounces such as a full mailbox, and bounced counts both. Open and click metrics need tracking on. Add include=providers for a breakdown by mailbox provider (Gmail, Outlook, iCloud, Yahoo, Proton, other). Requires the email:read scope.",
       "tags": [
         "Emails"
       ],

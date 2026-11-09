@@ -22,14 +22,58 @@
             "type": "integer"
           },
           "bounceRate": {
-            "description": "bounced / (sent - awaitingReport), as a percentage",
-            "example": 1.7,
+            "description": "Hard bounce rate over the last 30 days, as a percentage: the same as bounces.hardRate. Hard bounces only, as SES counts them; soft bounces are in bounces.soft.",
+            "example": 0.6,
             "format": "float",
             "type": "number"
           },
           "bounced": {
+            "description": "Emails with status bounced, hard or soft, all time",
             "example": 402,
             "type": "integer"
+          },
+          "bounces": {
+            "description": "Bounces over a rolling window (the last 30 days), counted by when each email was sent. A hard bounce is one SES marked Permanent or Undetermined: the address does not exist or does not take mail. A soft bounce is Transient, a temporary failure such as a full mailbox, and is not part of the bounce rate. A past bounce stays counted even if the address was later unsubscribed or suppressed.",
+            "properties": {
+              "days": {
+                "description": "Window length in days",
+                "example": 30,
+                "type": "integer"
+              },
+              "from": {
+                "description": "Start of the window",
+                "format": "date-time",
+                "type": "string"
+              },
+              "hard": {
+                "description": "Hard-bounced emails sent in the window",
+                "example": 65,
+                "type": "integer"
+              },
+              "hardRate": {
+                "description": "hard / reported, as a percentage",
+                "example": 0.6,
+                "format": "float",
+                "type": "number"
+              },
+              "reported": {
+                "description": "Emails sent in the window with a delivery or bounce report: the rates are over this",
+                "example": 10840,
+                "type": "integer"
+              },
+              "soft": {
+                "description": "Soft-bounced emails sent in the window",
+                "example": 212,
+                "type": "integer"
+              },
+              "softRate": {
+                "description": "soft / reported, as a percentage",
+                "example": 2,
+                "format": "float",
+                "type": "number"
+              }
+            },
+            "type": "object"
           },
           "canceled": {
             "example": 40,
@@ -153,12 +197,14 @@
                     "type": "integer"
                   },
                   "hard_bounced": {
+                    "description": "Bounce events SES marked Permanent or Undetermined, not counting refusals by the SES account-level suppression list",
                     "type": "integer"
                   },
                   "sent": {
                     "type": "integer"
                   },
                   "soft_bounced": {
+                    "description": "Bounce events SES marked Transient",
                     "type": "integer"
                   }
                 },
@@ -1136,10 +1182,12 @@
       "BroadcastMetrics": {
         "properties": {
           "bounce_rate": {
-            "example": 0.7,
+            "description": "Hard bounces only, as SES counts them: the same as hard_bounce_rate. Percent of recipients not skipped.",
+            "example": 0.3,
             "type": "number"
           },
           "bounced": {
+            "description": "Every bounce, hard plus soft.",
             "example": 9,
             "type": "integer"
           },
@@ -1176,6 +1224,16 @@
             "example": 1238,
             "type": "integer"
           },
+          "hard_bounce_rate": {
+            "description": "hard_bounced as a percent of recipients not skipped.",
+            "example": 0.3,
+            "type": "number"
+          },
+          "hard_bounced": {
+            "description": "Bounces SES marked Permanent or Undetermined: the address does not exist or does not take mail.",
+            "example": 4,
+            "type": "integer"
+          },
           "open_rate": {
             "example": 59.4,
             "type": "number"
@@ -1198,6 +1256,16 @@
           },
           "skipped": {
             "example": 12,
+            "type": "integer"
+          },
+          "soft_bounce_rate": {
+            "description": "soft_bounced as a percent of recipients not skipped. Not part of bounce_rate.",
+            "example": 0.4,
+            "type": "number"
+          },
+          "soft_bounced": {
+            "description": "Bounces SES marked Transient: a temporary failure such as a full mailbox.",
+            "example": 5,
             "type": "integer"
           },
           "total": {
@@ -4384,14 +4452,15 @@
         "description": "Sent email to one mailbox provider. Each email counts once, by the domain of its first To address; a domain outside the consumer domains is classified by its MX hosts, so Google Workspace counts as gmail and Microsoft 365 as outlook. Rates are percentages with two decimals, null when there is nothing to rate yet.",
         "properties": {
           "bounce_rate": {
-            "description": "bounced / (delivered + bounced).",
-            "example": 1.12,
+            "description": "hard_bounced / (delivered + bounced): hard bounces only, as SES counts them.",
+            "example": 0.5,
             "type": [
               "number",
               "null"
             ]
           },
           "bounced": {
+            "description": "Every bounce, hard plus soft.",
             "example": 9,
             "type": "integer"
           },
@@ -4419,6 +4488,11 @@
               "number",
               "null"
             ]
+          },
+          "hard_bounced": {
+            "description": "Bounces SES marked Permanent or Undetermined.",
+            "example": 4,
+            "type": "integer"
           },
           "name": {
             "example": "Gmail",
@@ -4457,6 +4531,19 @@
             "description": "Percent of all sent email in the breakdown.",
             "example": 67.44,
             "type": "number"
+          },
+          "soft_bounce_rate": {
+            "description": "soft_bounced / (delivered + bounced). Not part of bounce_rate.",
+            "example": 0.62,
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "soft_bounced": {
+            "description": "Bounces SES marked Transient, such as a full mailbox.",
+            "example": 5,
+            "type": "integer"
           },
           "tracked_delivered": {
             "description": "Delivered with open tracking on: the open rate's denominator.",
@@ -7626,7 +7713,7 @@
     },
     "/v1/analytics": {
       "get": {
-        "description": "Sending and deliverability totals for the account, plus a 30-day daily series. Pass days and/or domain to add a `window` object holding exact counts for that window and sending domain, aggregated in the database rather than sampled from the event log.",
+        "description": "Sending and deliverability totals for the account, plus a 30-day daily series. bounceRate counts hard bounces only, over the last 30 days; the bounces object has the hard and soft counts behind it. Pass days and/or domain to add a `window` object holding exact counts for that window and sending domain, aggregated in the database rather than sampled from the event log.",
         "operationId": "getAnalytics",
         "parameters": [
           {
@@ -13591,7 +13678,7 @@
     },
     "/v1/emails/metrics": {
       "get": {
-        "description": "Resend-compatible counts and rates over a date range, for transactional and broadcast email together. Leave dimensions out for one totals row; add period, domain, email or broadcast (email and broadcast cannot be combined) to break the numbers down. Each lifecycle timestamp counts in its own period. Sends where every recipient is the SES mailbox simulator are left out. Rates are percentages with one decimal. Open and click metrics need tracking on. Add include=providers for a breakdown by mailbox provider (Gmail, Outlook, iCloud, Yahoo, Proton, other). Requires the email:read scope.",
+        "description": "Resend-compatible counts and rates over a date range, for transactional and broadcast email together. Leave dimensions out for one totals row; add period, domain, email or broadcast (email and broadcast cannot be combined) to break the numbers down. Each lifecycle timestamp counts in its own period. Sends where every recipient is the SES mailbox simulator are left out. Rates are percentages with one decimal. bounce_rate counts hard bounces only, as SES does (bounced_hard: permanent plus undetermined); bounced_soft and soft_bounce_rate count transient bounces such as a full mailbox, and bounced counts both. Open and click metrics need tracking on. Add include=providers for a breakdown by mailbox provider (Gmail, Outlook, iCloud, Yahoo, Proton, other). Requires the email:read scope.",
         "operationId": "getEmailMetrics",
         "parameters": [
           {
