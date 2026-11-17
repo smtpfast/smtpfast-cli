@@ -446,6 +446,13 @@
               "type": "object"
             },
             "type": "array"
+          },
+          "warnings": {
+            "description": "Present only when there is something to check. category_not_set lists in items the emails sent without a category, which went out as marketing.",
+            "items": {
+              "$ref": "#/components/schemas/SendWarning"
+            },
+            "type": "array"
           }
         },
         "required": [
@@ -2554,6 +2561,10 @@
             "example": "pending",
             "type": "string"
           },
+          "dns_live": {
+            "description": "GET /v1/domains/{id} only. True when every required record (DKIM, SPF, DMARC, MAIL FROM) matches a live lookup at the domain's own nameservers. A verified domain with dns_live false still sends; fix the records each live_check marks.",
+            "type": "boolean"
+          },
           "dns_records": {
             "items": {
               "$ref": "#/components/schemas/DnsRecord"
@@ -2707,7 +2718,7 @@
             "type": "string"
           },
           "status": {
-            "description": "GET /v1/domains/{id} answers pending for a verified domain whose required records are no longer live.",
+            "description": "The stored status, which gates sending: verified once DKIM and the email provider identity are verified. POST /v1/domains/{id}/verify and the background check update it. A required record that is not live right now does not change it; dns_live, verification_phase and each record's live_check show that.",
             "enum": [
               "pending",
               "verifying",
@@ -5338,10 +5349,40 @@
           "id": {
             "example": "email_abc123",
             "type": "string"
+          },
+          "warnings": {
+            "description": "Not in Resend. Present only when the send was accepted with something to check. category_not_set: the request had no category (and no X-SMTPfast-Category header), so the email was sent as marketing, with a one-click unsubscribe link.",
+            "items": {
+              "$ref": "#/components/schemas/SendWarning"
+            },
+            "type": "array"
           }
         },
         "required": [
           "id"
+        ],
+        "type": "object"
+      },
+      "SendWarning": {
+        "properties": {
+          "code": {
+            "example": "category_not_set",
+            "type": "string"
+          },
+          "items": {
+            "description": "Batch sends only: the indexes of the items the warning is about, in request order.",
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
         ],
         "type": "object"
       },
