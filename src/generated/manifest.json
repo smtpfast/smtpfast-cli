@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "aba6219604e19692a84e07a57b865ca71ec9c7d23e0c4c2cdb181b43176ff5ee",
+  "specHash": "3bb4240c69546fe870ae0376a88eb504f9a1239187468611c4cca2df9d61ad2f",
   "operationCount": 162,
   "groups": [
     {
@@ -297,7 +297,7 @@
       "group": "api-keys",
       "command": "create",
       "summary": "Create API key",
-      "description": "Generate a new API key. The full key value is returned only once in the response. Store it securely.",
+      "description": "Generate a new API key. The full key value is returned only once in the response. Store it securely. Requires the apikey:manage scope when called with an API key. Called with an API key, the request may only reach keys with no more access than that key: a new or edited key gets only scopes the calling key has, never apikey:manage, and a key with scopes the calling key lacks, or made by a member with a higher role than the calling key's creator, cannot be edited or revoked. The dashboard is not limited this way. Without scopes the new key gets the default set, so a calling key that lacks any of those must name the scopes.",
       "tags": [
         "API Keys"
       ],
@@ -325,7 +325,7 @@
             "type": "array",
             "required": false,
             "items": "string",
-            "description": "Optional list of scopes to restrict the key. Available: email:send, email:read, domain:read, domain:write, contact:read, contact:write, form:read, form:write, webhook:read, webhook:write, logs:read, inbound:read, inbound:delete, team:read, team:manage, billing:read, billing:manage, apikey:manage. If omitted the key gets the default set: everything except logs:read, inbound:read, inbound:delete, team:read, team:manage, billing:read, billing:manage and apikey:manage. Listing, creating or revoking keys through the API requires apikey:manage.",
+            "description": "Optional list of scopes to restrict the key. Available: email:send, email:read, domain:read, domain:write, contact:read, contact:write, form:read, form:write, webhook:read, webhook:write, logs:read, inbound:read, inbound:delete, team:read, team:manage, billing:read, billing:manage, apikey:manage. If omitted the key gets the default set: everything except logs:read, inbound:read, inbound:delete, team:read, team:manage, billing:read, billing:manage and apikey:manage. Listing, creating or revoking keys through the API requires apikey:manage, and a key can only give a new key scopes it has itself, never apikey:manage.",
             "example": "email:send,domain:read"
           }
         ]
@@ -354,7 +354,7 @@
       "group": "api-keys",
       "command": "revoke",
       "summary": "Revoke API key",
-      "description": "Permanently revoke an API key. Any requests using this key will be rejected immediately.",
+      "description": "Permanently revoke an API key. Any requests using this key will be rejected immediately. Requires the apikey:manage scope when called with an API key. Called with an API key, the request may only reach keys with no more access than that key: a new or edited key gets only scopes the calling key has, never apikey:manage, and a key with scopes the calling key lacks, or made by a member with a higher role than the calling key's creator, cannot be edited or revoked. The dashboard is not limited this way.",
       "tags": [
         "API Keys"
       ],
@@ -379,7 +379,7 @@
       "group": "api-keys",
       "command": "update",
       "summary": "Update API key",
-      "description": "Rename a key or change its scopes. The secret is unchanged; scope changes apply on the key's next request. Requires the apikey:manage scope when called with an API key.",
+      "description": "Rename a key or change its scopes. The secret is unchanged; scope changes apply on the key's next request. Requires the apikey:manage scope when called with an API key. Called with an API key, the request may only reach keys with no more access than that key: a new or edited key gets only scopes the calling key has, never apikey:manage, and a key with scopes the calling key lacks, or made by a member with a higher role than the calling key's creator, cannot be edited or revoked. The dashboard is not limited this way.",
       "tags": [
         "API Keys"
       ],

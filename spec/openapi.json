@@ -1874,7 +1874,7 @@
             "type": "string"
           },
           "scopes": {
-            "description": "Optional list of scopes to restrict the key. Available: email:send, email:read, domain:read, domain:write, contact:read, contact:write, form:read, form:write, webhook:read, webhook:write, logs:read, inbound:read, inbound:delete, team:read, team:manage, billing:read, billing:manage, apikey:manage. If omitted the key gets the default set: everything except logs:read, inbound:read, inbound:delete, team:read, team:manage, billing:read, billing:manage and apikey:manage. Listing, creating or revoking keys through the API requires apikey:manage.",
+            "description": "Optional list of scopes to restrict the key. Available: email:send, email:read, domain:read, domain:write, contact:read, contact:write, form:read, form:write, webhook:read, webhook:write, logs:read, inbound:read, inbound:delete, team:read, team:manage, billing:read, billing:manage, apikey:manage. If omitted the key gets the default set: everything except logs:read, inbound:read, inbound:delete, team:read, team:manage, billing:read, billing:manage and apikey:manage. Listing, creating or revoking keys through the API requires apikey:manage, and a key can only give a new key scopes it has itself, never apikey:manage.",
             "example": [
               "email:send",
               "domain:read"
@@ -7916,7 +7916,7 @@
         "x-sdk-method": "list"
       },
       "post": {
-        "description": "Generate a new API key. The full key value is returned only once in the response. Store it securely.",
+        "description": "Generate a new API key. The full key value is returned only once in the response. Store it securely. Requires the apikey:manage scope when called with an API key. Called with an API key, the request may only reach keys with no more access than that key: a new or edited key gets only scopes the calling key has, never apikey:manage, and a key with scopes the calling key lacks, or made by a member with a higher role than the calling key's creator, cannot be edited or revoked. The dashboard is not limited this way. Without scopes the new key gets the default set, so a calling key that lacks any of those must name the scopes.",
         "operationId": "createApiKey",
         "requestBody": {
           "content": {
@@ -7959,6 +7959,44 @@
             },
             "description": "Invalid or missing API key"
           },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "scope_not_grantable",
+                        "key_out_of_reach",
+                        "expiring_key",
+                        "key_revoked",
+                        "missing_scope"
+                      ],
+                      "type": "string"
+                    },
+                    "error": {
+                      "example": "An API key can only grant scopes it has itself, and never apikey:manage. Not allowed: apikey:manage. Name fewer scopes, or create the key in the dashboard.",
+                      "type": "string"
+                    },
+                    "scopes": {
+                      "example": [
+                        "apikey:manage"
+                      ],
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Forbidden. The caller is not a team owner or admin, or the calling API key reaches past its own access: code scope_not_grantable (scopes names what it may not grant), key_out_of_reach (the target key has the scopes named, or was made by a member with a higher role), expiring_key (a connected app's token cannot create keys), key_revoked or missing_scope (the calling key was revoked or lost apikey:manage while the request waited)."
+          },
           "429": {
             "content": {
               "application/json": {
@@ -7992,7 +8030,7 @@
     },
     "/v1/api-keys/{id}": {
       "delete": {
-        "description": "Permanently revoke an API key. Any requests using this key will be rejected immediately.",
+        "description": "Permanently revoke an API key. Any requests using this key will be rejected immediately. Requires the apikey:manage scope when called with an API key. Called with an API key, the request may only reach keys with no more access than that key: a new or edited key gets only scopes the calling key has, never apikey:manage, and a key with scopes the calling key lacks, or made by a member with a higher role than the calling key's creator, cannot be edited or revoked. The dashboard is not limited this way.",
         "operationId": "revokeApiKey",
         "parameters": [
           {
@@ -8031,6 +8069,16 @@
             },
             "description": "API key revoked"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad request - check your payload"
+          },
           "401": {
             "content": {
               "application/json": {
@@ -8040,6 +8088,44 @@
               }
             },
             "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "scope_not_grantable",
+                        "key_out_of_reach",
+                        "expiring_key",
+                        "key_revoked",
+                        "missing_scope"
+                      ],
+                      "type": "string"
+                    },
+                    "error": {
+                      "example": "An API key can only grant scopes it has itself, and never apikey:manage. Not allowed: apikey:manage. Name fewer scopes, or create the key in the dashboard.",
+                      "type": "string"
+                    },
+                    "scopes": {
+                      "example": [
+                        "apikey:manage"
+                      ],
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Forbidden. The caller is not a team owner or admin, or the calling API key reaches past its own access: code scope_not_grantable (scopes names what it may not grant), key_out_of_reach (the target key has the scopes named, or was made by a member with a higher role), expiring_key (a connected app's token cannot create keys), key_revoked or missing_scope (the calling key was revoked or lost apikey:manage while the request waited)."
           },
           "404": {
             "content": {
@@ -8082,7 +8168,7 @@
         "x-sdk-method": "revoke"
       },
       "patch": {
-        "description": "Rename a key or change its scopes. The secret is unchanged; scope changes apply on the key's next request. Requires the apikey:manage scope when called with an API key.",
+        "description": "Rename a key or change its scopes. The secret is unchanged; scope changes apply on the key's next request. Requires the apikey:manage scope when called with an API key. Called with an API key, the request may only reach keys with no more access than that key: a new or edited key gets only scopes the calling key has, never apikey:manage, and a key with scopes the calling key lacks, or made by a member with a higher role than the calling key's creator, cannot be edited or revoked. The dashboard is not limited this way.",
         "operationId": "updateApiKey",
         "parameters": [
           {
@@ -8123,24 +8209,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "keyPrefix": {
-                      "type": "string"
-                    },
-                    "name": {
-                      "type": "string"
-                    },
-                    "scopes": {
-                      "items": {
-                        "type": "string"
-                      },
-                      "type": "array"
-                    }
-                  },
-                  "type": "object"
+                  "$ref": "#/components/schemas/ApiKey"
                 }
               }
             },
@@ -8170,11 +8239,39 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "scope_not_grantable",
+                        "key_out_of_reach",
+                        "expiring_key",
+                        "key_revoked",
+                        "missing_scope"
+                      ],
+                      "type": "string"
+                    },
+                    "error": {
+                      "example": "An API key can only grant scopes it has itself, and never apikey:manage. Not allowed: apikey:manage. Name fewer scopes, or create the key in the dashboard.",
+                      "type": "string"
+                    },
+                    "scopes": {
+                      "example": [
+                        "apikey:manage"
+                      ],
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
                 }
               }
             },
-            "description": "Forbidden - domain not verified or insufficient permissions"
+            "description": "Forbidden. The caller is not a team owner or admin, or the calling API key reaches past its own access: code scope_not_grantable (scopes names what it may not grant), key_out_of_reach (the target key has the scopes named, or was made by a member with a higher role), expiring_key (a connected app's token cannot create keys), key_revoked or missing_scope (the calling key was revoked or lost apikey:manage while the request waited)."
           },
           "404": {
             "content": {
