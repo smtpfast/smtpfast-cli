@@ -22828,7 +22828,7 @@
         "x-sdk-method": "list"
       },
       "post": {
-        "description": "Emails an invitation link that is valid for 7 days. The person signs in with the invited address to accept. Inviting the same address again sends a fresh link. Needs a paid plan and a free seat. Limited to 20 invitations an hour per inviter and 3 an hour per address. Owner or admin only; requires the team:manage scope.",
+        "description": "Emails an invitation link that is valid for 7 days. The person signs in with the invited address to accept. Inviting the same address again sends a fresh link. Needs a paid plan and a free seat. Limited to 20 invitations an hour per inviter and 3 an hour per address. Owner or admin only; requires the team:manage scope. An API key can only invite members (403 key_out_of_reach for an admin); invite admins in the dashboard.",
         "operationId": "createTeamInvite",
         "requestBody": {
           "content": {
@@ -22892,11 +22892,37 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "key_out_of_reach",
+                        "key_revoked",
+                        "missing_scope"
+                      ],
+                      "type": "string"
+                    },
+                    "error": {
+                      "example": "An API key can only remove or change members whose keys have no more access than itself. That member's keys also have: apikey:manage. Do this in the dashboard.",
+                      "type": "string"
+                    },
+                    "scopes": {
+                      "example": [
+                        "apikey:manage"
+                      ],
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
                 }
               }
             },
-            "description": "Forbidden - domain not verified or insufficient permissions"
+            "description": "Forbidden. The caller is not an owner or admin, the plan has no free seat, or an API key asked for an admin (code key_out_of_reach)."
           },
           "409": {
             "content": {
@@ -23206,7 +23232,7 @@
     },
     "/v1/team/members/{id}": {
       "delete": {
-        "description": "Removes the person from the team and revokes their API keys for it. Team resources stay. You cannot remove yourself this way, and the last owner cannot be removed. The owner who pays for the team cannot be removed until they transfer ownership (409). Owner or admin only; requires the team:manage scope.",
+        "description": "Removes the person from the team and revokes their API keys for it. Team resources stay. You cannot remove yourself this way, and the last owner cannot be removed. The owner who pays for the team cannot be removed until they transfer ownership (409). Owner or admin only; requires the team:manage scope. Called with an API key, the member must be within the key's own access: every live key and connected app of the member has only scopes the calling key has, and the member is not an owner. A key never makes someone an admin or an owner. The dashboard is not limited this way.",
         "operationId": "removeTeamMember",
         "parameters": [
           {
@@ -23255,11 +23281,37 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "key_out_of_reach",
+                        "key_revoked",
+                        "missing_scope"
+                      ],
+                      "type": "string"
+                    },
+                    "error": {
+                      "example": "An API key can only remove or change members whose keys have no more access than itself. That member's keys also have: apikey:manage. Do this in the dashboard.",
+                      "type": "string"
+                    },
+                    "scopes": {
+                      "example": [
+                        "apikey:manage"
+                      ],
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
                 }
               }
             },
-            "description": "Forbidden - domain not verified or insufficient permissions"
+            "description": "Forbidden. The caller may not change this member: their role does not allow it, or the calling API key reaches past its own access. code key_out_of_reach (scopes names what the member's keys have beyond the calling key; empty for an owner, or for a role above member), key_revoked or missing_scope (the calling key was revoked or lost team:manage while the request waited)."
           },
           "404": {
             "content": {
@@ -23313,7 +23365,7 @@
         "x-sdk-method": "remove"
       },
       "patch": {
-        "description": "Send role, can_manage_billing, or both. Owners and admins can change roles under the same rules as the Members page (an admin cannot touch an owner, a team keeps at least one owner). The owner who pays for a team with several owners keeps the owner role until they transfer ownership: changing it answers 409. Only an owner can change billing access. The member gets an email when their role changes. Requires the team:manage scope.",
+        "description": "Send role, can_manage_billing, or both. Owners and admins can change roles under the same rules as the Members page (an admin cannot touch an owner, a team keeps at least one owner). The owner who pays for a team with several owners keeps the owner role until they transfer ownership: changing it answers 409. Only an owner can change billing access. The member gets an email when their role changes. Requires the team:manage scope. Called with an API key, the member must be within the key's own access: every live key and connected app of the member has only scopes the calling key has, and the member is not an owner. A key never makes someone an admin or an owner. The dashboard is not limited this way.",
         "operationId": "updateTeamMember",
         "parameters": [
           {
@@ -23385,11 +23437,37 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "key_out_of_reach",
+                        "key_revoked",
+                        "missing_scope"
+                      ],
+                      "type": "string"
+                    },
+                    "error": {
+                      "example": "An API key can only remove or change members whose keys have no more access than itself. That member's keys also have: apikey:manage. Do this in the dashboard.",
+                      "type": "string"
+                    },
+                    "scopes": {
+                      "example": [
+                        "apikey:manage"
+                      ],
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
                 }
               }
             },
-            "description": "Forbidden - domain not verified or insufficient permissions"
+            "description": "Forbidden. The caller may not change this member: their role does not allow it, or the calling API key reaches past its own access. code key_out_of_reach (scopes names what the member's keys have beyond the calling key; empty for an owner, or for a role above member), key_revoked or missing_scope (the calling key was revoked or lost team:manage while the request waited)."
           },
           "404": {
             "content": {

@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "3bb4240c69546fe870ae0376a88eb504f9a1239187468611c4cca2df9d61ad2f",
+  "specHash": "063bd30006827c27c50780da18444bb48a5d7cc3bb5c5b3530f1c44aa9b1b655",
   "operationCount": 162,
   "groups": [
     {
@@ -6162,7 +6162,7 @@
       "group": "team",
       "command": "create-invite",
       "summary": "Invite someone to the team",
-      "description": "Emails an invitation link that is valid for 7 days. The person signs in with the invited address to accept. Inviting the same address again sends a fresh link. Needs a paid plan and a free seat. Limited to 20 invitations an hour per inviter and 3 an hour per address. Owner or admin only; requires the team:manage scope.",
+      "description": "Emails an invitation link that is valid for 7 days. The person signs in with the invited address to accept. Inviting the same address again sends a fresh link. Needs a paid plan and a free seat. Limited to 20 invitations an hour per inviter and 3 an hour per address. Owner or admin only; requires the team:manage scope. An API key can only invite members (403 key_out_of_reach for an admin); invite admins in the dashboard.",
       "tags": [
         "Team"
       ],
@@ -6260,7 +6260,7 @@
       "group": "team",
       "command": "remove-member",
       "summary": "Remove a member",
-      "description": "Removes the person from the team and revokes their API keys for it. Team resources stay. You cannot remove yourself this way, and the last owner cannot be removed. The owner who pays for the team cannot be removed until they transfer ownership (409). Owner or admin only; requires the team:manage scope.",
+      "description": "Removes the person from the team and revokes their API keys for it. Team resources stay. You cannot remove yourself this way, and the last owner cannot be removed. The owner who pays for the team cannot be removed until they transfer ownership (409). Owner or admin only; requires the team:manage scope. Called with an API key, the member must be within the key's own access: every live key and connected app of the member has only scopes the calling key has, and the member is not an owner. A key never makes someone an admin or an owner. The dashboard is not limited this way.",
       "tags": [
         "Team"
       ],
@@ -6310,7 +6310,7 @@
       "group": "team",
       "command": "update-member",
       "summary": "Change a member's role or billing access",
-      "description": "Send role, can_manage_billing, or both. Owners and admins can change roles under the same rules as the Members page (an admin cannot touch an owner, a team keeps at least one owner). The owner who pays for a team with several owners keeps the owner role until they transfer ownership: changing it answers 409. Only an owner can change billing access. The member gets an email when their role changes. Requires the team:manage scope.",
+      "description": "Send role, can_manage_billing, or both. Owners and admins can change roles under the same rules as the Members page (an admin cannot touch an owner, a team keeps at least one owner). The owner who pays for a team with several owners keeps the owner role until they transfer ownership: changing it answers 409. Only an owner can change billing access. The member gets an email when their role changes. Requires the team:manage scope. Called with an API key, the member must be within the key's own access: every live key and connected app of the member has only scopes the calling key has, and the member is not an owner. A key never makes someone an admin or an owner. The dashboard is not limited this way.",
       "tags": [
         "Team"
       ],
