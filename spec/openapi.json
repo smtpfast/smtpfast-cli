@@ -5304,7 +5304,7 @@
             "type": "object"
           },
           "text": {
-            "description": "Plain text fallback body. Supports the same `{{unsubscribe_url}}` placeholder as the HTML body.",
+            "description": "Plain text fallback body. Supports the same `{{unsubscribe_url}}` placeholder as the HTML body. When left out, a text part is generated from the html: from its first 512 KB (524,288 characters), with a closing line that points to the HTML version when it is longer.",
             "example": "Hello! (plain text fallback)",
             "type": "string"
           },

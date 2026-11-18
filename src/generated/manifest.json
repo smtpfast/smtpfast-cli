@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "410364e4260444588bab3c6fe799f171bbf9eb7ed926dbb4ff7c4faafb460518",
+  "specHash": "4cb635a900c4cd9aadf401db45cd92af5bae5741b2d7c202d16c859c5a9516e4",
   "operationCount": 162,
   "groups": [
     {
@@ -2823,7 +2823,7 @@
             "in": "body",
             "type": "string",
             "required": false,
-            "description": "Plain text fallback body. Supports the same `{{unsubscribe_url}}` placeholder as the HTML body.",
+            "description": "Plain text fallback body. Supports the same `{{unsubscribe_url}}` placeholder as the HTML body. When left out, a text part is generated from the html: from its first 512 KB (524,288 characters), with a closing line that points to the HTML version when it is longer.",
             "example": "Hello! (plain text fallback)"
           },
           {
