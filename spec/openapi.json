@@ -1910,6 +1910,7 @@
             "type": "string"
           },
           "html": {
+            "description": "HTML body, at most 100,000 characters. HTML with merge tags is parsed to place each value, so it must stay within 131,072 characters, 10,000 tags, 300 merge tags, 256 levels of nesting and 256 attributes on one element, without heavily misplaced markup. Over that, saving or sending it answers 422 with code html_too_complex.",
             "type": [
               "string",
               "null"
@@ -2302,7 +2303,7 @@
             ]
           },
           "html": {
-            "description": "The HTML body. Variables are written {{{KEY}}}, optionally with an inline fallback: {{{KEY|default}}}.",
+            "description": "The HTML body. Variables are written {{{KEY}}}, optionally with an inline fallback: {{{KEY|default}}}. HTML with merge tags is parsed to place each value, so it must stay within 131,072 characters, 10,000 tags, 300 merge tags, 256 levels of nesting and 256 attributes on one element, without heavily misplaced markup. Over that, saving or sending it answers 422 with code html_too_complex.",
             "maxLength": 100000,
             "type": "string"
           },
@@ -6495,7 +6496,7 @@
             ]
           },
           "html": {
-            "description": "The HTML body. Variables are written {{{KEY}}}, optionally with an inline fallback: {{{KEY|default}}}.",
+            "description": "The HTML body. Variables are written {{{KEY}}}, optionally with an inline fallback: {{{KEY|default}}}. HTML with merge tags is parsed to place each value, so it must stay within 131,072 characters, 10,000 tags, 300 merge tags, 256 levels of nesting and 256 attributes on one element, without heavily misplaced markup. Over that, saving or sending it answers 422 with code html_too_complex.",
             "maxLength": 100000,
             "type": [
               "string",

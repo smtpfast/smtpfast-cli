@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "063bd30006827c27c50780da18444bb48a5d7cc3bb5c5b3530f1c44aa9b1b655",
+  "specHash": "410364e4260444588bab3c6fe799f171bbf9eb7ed926dbb4ff7c4faafb460518",
   "operationCount": 162,
   "groups": [
     {
@@ -711,6 +711,7 @@
             "in": "body",
             "type": "string",
             "required": false,
+            "description": "HTML body, at most 100,000 characters. HTML with merge tags is parsed to place each value, so it must stay within 131,072 characters, 10,000 tags, 300 merge tags, 256 levels of nesting and 256 attributes on one element, without heavily misplaced markup. Over that, saving or sending it answers 422 with code html_too_complex.",
             "nullable": true
           },
           {
@@ -1205,6 +1206,7 @@
             "in": "body",
             "type": "string",
             "required": false,
+            "description": "HTML body, at most 100,000 characters. HTML with merge tags is parsed to place each value, so it must stay within 131,072 characters, 10,000 tags, 300 merge tags, 256 levels of nesting and 256 attributes on one element, without heavily misplaced markup. Over that, saving or sending it answers 422 with code html_too_complex.",
             "nullable": true
           },
           {
@@ -6407,7 +6409,7 @@
             "in": "body",
             "type": "string",
             "required": false,
-            "description": "The HTML body. Variables are written {{{KEY}}}, optionally with an inline fallback: {{{KEY|default}}}."
+            "description": "The HTML body. Variables are written {{{KEY}}}, optionally with an inline fallback: {{{KEY|default}}}. HTML with merge tags is parsed to place each value, so it must stay within 131,072 characters, 10,000 tags, 300 merge tags, 256 levels of nesting and 256 attributes on one element, without heavily misplaced markup. Over that, saving or sending it answers 422 with code html_too_complex."
           },
           {
             "name": "markdown",
@@ -6710,7 +6712,7 @@
             "in": "body",
             "type": "string",
             "required": false,
-            "description": "The HTML body. Variables are written {{{KEY}}}, optionally with an inline fallback: {{{KEY|default}}}.",
+            "description": "The HTML body. Variables are written {{{KEY}}}, optionally with an inline fallback: {{{KEY|default}}}. HTML with merge tags is parsed to place each value, so it must stay within 131,072 characters, 10,000 tags, 300 merge tags, 256 levels of nesting and 256 attributes on one element, without heavily misplaced markup. Over that, saving or sending it answers 422 with code html_too_complex.",
             "nullable": true
           },
           {
