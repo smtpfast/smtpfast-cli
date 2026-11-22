@@ -5120,7 +5120,7 @@
         "description": "from and subject are required, unless a template supplies them. Give a body as html and/or text, or name a published template; not both.",
         "properties": {
           "attachments": {
-            "description": "Up to 10 files, base64 encoded, 25 MB per message in total. A content_id makes the part inline: reference it from the HTML as cid:<content_id>.",
+            "description": "Up to 10 files, base64 encoded, 10 MB each and 25 MB per message in total (413 over a limit). A content_id makes the part inline: reference it from the HTML as cid:<content_id>. On POST /v1/emails, a file whose name ends in an extension Amazon SES blocks (.exe, .bat, .js, .tmp and others; see https://docs.aws.amazon.com/ses/latest/dg/attachments.html) is refused with 422, and nothing is sent.",
             "items": {
               "properties": {
                 "content": {
@@ -13560,6 +13560,26 @@
               }
             },
             "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Payload too large - over a size limit"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The request is well formed but cannot be carried out in the current state, for example an unpublished template"
           },
           "429": {
             "content": {

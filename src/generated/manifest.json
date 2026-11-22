@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "4cb635a900c4cd9aadf401db45cd92af5bae5741b2d7c202d16c859c5a9516e4",
+  "specHash": "2ebd761cab36bcd6ec4d8898abaf869a7f5e5a529a2bd483636ee94a9ce946c1",
   "operationCount": 162,
   "groups": [
     {
@@ -2711,7 +2711,7 @@
             "type": "array",
             "required": false,
             "items": "object",
-            "description": "Up to 10 files, base64 encoded, 25 MB per message in total. A content_id makes the part inline: reference it from the HTML as cid:<content_id>."
+            "description": "Up to 10 files, base64 encoded, 10 MB each and 25 MB per message in total (413 over a limit). A content_id makes the part inline: reference it from the HTML as cid:<content_id>. On POST /v1/emails, a file whose name ends in an extension Amazon SES blocks (.exe, .bat, .js, .tmp and others; see https://docs.aws.amazon.com/ses/latest/dg/attachments.html) is refused with 422, and nothing is sent."
           },
           {
             "name": "bcc",
