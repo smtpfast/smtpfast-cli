@@ -367,7 +367,7 @@
         "type": "object"
       },
       "BatchSendRequest": {
-        "description": "JSON array of email objects (1 to 100). Each item accepts the same fields as POST /v1/emails.",
+        "description": "JSON array of email objects (1 to 100). Each item accepts the same fields as POST /v1/emails, attachments included, with the same per-message limits. All the attachments in one batch together can be at most 25 MB.",
         "example": [
           {
             "from": "hello@yourapp.com",
@@ -5120,7 +5120,7 @@
         "description": "from and subject are required, unless a template supplies them. Give a body as html and/or text, or name a published template; not both.",
         "properties": {
           "attachments": {
-            "description": "Up to 10 files, base64 encoded, 10 MB each and 25 MB per message in total (413 over a limit). A content_id makes the part inline: reference it from the HTML as cid:<content_id>. On POST /v1/emails, a file whose name ends in an extension Amazon SES blocks (.exe, .bat, .js, .tmp and others; see https://docs.aws.amazon.com/ses/latest/dg/attachments.html) is refused with 422, and nothing is sent.",
+            "description": "Up to 10 files, base64 encoded, 10 MB each and 25 MB per message in total (413 over a limit). A content_id makes the part inline: reference it from the HTML as cid:<content_id>. On POST /v1/emails and on each batch item, a file whose name ends in an extension Amazon SES blocks (.exe, .bat, .js, .tmp and others; see https://docs.aws.amazon.com/ses/latest/dg/attachments.html) is refused with 422, and nothing is sent.",
             "items": {
               "properties": {
                 "content": {
@@ -13614,7 +13614,7 @@
     },
     "/v1/emails/batch": {
       "post": {
-        "description": "Queue up to 100 emails in a single request. The body is a JSON array of email objects, each using the same shape as the single-send endpoint. Validation runs on every item before any are queued — a malformed item rejects the whole batch with 400. Suppressed recipients (to, cc and bcc) are dropped per row; a row left with no deliverable To recipient is recorded with status \"failed\". The batch is accepted whole or not at all: every email is recorded and queued, or none is, so there is no partial success to reconcile. A 4xx means nothing was queued. After a 5xx or a lost response, retry with the same Idempotency-Key: you get the first answer if the batch was accepted, or a fresh attempt if it was not.",
+        "description": "Queue up to 100 emails in a single request. The body is a JSON array of email objects, each using the same shape as the single-send endpoint, attachments included. Validation runs on every item before any are queued: a malformed item rejects the whole batch with 400. Each item's attachments get the checks of POST /v1/emails (413 over a size limit, 422 for a file type Amazon SES blocks), and the error names the item by its index; all the attachments in one batch together can be at most 25 MB (413). Suppressed recipients (to, cc and bcc) are dropped per row; a row left with no deliverable To recipient is recorded with status \"failed\". The batch is accepted whole or not at all: every email is recorded and queued, or none is, so there is no partial success to reconcile. A 4xx means nothing was queued. After a 5xx or a lost response, retry with the same Idempotency-Key: you get the first answer if the batch was accepted, or a fresh attempt if it was not.",
         "operationId": "sendEmailBatch",
         "parameters": [
           {
@@ -13688,6 +13688,16 @@
               }
             },
             "description": "Conflict - the resource already exists or changed meanwhile"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Payload too large - over a size limit"
           },
           "422": {
             "content": {

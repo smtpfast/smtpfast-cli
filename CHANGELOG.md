@@ -2,6 +2,12 @@
 
 All notable changes to the smtpfast CLI. The spec sync workflow adds an entry for each release it publishes.
 
+## [0.17.11] - 2026-11-23
+
+Updated from the live API spec.
+
+The API spec changed, but no command, argument or flag did. Help text may have changed.
+
 ## [0.17.10] - 2026-11-22
 
 Updated from the live API spec.
