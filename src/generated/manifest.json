@@ -2,8 +2,8 @@
   "manifestVersion": 1,
   "specTitle": "SMTPfast API",
   "specVersion": "1.0.0",
-  "specHash": "3feb7b84787de35094b4d387566244aba56b9e91fc05f362bcbb9582933952b4",
-  "operationCount": 162,
+  "specHash": "62b35b043a2c3aeb9d14d902ed858102294c73d64f8b7ffcb35cc5cb9a39ce73",
+  "operationCount": 169,
   "groups": [
     {
       "name": "account",
@@ -80,6 +80,10 @@
     {
       "name": "templates",
       "description": "Reusable emails with variables, Resend-compatible: draft, publish, then send by id or alias"
+    },
+    {
+      "name": "topics",
+      "description": "Manage subscribers, subscription status, and custom properties"
     },
     {
       "name": "webhooks",
@@ -327,6 +331,19 @@
             "items": "string",
             "description": "Optional list of scopes to restrict the key. Available: email:send, email:read, domain:read, domain:write, contact:read, contact:write, form:read, form:write, webhook:read, webhook:write, logs:read, inbound:read, inbound:delete, team:read, team:manage, billing:read, billing:manage, apikey:manage. If omitted the key gets the default set: everything except logs:read, inbound:read, inbound:delete, team:read, team:manage, billing:read, billing:manage and apikey:manage. Listing, creating or revoking keys through the API requires apikey:manage, and a key can only give a new key scopes it has itself, never apikey:manage.",
             "example": "email:send,domain:read"
+          },
+          {
+            "name": "smtp_category",
+            "flag": "smtp-category",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Not in Resend. The category of mail sent over SMTP with this key when the message has no X-SMTPfast-Category header. transactional: no List-Unsubscribe header, and a recipient's marketing opt-out does not block it (use it for a key that only sends sign-in, password-reset and receipt mail, for example from Supabase Auth or Firebase). marketing: the one-click unsubscribe header and every opt-out apply (use it for newsletters). A message with an unsubscribe placeholder is always marketing. Sends through the HTTP API are not affected; they use the category field. Defaults to marketing. Never set transactional on a key that sends newsletters or promotions.",
+            "enum": [
+              "transactional",
+              "marketing"
+            ],
+            "default": "marketing"
           }
         ]
       }
@@ -379,7 +396,7 @@
       "group": "api-keys",
       "command": "update",
       "summary": "Update API key",
-      "description": "Rename a key or change its scopes. The secret is unchanged; scope changes apply on the key's next request. Requires the apikey:manage scope when called with an API key. Called with an API key, the request may only reach keys with no more access than that key: a new or edited key gets only scopes the calling key has, never apikey:manage, and a key with scopes the calling key lacks, or made by a member with a higher role than the calling key's creator, cannot be edited or revoked. The dashboard is not limited this way.",
+      "description": "Rename a key, change its scopes, or set the category of its unlabelled SMTP mail (smtp_category). The secret is unchanged; scope changes apply on the key's next request. Requires the apikey:manage scope when called with an API key. Called with an API key, the request may only reach keys with no more access than that key: a new or edited key gets only scopes the calling key has, never apikey:manage, and a key with scopes the calling key lacks, or made by a member with a higher role than the calling key's creator, cannot be edited or revoked. The dashboard is not limited this way.",
       "tags": [
         "API Keys"
       ],
@@ -415,6 +432,18 @@
             "required": false,
             "items": "string",
             "description": "Replaces the key's scopes"
+          },
+          {
+            "name": "smtp_category",
+            "flag": "smtp-category",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Not in Resend. The category of mail sent over SMTP with this key when the message has no X-SMTPfast-Category header. transactional: no List-Unsubscribe header, and a recipient's marketing opt-out does not block it (use it for a key that only sends sign-in, password-reset and receipt mail, for example from Supabase Auth or Firebase). marketing: the one-click unsubscribe header and every opt-out apply (use it for newsletters). A message with an unsubscribe placeholder is always marketing. Sends through the HTTP API are not affected; they use the category field. Defaults to marketing. Never set transactional on a key that sends newsletters or promotions.",
+            "enum": [
+              "transactional",
+              "marketing"
+            ]
           }
         ]
       }
@@ -589,7 +618,7 @@
       "group": "broadcasts",
       "command": "audience",
       "summary": "Preview a broadcast audience",
-      "description": "How many contacts a broadcast to all contacts, or to one segment, would reach after unsubscribes, suppressions and invalid addresses are skipped, plus the plan's broadcast allowance this month. Not in Resend. Requires the email:read scope.",
+      "description": "How many contacts a broadcast to all contacts, or to one segment, and optionally of one topic, would reach after unsubscribes, suppressions and invalid addresses are skipped, plus the plan's broadcast allowance this month. Not in Resend. Requires the email:read scope.",
       "tags": [
         "Broadcasts"
       ],
@@ -602,6 +631,14 @@
           "type": "string",
           "required": false,
           "description": "Preview one segment instead of all contacts"
+        },
+        {
+          "name": "topic_id",
+          "flag": "topic-id",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Count only contacts subscribed to this topic"
         }
       ],
       "headerParams": [],
@@ -789,6 +826,16 @@
             "in": "body",
             "type": "string",
             "required": false,
+            "nullable": true
+          },
+          {
+            "name": "topic_id",
+            "flag": "topic-id",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Resend-compatible. Only contacts subscribed to this topic get the broadcast (their own opt-in, or the topic default), and its unsubscribe link and one-click header remove that topic only. Contacts who unsubscribed from everything and suppressed addresses are always left out. Omit it, or send null, to send to every subscribed contact in the audience.",
+            "example": "clx_topic123",
             "nullable": true
           },
           {
@@ -1284,6 +1331,16 @@
             "in": "body",
             "type": "string",
             "required": false,
+            "nullable": true
+          },
+          {
+            "name": "topic_id",
+            "flag": "topic-id",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Resend-compatible. Only contacts subscribed to this topic get the broadcast (their own opt-in, or the topic default), and its unsubscribe link and one-click header remove that topic only. Contacts who unsubscribed from everything and suppressed addresses are always left out. Omit it, or send null, to send to every subscribed contact in the audience.",
+            "example": "clx_topic123",
             "nullable": true
           },
           {
@@ -2001,6 +2058,14 @@
             "unsubscribed"
           ],
           "default": "all"
+        },
+        {
+          "name": "topic_id",
+          "flag": "topic-id",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "Not in Resend. Only contacts subscribed to this topic: their own opt-in, or the topic default when they never chose. Combine with status=subscribed for the contacts a topic broadcast can reach."
         }
       ],
       "headerParams": [],
@@ -2047,6 +2112,31 @@
       "command": "segments",
       "summary": "List a contact's segments",
       "description": "The segments one contact belongs to. The contact can be named by id or email address, like Resend. Requires the contact:read scope.",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The contact ID or email address"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listContactTopics",
+      "method": "GET",
+      "path": "/v1/contacts/{id}/topics",
+      "group": "contacts",
+      "command": "topics",
+      "summary": "List a contact's topics",
+      "description": "Every topic of the team with this contact's subscription: their own choice, or the topic default when they never chose (source and updated_at are null then). The contact can be named by id or email address. Resend-compatible. Requires the contact:read scope.",
       "tags": [
         "Contacts"
       ],
@@ -2149,6 +2239,45 @@
             "type": "boolean",
             "required": false,
             "example": "true"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "updateContactTopics",
+      "method": "PATCH",
+      "path": "/v1/contacts/{id}/topics",
+      "group": "contacts",
+      "command": "update-topics",
+      "summary": "Update a contact's topics",
+      "description": "Opt the contact in to or out of topics. Topics not named keep what they had. An opt-in never overrides an unsubscribe from everything or a suppression. The body can also be the bare array, as in Resend's cURL example. Resend-compatible. Requires the contact:write scope.",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The contact ID or email address"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "topics",
+            "flag": "topics",
+            "in": "body",
+            "type": "array",
+            "required": true,
+            "items": "object"
           }
         ]
       }
@@ -2728,7 +2857,7 @@
             "in": "body",
             "type": "string",
             "required": false,
-            "description": "Defaults to marketing. Label receipts, password resets and other transactional mail transactional so a marketing opt-out does not block them; unlabelled mail is treated as marketing. Over SMTP, set the X-SMTPfast-Category header instead; it is removed before sending. An email whose html or text (for a template, the rendered body) contains an unsubscribe placeholder is always marketing. A marketing email carries the one-click List-Unsubscribe header and is not sent to anyone who unsubscribed. A transactional email has no List-Unsubscribe header and still goes to addresses whose suppression has scope marketing (a recipient's own unsubscribe, or a manual suppression created with scope marketing), but not to addresses with scope all: hard bounces, complaints, and manual suppressions, which block everything by default. Transactional means mail the recipient needs because of an action or account; labelling promotions transactional is not allowed. Any other value is refused with 400.",
+            "description": "Defaults to marketing. Label receipts, password resets and other transactional mail transactional so a marketing opt-out does not block them; unlabelled mail is treated as marketing. Over SMTP, set the X-SMTPfast-Category header instead; it is removed before sending. An SMTP message without the header takes the category set on its API key (smtp_category). An email whose html or text (for a template, the rendered body) contains an unsubscribe placeholder is always marketing. A marketing email carries the one-click List-Unsubscribe header and is not sent to anyone who unsubscribed. A transactional email has no List-Unsubscribe header and still goes to addresses whose suppression has scope marketing (a recipient's own unsubscribe, or a manual suppression created with scope marketing), but not to addresses with scope all: hard bounces, complaints, and manual suppressions, which block everything by default. Transactional means mail the recipient needs because of an action or account; labelling promotions transactional is not allowed. Any other value is refused with 400.",
             "enum": [
               "transactional",
               "marketing"
@@ -3004,7 +3133,7 @@
       "group": "forms",
       "command": "approve-pending",
       "summary": "Approve a pending signup",
-      "description": "Confirm one pending signup without waiting for the link click. It becomes a contact, fires contact.subscribed and gets the welcome email if enabled. Approving one that is already confirmed returns 200 with already_confirmed. Returns 409 when the form is no longer active. Requires the form:write scope.",
+      "description": "Confirm one pending signup without waiting for the link click. It becomes a contact, fires contact.subscribed and gets the welcome email if enabled. Approving one that is already confirmed returns 200 with already_confirmed. Returns 409 when the form is no longer active, or when the address has unsubscribed or is suppressed since it signed up (the pending signup is then removed). Requires the form:write scope.",
       "tags": [
         "Forms"
       ],
@@ -3112,6 +3241,15 @@
             "nullable": true
           },
           {
+            "name": "consent_text",
+            "flag": "consent-text",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Shown under the form and stored with each topic opt-in.",
+            "nullable": true
+          },
+          {
             "name": "double_opt_in",
             "flag": "double-opt-in",
             "in": "body",
@@ -3158,6 +3296,15 @@
             "type": "string",
             "required": false,
             "example": "Thanks for subscribing!"
+          },
+          {
+            "name": "topic_id",
+            "flag": "topic-id",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "A signup subscribes the contact to this topic only. Existing contacts can sign up too, and nothing else about them changes; a contact who unsubscribed from everything stays unsubscribed. null removes the topic, and the form adds contacts to the list as before.",
+            "nullable": true
           },
           {
             "name": "turnstile_secret_key",
@@ -3498,6 +3645,15 @@
             "nullable": true
           },
           {
+            "name": "consent_text",
+            "flag": "consent-text",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "Shown under the form and stored with each topic opt-in.",
+            "nullable": true
+          },
+          {
             "name": "double_opt_in",
             "flag": "double-opt-in",
             "in": "body",
@@ -3538,6 +3694,15 @@
             "in": "body",
             "type": "string",
             "required": false
+          },
+          {
+            "name": "topic_id",
+            "flag": "topic-id",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "A signup subscribes the contact to this topic only. Existing contacts can sign up too, and nothing else about them changes; a contact who unsubscribed from everything stays unsubscribed. null removes the topic, and the form adds contacts to the list as before.",
+            "nullable": true
           },
           {
             "name": "turnstile_secret_key",
@@ -6778,6 +6943,205 @@
             "required": false,
             "items": "object",
             "nullable": true
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "createTopic",
+      "method": "POST",
+      "path": "/v1/topics",
+      "group": "topics",
+      "command": "create",
+      "summary": "Create a topic",
+      "description": "Resend-compatible. default_subscription is the subscription of a contact that never chose: opt_in means every contact gets the topic's broadcasts unless they opt out; opt_out means nobody does unless they opt in. It cannot be changed later. Set subscribe_existing_contacts (not in Resend) on an opt_out topic to opt in every contact who is subscribed and not suppressed now. Requires the contact:write scope.",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "default_subscription",
+            "flag": "default-subscription",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "description": "The subscription of a contact that never chose. Fixed at creation.",
+            "enum": [
+              "opt_in",
+              "opt_out"
+            ]
+          },
+          {
+            "name": "description",
+            "flag": "description",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "New features, about once a month",
+            "nullable": true
+          },
+          {
+            "name": "name",
+            "flag": "name",
+            "in": "body",
+            "type": "string",
+            "required": true,
+            "example": "Product updates"
+          },
+          {
+            "name": "subscribe_existing_contacts",
+            "flag": "subscribe-existing-contacts",
+            "in": "body",
+            "type": "boolean",
+            "required": false,
+            "description": "Not in Resend. Only with default_subscription opt_out: opt in every contact who is subscribed and not suppressed now.",
+            "default": false
+          },
+          {
+            "name": "visibility",
+            "flag": "visibility",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "public: on every contact's preference page. private: only on the page of contacts opted in.",
+            "enum": [
+              "public",
+              "private"
+            ],
+            "default": "private"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "deleteTopic",
+      "method": "DELETE",
+      "path": "/v1/topics/{id}",
+      "group": "topics",
+      "command": "delete",
+      "summary": "Delete a topic",
+      "description": "Delete a topic and every contact's choice about it. A topic that a form signs people up to, or that a broadcast not yet sent belongs to, cannot be deleted (409); sent broadcasts lose the label. Requires the contact:write scope.",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The topic ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "getTopic",
+      "method": "GET",
+      "path": "/v1/topics/{id}",
+      "group": "topics",
+      "command": "get",
+      "summary": "Retrieve a topic",
+      "description": "Resend-compatible. Requires the contact:read scope.",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The topic ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "listTopics",
+      "method": "GET",
+      "path": "/v1/topics",
+      "group": "topics",
+      "command": "list",
+      "summary": "List topics",
+      "description": "Every topic of the team, oldest first. Resend-compatible. Requires the contact:read scope.",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [],
+      "queryParams": [],
+      "headerParams": [],
+      "body": null
+    },
+    {
+      "operationId": "updateTopic",
+      "method": "PATCH",
+      "path": "/v1/topics/{id}",
+      "group": "topics",
+      "command": "update",
+      "summary": "Update a topic",
+      "description": "Change the name, description or visibility. Only the fields sent change; default_subscription cannot be changed. Resend-compatible. Requires the contact:write scope.",
+      "tags": [
+        "Contacts"
+      ],
+      "pathParams": [
+        {
+          "name": "id",
+          "flag": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "The topic ID"
+        }
+      ],
+      "queryParams": [],
+      "headerParams": [],
+      "body": {
+        "required": true,
+        "contentType": "application/json",
+        "type": "object",
+        "fields": [
+          {
+            "name": "description",
+            "flag": "description",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "New features, about once a month",
+            "nullable": true
+          },
+          {
+            "name": "name",
+            "flag": "name",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "example": "Product updates"
+          },
+          {
+            "name": "visibility",
+            "flag": "visibility",
+            "in": "body",
+            "type": "string",
+            "required": false,
+            "description": "public: on every contact's preference page. private: only on the page of contacts opted in.",
+            "enum": [
+              "public",
+              "private"
+            ]
           }
         ]
       }

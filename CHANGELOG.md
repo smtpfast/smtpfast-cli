@@ -2,6 +2,31 @@
 
 All notable changes to the smtpfast CLI. The spec sync workflow adds an entry for each release it publishes.
 
+## [0.18.0] - 2026-11-23
+
+Updated from the live API spec.
+
+### New commands
+
+- `smtpfast contacts topics` (GET /v1/contacts/{id}/topics): List a contact's topics
+- `smtpfast contacts update-topics` (PATCH /v1/contacts/{id}/topics): Update a contact's topics
+- `smtpfast topics create` (POST /v1/topics): Create a topic
+- `smtpfast topics delete` (DELETE /v1/topics/{id}): Delete a topic
+- `smtpfast topics get` (GET /v1/topics/{id}): Retrieve a topic
+- `smtpfast topics list` (GET /v1/topics): List topics
+- `smtpfast topics update` (PATCH /v1/topics/{id}): Update a topic
+
+### Changed commands
+
+- `smtpfast api-keys create`: new flags --smtp-category
+- `smtpfast api-keys update`: new flags --smtp-category
+- `smtpfast broadcasts audience`: new flags --topic-id
+- `smtpfast broadcasts create`: new flags --topic-id
+- `smtpfast broadcasts update`: new flags --topic-id
+- `smtpfast contacts list`: new flags --topic-id
+- `smtpfast forms create`: new flags --consent-text, --topic-id
+- `smtpfast forms update`: new flags --consent-text, --topic-id
+
 ## [0.17.11] - 2026-11-23
 
 Updated from the live API spec.

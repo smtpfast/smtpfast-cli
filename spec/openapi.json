@@ -310,6 +310,14 @@
               "type": "string"
             },
             "type": "array"
+          },
+          "smtp_category": {
+            "description": "The category of unlabelled SMTP mail sent with this key",
+            "enum": [
+              "transactional",
+              "marketing"
+            ],
+            "type": "string"
           }
         },
         "required": [
@@ -354,6 +362,14 @@
               "type": "string"
             },
             "type": "array"
+          },
+          "smtp_category": {
+            "description": "The category of unlabelled SMTP mail sent with this key",
+            "enum": [
+              "transactional",
+              "marketing"
+            ],
+            "type": "string"
           }
         },
         "type": "object"
@@ -1062,6 +1078,13 @@
             ]
           },
           "text": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "topic_id": {
+            "description": "The topic the broadcast belongs to: only contacts subscribed to it get it, and its unsubscribe link removes that topic only. null: every subscribed contact in the audience.",
             "type": [
               "string",
               "null"
@@ -1866,6 +1889,108 @@
         ],
         "type": "object"
       },
+      "ContactTopic": {
+        "properties": {
+          "default_subscription": {
+            "enum": [
+              "opt_in",
+              "opt_out"
+            ],
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "description": "The topic ID",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "source": {
+            "description": "Where the contact's choice was made; null when the default applies",
+            "enum": [
+              "api",
+              "dashboard",
+              "form",
+              "unsubscribe_link",
+              "preference_page",
+              "backfill",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "subscription": {
+            "description": "The contact's choice, else the topic default",
+            "enum": [
+              "opt_in",
+              "opt_out"
+            ],
+            "type": "string"
+          },
+          "updated_at": {
+            "description": "When the contact chose; null when the default applies",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "visibility": {
+            "enum": [
+              "public",
+              "private"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "subscription",
+          "default_subscription",
+          "visibility",
+          "source",
+          "updated_at"
+        ],
+        "type": "object"
+      },
+      "ContactTopicList": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ContactTopic"
+            },
+            "type": "array"
+          },
+          "has_more": {
+            "example": false,
+            "type": "boolean"
+          },
+          "object": {
+            "example": "list",
+            "type": "string"
+          },
+          "total": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "object",
+          "has_more",
+          "data",
+          "total"
+        ],
+        "type": "object"
+      },
       "CreateApiKeyRequest": {
         "properties": {
           "name": {
@@ -1883,6 +2008,15 @@
               "type": "string"
             },
             "type": "array"
+          },
+          "smtp_category": {
+            "default": "marketing",
+            "description": "Not in Resend. The category of mail sent over SMTP with this key when the message has no X-SMTPfast-Category header. transactional: no List-Unsubscribe header, and a recipient's marketing opt-out does not block it (use it for a key that only sends sign-in, password-reset and receipt mail, for example from Supabase Auth or Firebase). marketing: the one-click unsubscribe header and every opt-out apply (use it for newsletters). A message with an unsubscribe placeholder is always marketing. Sends through the HTTP API are not affected; they use the category field. Defaults to marketing. Never set transactional on a key that sends newsletters or promotions.",
+            "enum": [
+              "transactional",
+              "marketing"
+            ],
+            "type": "string"
           }
         },
         "required": [
@@ -1963,6 +2097,14 @@
             "type": "string"
           },
           "text": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "topic_id": {
+            "description": "Resend-compatible. Only contacts subscribed to this topic get the broadcast (their own opt-in, or the topic default), and its unsubscribe link and one-click header remove that topic only. Contacts who unsubscribed from everything and suppressed addresses are always left out. Omit it, or send null, to send to every subscribed contact in the audience.",
+            "example": "clx_topic123",
             "type": [
               "string",
               "null"
@@ -2155,6 +2297,14 @@
               "null"
             ]
           },
+          "consent_text": {
+            "description": "Shown under the form and stored with each topic opt-in.",
+            "maxLength": 500,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "double_opt_in": {
             "example": true,
             "type": "boolean"
@@ -2192,6 +2342,13 @@
             "example": "Thanks for subscribing!",
             "maxLength": 200,
             "type": "string"
+          },
+          "topic_id": {
+            "description": "A signup subscribes the contact to this topic only. Existing contacts can sign up too, and nothing else about them changes; a contact who unsubscribed from everything stays unsubscribed. null removes the topic, and the form adds contacts to the list as before.",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "turnstile_secret_key": {
             "description": "Write-only. Returned forms expose turnstile_secret_configured instead.",
@@ -2374,6 +2531,50 @@
         },
         "required": [
           "name"
+        ],
+        "type": "object"
+      },
+      "CreateTopicRequest": {
+        "properties": {
+          "default_subscription": {
+            "description": "The subscription of a contact that never chose. Fixed at creation.",
+            "enum": [
+              "opt_in",
+              "opt_out"
+            ],
+            "type": "string"
+          },
+          "description": {
+            "example": "New features, about once a month",
+            "maxLength": 200,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "example": "Product updates",
+            "maxLength": 50,
+            "type": "string"
+          },
+          "subscribe_existing_contacts": {
+            "default": false,
+            "description": "Not in Resend. Only with default_subscription opt_out: opt in every contact who is subscribed and not suppressed now.",
+            "type": "boolean"
+          },
+          "visibility": {
+            "default": "private",
+            "description": "public: on every contact's preference page. private: only on the page of contacts opted in.",
+            "enum": [
+              "public",
+              "private"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "default_subscription"
         ],
         "type": "object"
       },
@@ -5171,7 +5372,7 @@
           },
           "category": {
             "default": "marketing",
-            "description": "Defaults to marketing. Label receipts, password resets and other transactional mail transactional so a marketing opt-out does not block them; unlabelled mail is treated as marketing. Over SMTP, set the X-SMTPfast-Category header instead; it is removed before sending. An email whose html or text (for a template, the rendered body) contains an unsubscribe placeholder is always marketing. A marketing email carries the one-click List-Unsubscribe header and is not sent to anyone who unsubscribed. A transactional email has no List-Unsubscribe header and still goes to addresses whose suppression has scope marketing (a recipient's own unsubscribe, or a manual suppression created with scope marketing), but not to addresses with scope all: hard bounces, complaints, and manual suppressions, which block everything by default. Transactional means mail the recipient needs because of an action or account; labelling promotions transactional is not allowed. Any other value is refused with 400.",
+            "description": "Defaults to marketing. Label receipts, password resets and other transactional mail transactional so a marketing opt-out does not block them; unlabelled mail is treated as marketing. Over SMTP, set the X-SMTPfast-Category header instead; it is removed before sending. An SMTP message without the header takes the category set on its API key (smtp_category). An email whose html or text (for a template, the rendered body) contains an unsubscribe placeholder is always marketing. A marketing email carries the one-click List-Unsubscribe header and is not sent to anyone who unsubscribed. A transactional email has no List-Unsubscribe header and still goes to addresses whose suppression has scope marketing (a recipient's own unsubscribe, or a manual suppression created with scope marketing), but not to addresses with scope all: hard bounces, complaints, and manual suppressions, which block everything by default. Transactional means mail the recipient needs because of an action or account; labelling promotions transactional is not allowed. Any other value is refused with 400.",
             "enum": [
               "transactional",
               "marketing"
@@ -5424,6 +5625,14 @@
               "null"
             ]
           },
+          "consent_text": {
+            "description": "Shown under the form and stored with each topic opt-in.",
+            "example": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "created_at": {
             "format": "date-time",
             "type": "string"
@@ -5509,6 +5718,14 @@
           "success_message": {
             "example": "Thanks for subscribing!",
             "type": "string"
+          },
+          "topic_id": {
+            "description": "The topic a signup subscribes the contact to, or null.",
+            "example": null,
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "turnstile_secret_configured": {
             "example": false,
@@ -6284,6 +6501,166 @@
         ],
         "type": "object"
       },
+      "Topic": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "default_subscription": {
+            "description": "The subscription of a contact that never chose. Fixed at creation.",
+            "enum": [
+              "opt_in",
+              "opt_out"
+            ],
+            "type": "string"
+          },
+          "description": {
+            "example": "New features, about once a month",
+            "maxLength": 200,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "example": "clx_topic123",
+            "type": "string"
+          },
+          "name": {
+            "example": "Product updates",
+            "maxLength": 50,
+            "type": "string"
+          },
+          "object": {
+            "example": "topic",
+            "type": "string"
+          },
+          "subscribed_contacts": {
+            "description": "Create only, when subscribe_existing_contacts was true: how many contacts were opted in.",
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "visibility": {
+            "description": "public: on every contact's preference page. private: only on the page of contacts opted in.",
+            "enum": [
+              "public",
+              "private"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "object",
+          "id",
+          "name",
+          "description",
+          "default_subscription",
+          "visibility",
+          "created_at",
+          "updated_at"
+        ],
+        "type": "object"
+      },
+      "TopicList": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/TopicSummary"
+            },
+            "type": "array"
+          },
+          "has_more": {
+            "description": "Always false: every topic is in one page",
+            "example": false,
+            "type": "boolean"
+          },
+          "object": {
+            "example": "list",
+            "type": "string"
+          },
+          "subscribed_contacts": {
+            "description": "Contacts subscribed and not suppressed now: what subscribe_existing_contacts would opt in to a new topic.",
+            "example": 1200,
+            "type": "integer"
+          },
+          "topic_limit": {
+            "example": 50,
+            "type": "integer"
+          },
+          "total": {
+            "example": 2,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "object",
+          "has_more",
+          "data",
+          "total",
+          "topic_limit",
+          "subscribed_contacts"
+        ],
+        "type": "object"
+      },
+      "TopicSummary": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "default_subscription": {
+            "description": "The subscription of a contact that never chose. Fixed at creation.",
+            "enum": [
+              "opt_in",
+              "opt_out"
+            ],
+            "type": "string"
+          },
+          "description": {
+            "example": "New features, about once a month",
+            "maxLength": 200,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "example": "clx_topic123",
+            "type": "string"
+          },
+          "name": {
+            "example": "Product updates",
+            "maxLength": 50,
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "visibility": {
+            "description": "public: on every contact's preference page. private: only on the page of contacts opted in.",
+            "enum": [
+              "public",
+              "private"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "default_subscription",
+          "visibility",
+          "created_at",
+          "updated_at"
+        ],
+        "type": "object"
+      },
       "UpdateBroadcastRequest": {
         "allOf": [
           {
@@ -6331,6 +6708,39 @@
             "type": "boolean"
           }
         },
+        "type": "object"
+      },
+      "UpdateContactTopicsRequest": {
+        "properties": {
+          "topics": {
+            "items": {
+              "properties": {
+                "id": {
+                  "description": "The topic ID",
+                  "type": "string"
+                },
+                "subscription": {
+                  "enum": [
+                    "opt_in",
+                    "opt_out"
+                  ],
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "subscription"
+              ],
+              "type": "object"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "topics"
+        ],
         "type": "object"
       },
       "UpdateSegmentRequest": {
@@ -6391,6 +6801,14 @@
               "null"
             ]
           },
+          "consent_text": {
+            "description": "Shown under the form and stored with each topic opt-in.",
+            "maxLength": 500,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "double_opt_in": {
             "type": "boolean"
           },
@@ -6418,6 +6836,13 @@
           "success_message": {
             "maxLength": 200,
             "type": "string"
+          },
+          "topic_id": {
+            "description": "A signup subscribes the contact to this topic only. Existing contacts can sign up too, and nothing else about them changes; a contact who unsubscribed from everything stays unsubscribed. null removes the topic, and the form adds contacts to the list as before.",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "turnstile_secret_key": {
             "description": "Write-only. Omit to keep the existing secret.",
@@ -6569,6 +6994,32 @@
               "array",
               "null"
             ]
+          }
+        },
+        "type": "object"
+      },
+      "UpdateTopicRequest": {
+        "properties": {
+          "description": {
+            "example": "New features, about once a month",
+            "maxLength": 200,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "example": "Product updates",
+            "maxLength": 50,
+            "type": "string"
+          },
+          "visibility": {
+            "description": "public: on every contact's preference page. private: only on the page of contacts opted in.",
+            "enum": [
+              "public",
+              "private"
+            ],
+            "type": "string"
           }
         },
         "type": "object"
@@ -8169,7 +8620,7 @@
         "x-sdk-method": "revoke"
       },
       "patch": {
-        "description": "Rename a key or change its scopes. The secret is unchanged; scope changes apply on the key's next request. Requires the apikey:manage scope when called with an API key. Called with an API key, the request may only reach keys with no more access than that key: a new or edited key gets only scopes the calling key has, never apikey:manage, and a key with scopes the calling key lacks, or made by a member with a higher role than the calling key's creator, cannot be edited or revoked. The dashboard is not limited this way.",
+        "description": "Rename a key, change its scopes, or set the category of its unlabelled SMTP mail (smtp_category). The secret is unchanged; scope changes apply on the key's next request. Requires the apikey:manage scope when called with an API key. Called with an API key, the request may only reach keys with no more access than that key: a new or edited key gets only scopes the calling key has, never apikey:manage, and a key with scopes the calling key lacks, or made by a member with a higher role than the calling key's creator, cannot be edited or revoked. The dashboard is not limited this way.",
         "operationId": "updateApiKey",
         "parameters": [
           {
@@ -8197,6 +8648,14 @@
                       "type": "string"
                     },
                     "type": "array"
+                  },
+                  "smtp_category": {
+                    "description": "Not in Resend. The category of mail sent over SMTP with this key when the message has no X-SMTPfast-Category header. transactional: no List-Unsubscribe header, and a recipient's marketing opt-out does not block it (use it for a key that only sends sign-in, password-reset and receipt mail, for example from Supabase Auth or Firebase). marketing: the one-click unsubscribe header and every opt-out apply (use it for newsletters). A message with an unsubscribe placeholder is always marketing. Sends through the HTTP API are not affected; they use the category field. Defaults to marketing. Never set transactional on a key that sends newsletters or promotions.",
+                    "enum": [
+                      "transactional",
+                      "marketing"
+                    ],
+                    "type": "string"
                   }
                 },
                 "type": "object"
@@ -8991,13 +9450,21 @@
     },
     "/v1/broadcasts/audience": {
       "get": {
-        "description": "How many contacts a broadcast to all contacts, or to one segment, would reach after unsubscribes, suppressions and invalid addresses are skipped, plus the plan's broadcast allowance this month. Not in Resend. Requires the email:read scope.",
+        "description": "How many contacts a broadcast to all contacts, or to one segment, and optionally of one topic, would reach after unsubscribes, suppressions and invalid addresses are skipped, plus the plan's broadcast allowance this month. Not in Resend. Requires the email:read scope.",
         "operationId": "getBroadcastAudience",
         "parameters": [
           {
             "description": "Preview one segment instead of all contacts",
             "in": "query",
             "name": "segment_id",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Count only contacts subscribed to this topic",
+            "in": "query",
+            "name": "topic_id",
             "schema": {
               "type": "string"
             }
@@ -11400,6 +11867,14 @@
             }
           },
           {
+            "description": "Not in Resend. Only contacts subscribed to this topic: their own opt-in, or the topic default when they never chose. Combine with status=subscribed for the contacts a topic broadcast can reach.",
+            "in": "query",
+            "name": "topic_id",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "description": "Number of contacts to return",
             "in": "query",
             "name": "limit",
@@ -12267,6 +12742,214 @@
           "segments"
         ],
         "x-sdk-method": "add"
+      }
+    },
+    "/v1/contacts/{id}/topics": {
+      "get": {
+        "description": "Every topic of the team with this contact's subscription: their own choice, or the topic default when they never chose (source and updated_at are null then). The contact can be named by id or email address. Resend-compatible. Requires the contact:read scope.",
+        "operationId": "listContactTopics",
+        "parameters": [
+          {
+            "description": "The contact ID or email address",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactTopicList"
+                }
+              }
+            },
+            "description": "The contact's topics"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "summary": "List a contact's topics",
+        "tags": [
+          "Contacts"
+        ],
+        "x-sdk-group": [
+          "contacts",
+          "topics"
+        ],
+        "x-sdk-method": "list"
+      },
+      "patch": {
+        "description": "Opt the contact in to or out of topics. Topics not named keep what they had. An opt-in never overrides an unsubscribe from everything or a suppression. The body can also be the bare array, as in Resend's cURL example. Resend-compatible. Requires the contact:write scope.",
+        "operationId": "updateContactTopics",
+        "parameters": [
+          {
+            "description": "The contact ID or email address",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateContactTopicsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "id": {
+                      "description": "The contact ID",
+                      "type": "string"
+                    },
+                    "object": {
+                      "example": "contact_topics",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "object",
+                    "id"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Updated"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad request - check your payload"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Update a contact's topics",
+        "tags": [
+          "Contacts"
+        ],
+        "x-sdk-group": [
+          "contacts",
+          "topics"
+        ],
+        "x-sdk-method": "update"
       }
     },
     "/v1/domains": {
@@ -16375,7 +17058,7 @@
     },
     "/v1/forms/{id}/pending/{pendingId}/approve": {
       "post": {
-        "description": "Confirm one pending signup without waiting for the link click. It becomes a contact, fires contact.subscribed and gets the welcome email if enabled. Approving one that is already confirmed returns 200 with already_confirmed. Returns 409 when the form is no longer active. Requires the form:write scope.",
+        "description": "Confirm one pending signup without waiting for the link click. It becomes a contact, fires contact.subscribed and gets the welcome email if enabled. Approving one that is already confirmed returns 200 with already_confirmed. Returns 409 when the form is no longer active, or when the address has unsubscribed or is suppressed since it signed up (the pending signup is then removed). Requires the form:write scope.",
         "operationId": "approvePendingSignup",
         "parameters": [
           {
@@ -24311,6 +24994,463 @@
           "templates"
         ],
         "x-sdk-method": "publish"
+      }
+    },
+    "/v1/topics": {
+      "get": {
+        "description": "Every topic of the team, oldest first. Resend-compatible. Requires the contact:read scope.",
+        "operationId": "listTopics",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicList"
+                }
+              }
+            },
+            "description": "The topics"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "summary": "List topics",
+        "tags": [
+          "Contacts"
+        ],
+        "x-sdk-group": [
+          "topics"
+        ],
+        "x-sdk-method": "list"
+      },
+      "post": {
+        "description": "Resend-compatible. default_subscription is the subscription of a contact that never chose: opt_in means every contact gets the topic's broadcasts unless they opt out; opt_out means nobody does unless they opt in. It cannot be changed later. Set subscribe_existing_contacts (not in Resend) on an opt_out topic to opt in every contact who is subscribed and not suppressed now. Requires the contact:write scope.",
+        "operationId": "createTopic",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTopicRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Topic"
+                }
+              }
+            },
+            "description": "Topic created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad request - check your payload"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Conflict - the resource already exists or changed meanwhile"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Create a topic",
+        "tags": [
+          "Contacts"
+        ],
+        "x-sdk-group": [
+          "topics"
+        ],
+        "x-sdk-method": "create"
+      }
+    },
+    "/v1/topics/{id}": {
+      "delete": {
+        "description": "Delete a topic and every contact's choice about it. A topic that a form signs people up to, or that a broadcast not yet sent belongs to, cannot be deleted (409); sent broadcasts lose the label. Requires the contact:write scope.",
+        "operationId": "deleteTopic",
+        "parameters": [
+          {
+            "description": "The topic ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletedObject"
+                }
+              }
+            },
+            "description": "Topic deleted"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Conflict - the resource already exists or changed meanwhile"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Delete a topic",
+        "tags": [
+          "Contacts"
+        ],
+        "x-sdk-group": [
+          "topics"
+        ],
+        "x-sdk-method": "delete"
+      },
+      "get": {
+        "description": "Resend-compatible. Requires the contact:read scope.",
+        "operationId": "getTopic",
+        "parameters": [
+          {
+            "description": "The topic ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Topic"
+                }
+              }
+            },
+            "description": "The topic"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Retrieve a topic",
+        "tags": [
+          "Contacts"
+        ],
+        "x-sdk-group": [
+          "topics"
+        ],
+        "x-sdk-method": "get"
+      },
+      "patch": {
+        "description": "Change the name, description or visibility. Only the fields sent change; default_subscription cannot be changed. Resend-compatible. Requires the contact:write scope.",
+        "operationId": "updateTopic",
+        "parameters": [
+          {
+            "description": "The topic ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTopicRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Topic"
+                }
+              }
+            },
+            "description": "Topic updated"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad request - check your payload"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Invalid or missing API key"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Forbidden - domain not verified or insufficient permissions"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Resource not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Conflict - the resource already exists or changed meanwhile"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Rate limit exceeded - retry after the period indicated in the Retry-After header"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Update a topic",
+        "tags": [
+          "Contacts"
+        ],
+        "x-sdk-group": [
+          "topics"
+        ],
+        "x-sdk-method": "update"
       }
     },
     "/v1/usage": {
