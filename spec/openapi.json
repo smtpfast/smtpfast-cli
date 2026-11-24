@@ -41,7 +41,7 @@
                 "type": "integer"
               },
               "from": {
-                "description": "Start of the window",
+                "description": "Start of the window: the time of the request minus 30 x 24 hours",
                 "format": "date-time",
                 "type": "string"
               },
@@ -84,7 +84,7 @@
             "type": "integer"
           },
           "daily": {
-            "description": "Last 30 days, bucketed by the UTC day each email was sent",
+            "description": "30 UTC calendar dates ending today (today is still in progress), bucketed by the UTC day each email was sent",
             "items": {
               "properties": {
                 "bounced": {
@@ -135,12 +135,12 @@
             "type": "integer"
           },
           "thisWeek": {
-            "description": "Emails sent in the last 7 days",
+            "description": "Emails sent in the last 7 x 24 hours (rolling, ending now; not calendar days)",
             "example": 2190,
             "type": "integer"
           },
           "today": {
-            "description": "Emails sent in the last 24 hours",
+            "description": "Emails sent in the last 24 hours (rolling, ending now; not since midnight)",
             "example": 312,
             "type": "integer"
           },
@@ -180,7 +180,7 @@
             "type": "object"
           },
           "window": {
-            "description": "Present when days or domain is passed",
+            "description": "Present when days or domain is passed. A rolling window from now minus days x 24 hours to now, in UTC. sent and delivered count emails by when they were sent, failed by when they were created, and the bounce and complaint counts by when the report arrived.",
             "properties": {
               "complete": {
                 "type": "boolean"
@@ -221,6 +221,7 @@
                 ]
               },
               "from": {
+                "description": "Start of the window: to minus days x 24 hours",
                 "format": "date-time",
                 "type": "string"
               },
@@ -242,6 +243,7 @@
                 "type": "object"
               },
               "to": {
+                "description": "End of the window: the time of the request",
                 "format": "date-time",
                 "type": "string"
               }
@@ -8206,11 +8208,11 @@
     },
     "/v1/analytics": {
       "get": {
-        "description": "Sending and deliverability totals for the account, plus a 30-day daily series. bounceRate counts hard bounces only, over the last 30 days; the bounces object has the hard and soft counts behind it. Pass days and/or domain to add a `window` object holding exact counts for that window and sending domain, aggregated in the database rather than sampled from the event log.",
+        "description": "Sending and deliverability totals for the account, plus a 30-day daily series. bounceRate counts hard bounces only, over the last 30 days; the bounces object has the hard and soft counts behind it. Pass days and/or domain to add a `window` object holding exact counts for that window and sending domain, aggregated in the database rather than sampled from the event log. Every window here is rolling and ends at the time of the request, in UTC: today is the last 24 hours, thisWeek the last 7 x 24 hours, bounces the last 30 x 24 hours, and window the last days x 24 hours (from = now minus days x 24 hours, not midnight). Only daily uses calendar days: 30 UTC dates ending today, with today still in progress. GET /v1/emails/metrics works on calendar dates instead, so the same \"last 7 days\" can differ between the two; see its start_date.",
         "operationId": "getAnalytics",
         "parameters": [
           {
-            "description": "Window in days (1-90) for the `window` block. Present in the response only when days or domain is given.",
+            "description": "Rolling window for the `window` block: the last days x 24 hours up to the time of the request (UTC), not from midnight. 1-90; the block is present only when days or domain is given.",
             "in": "query",
             "name": "days",
             "schema": {
@@ -14530,11 +14532,11 @@
     },
     "/v1/emails/metrics": {
       "get": {
-        "description": "Resend-compatible counts and rates over a date range, for transactional and broadcast email together. Leave dimensions out for one totals row; add period, domain, email or broadcast (email and broadcast cannot be combined) to break the numbers down. Each lifecycle timestamp counts in its own period. Sends where every recipient is the SES mailbox simulator are left out. Rates are percentages with one decimal. bounce_rate counts hard bounces only, as SES does (bounced_hard: permanent plus undetermined); bounced_soft and soft_bounce_rate count transient bounces such as a full mailbox, and bounced counts both. Open and click metrics need tracking on. Add include=providers for a breakdown by mailbox provider (Gmail, Outlook, iCloud, Yahoo, Proton, other). Requires the email:read scope.",
+        "description": "Resend-compatible counts and rates over a date range, for transactional and broadcast email together. Leave dimensions out for one totals row; add period, domain, email or broadcast (email and broadcast cannot be combined) to break the numbers down. Each lifecycle timestamp counts in its own period: sent by when the email was sent, bounced by when it bounced, and so on. Ranges are calendar dates in timezone (UTC by default), so the default \"last 7 days\" starts at midnight six days ago, while GET /v1/analytics?days=7 is a rolling 7 x 24 hours ending now; the two can disagree. Sends where every recipient is the SES mailbox simulator are left out. Rates are percentages with one decimal. bounce_rate counts hard bounces only, as SES does (bounced_hard: permanent plus undetermined); bounced_soft and soft_bounce_rate count transient bounces such as a full mailbox, and bounced counts both. Open and click metrics need tracking on. Add include=providers for a breakdown by mailbox provider (Gmail, Outlook, iCloud, Yahoo, Proton, other). Requires the email:read scope.",
         "operationId": "getEmailMetrics",
         "parameters": [
           {
-            "description": "ISO 8601 date or datetime. A date means midnight in timezone. Defaults to 6 days before end_date.",
+            "description": "ISO 8601 date or datetime; a bare date means midnight in timezone (UTC by default), so start_date=2026-11-17 starts at 2026-11-17T00:00:00Z, not 7 x 24 hours before now. Default: midnight, in timezone, of the day six days before the last day in range, so with no dates the range is today so far plus the six whole days before it. For a rolling window that ends now, pass a datetime or use GET /v1/analytics?days=N.",
             "in": "query",
             "name": "start_date",
             "schema": {
@@ -14542,7 +14544,7 @@
             }
           },
           {
-            "description": "ISO 8601 date (the whole day is included) or datetime. Future values are clamped to now. Defaults to now.",
+            "description": "ISO 8601 date or datetime; a bare date includes that whole day (up to the next midnight in timezone). Future values are clamped to now. Defaults to now. The range is start inclusive, end exclusive.",
             "in": "query",
             "name": "end_date",
             "schema": {
@@ -14550,7 +14552,7 @@
             }
           },
           {
-            "description": "IANA time zone for dates and periods, e.g. America/New_York. Default UTC.",
+            "description": "IANA time zone for bare dates and periods, e.g. America/New_York. Default UTC.",
             "in": "query",
             "name": "timezone",
             "schema": {
@@ -14706,6 +14708,7 @@
                       "type": "array"
                     },
                     "end_date": {
+                      "description": "The resolved end of the range, as a UTC instant (exclusive)",
                       "format": "date-time",
                       "type": "string"
                     },
@@ -14741,6 +14744,7 @@
                       "type": "array"
                     },
                     "start_date": {
+                      "description": "The resolved start of the range, as a UTC instant (inclusive)",
                       "format": "date-time",
                       "type": "string"
                     },
@@ -16338,7 +16342,7 @@
         "x-sdk-method": "list"
       },
       "post": {
-        "description": "Create a new signup form, including its confirmation sender and welcome email if you send them. After creation, the embed snippet at /api/forms/{id}/submit (HTML) or /api/forms/{id}/embed.js (JavaScript widget) can be used on third-party sites. Request keys are snake_case; the older camelCase keys are still accepted. Requires the form:write scope.",
+        "description": "Create a new signup form, including its confirmation sender and welcome email if you send them. After creation, embed it on any site with the dashboard's snippets: the widget (https://smtpfa.st/embed/forms-1.js, or a pinned version with an integrity hash) with a <div data-smtpfast-form=\"{id}\">, an iframe of https://smtpfa.st/f/{id}, or a plain HTML form posting to /api/forms/{id}/submit. Request keys are snake_case; the older camelCase keys are still accepted. Requires the form:write scope.",
         "operationId": "createSignupForm",
         "requestBody": {
           "content": {
